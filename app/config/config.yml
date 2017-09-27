@@ -67,3 +67,12 @@ swiftmailer:
     username: '%mailer_user%'
     password: '%mailer_password%'
     spool: { type: memory }
+
+fos_rest:
+    view:
+        formats:
+            json: true
+        failed_validation: HTTP_BAD_REQUEST
+        mime_types:
+            json: ['application/json; charset=utf-8', 'application/json']
+        view_response_listener: force
