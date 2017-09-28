@@ -6,7 +6,7 @@
  * Time: 09:48
  */
 
-namespace AppBundle\Schema\Types;
+namespace AppBundle\Schema\Types\Query;
 
 
 use AppBundle\Entity\Tasklist;

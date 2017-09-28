@@ -3,7 +3,8 @@
 namespace AppBundle\Schema;
 
 use AppBundle\Schema\Types\DateType;
-use AppBundle\Schema\Types\QueryType;
+use AppBundle\Schema\Types\Mutation\MutationType;
+use AppBundle\Schema\Types\Query\QueryType;
 use AppBundle\Schema\Types\TasklistType;
 use AppBundle\Schema\Types\TaskType;
 use AppBundle\Schema\Types\TaskTypeEnum;
@@ -17,6 +18,7 @@ use GraphQL\Type\Definition\Type;
 class Types
 {
     private static $date;
+    private static $mutation;
     private static $query;
     private static $task;
     private static $tasklist;
@@ -25,6 +27,11 @@ class Types
     public static function date()
     {
         return self::$date ?: (self::$date = new DateType());
+    }
+
+    public static function mutation(Registry $doctrine)
+    {
+        return self::$mutation ?: (self::$mutation = new MutationType($doctrine));
     }
 
     public static function query(Registry $doctrine)

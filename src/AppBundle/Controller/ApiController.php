@@ -27,7 +27,8 @@ class ApiController extends Controller
     public function indexAction(Request $request)
     {
         $schema = new Schema([
-            'query' => Types::query($this->getDoctrine())
+            'query' => Types::query($this->getDoctrine()),
+            'mutation' => Types::mutation($this->getDoctrine())
         ]);
 
         $this->validateSchemaIfDebug($request, $schema);
