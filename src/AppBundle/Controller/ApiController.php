@@ -2,13 +2,15 @@
 
 namespace AppBundle\Controller;
 
-use AppBundle\Schema\Types;
+use AppBundle\Schema\LoginSchema;
+use AppBundle\Schema\Schema;
+use AppBundle\Service\GraphQLQueryExecutor;
 use FOS\RestBundle\Controller\Annotations as Rest;
-use GraphQL\GraphQL;
-use GraphQL\Type\Schema;
+use Psr\Log\LoggerInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Security\Core\Encoder\UserPasswordEncoder;
 
 /**
  * Class ApiController
@@ -19,59 +21,40 @@ use Symfony\Component\HttpFoundation\Request;
  */
 class ApiController extends Controller
 {
+    private static $DEFAULT_QUERY = '{hello}';
+
     /**
      * @Rest\Post("", defaults={"_format" = "json"}, options={"expose" = true})
      * @param Request $request
+     * @param GraphQLQueryExecutor $executor
+     * @param LoggerInterface $logger
      * @return array
      */
-    public function indexAction(Request $request)
+    public function indexAction(Request $request, GraphQLQueryExecutor $executor, LoggerInterface $logger)
     {
-        $schema = new Schema([
-            'query' => Types::query($this->getDoctrine()),
-            'mutation' => Types::mutation($this->getDoctrine())
-        ]);
+        $schema = new Schema($this->getDoctrine());
 
-        $this->validateSchemaIfDebug($request, $schema);
-
-        $query = $request->request->get('query');
-        $variables = $request->request->get('variables');
-
-        $input = [
-            'query' => trim($query) === "" ? null : $query,
-            'variables' => $variables === "" ? null : $variables
-        ];
-
-        if ($input['query'] === null) {
-            $input['query'] = '{hello}';
-        }
-
-        $result = GraphQL::executeQuery(
+        $result = $executor->executeQuery(
+            $request,
             $schema,
-            $input['query'],
-            null,
-            null,
-            (array) $input['variables']
+            $logger,
+            self::$DEFAULT_QUERY
         );
-
-        if (!empty($result->errors)) {
-            $logger = $this->get('logger');
-            $logger->error('GraphQL request failed!');
-            $logger->error('    Query: ' . $query);
-            $logger->error('    Variables: ' . $variables);
-            foreach ($result->errors as $error) {
-                $logger->error('    Message:', array('error' => $error->getMessage()));
-            }
-        }
 
         return $result->toArray();
     }
 
-    private function validateSchemaIfDebug(Request $request, Schema $schema)
+    public function loginAction(Request $request, GraphQLQueryExecutor $executor, LoggerInterface $logger, UserPasswordEncoder $encoder)
     {
-        $debug_api = $request->query->get('debug_api');
-        if ($debug_api === '1') {
-            $schema->assertValid();
-        }
-    }
+        $schema = new LoginSchema($this->container);
 
+        $result = $executor->executeQuery(
+            $request,
+            $schema,
+            $logger,
+            self::$DEFAULT_QUERY
+        );
+
+        return $result->toArray();
+    }
 }

@@ -12,6 +12,7 @@ namespace AppBundle\Schema\Types\Mutation;
 use AppBundle\Entity\Task;
 use AppBundle\Entity\Tasklist;
 use AppBundle\Schema\Types;
+use AppBundle\Security\Credentials;
 use Doctrine\Bundle\DoctrineBundle\Registry;
 use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Type\Definition\ResolveInfo;
@@ -45,13 +46,13 @@ class MutationType extends ObjectType
             ],
             'resolveField' => function ($val, $args, $context, ResolveInfo $info)
             {
-                return $this->{$info->fieldName}($val, $args, $context, $info);
+                return $this->{$info->fieldName}($args);
             }
         ];
         parent::__construct($config);
     }
 
-    private function addTask($val, $args)
+    private function addTask($args)
     {
         $tasklistid = $args['tasklist'];
         $tasklist = $this->doctrine->getRepository(TaskList::class)->find($tasklistid);

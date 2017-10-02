@@ -3,6 +3,7 @@
 namespace AppBundle\Schema;
 
 use AppBundle\Schema\Types\DateType;
+use AppBundle\Schema\Types\Mutation\LoginType;
 use AppBundle\Schema\Types\Mutation\MutationType;
 use AppBundle\Schema\Types\Query\QueryType;
 use AppBundle\Schema\Types\TasklistType;
@@ -14,10 +15,12 @@ use GraphQL\Type\Definition\ListOfType;
 use GraphQL\Type\Definition\NonNull;
 use GraphQL\Type\Definition\StringType;
 use GraphQL\Type\Definition\Type;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class Types
 {
     private static $date;
+    private static $login;
     private static $mutation;
     private static $query;
     private static $task;
@@ -27,6 +30,11 @@ class Types
     public static function date()
     {
         return self::$date ?: (self::$date = new DateType());
+    }
+
+    public static function login(ContainerInterface $container)
+    {
+        return self::$login ?: (self::$login = new LoginType($container));
     }
 
     public static function mutation(Registry $doctrine)

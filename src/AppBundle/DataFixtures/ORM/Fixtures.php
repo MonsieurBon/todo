@@ -12,6 +12,7 @@ namespace AppBundle\DataFixtures\ORM;
 use AppBundle\Entity\Task;
 use AppBundle\Entity\Tasklist;
 use AppBundle\Entity\TaskType;
+use AppBundle\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\Persistence\ObjectManager;
 
@@ -19,6 +20,16 @@ class Fixtures extends Fixture
 {
     public function load(ObjectManager $manager)
     {
+        $user = new User();
+        $user->setUsername('fgu');
+        $user->setName('Gut');
+        $user->setFirstname('Fabian');
+        $user->setEmail('fabian.gut@ethy.ch');
+        $user->setIsActive(true);
+        $encoder = $this->container->get('security.password_encoder');
+        $password = $encoder->encodePassword($user, 'test');
+        $user->setPassword($password);
+
         $tasklist1 = new Tasklist();
         $tasklist1->setName('Home');
 
@@ -65,6 +76,7 @@ class Fixtures extends Fixture
         $task5->setDueDate(\DateTime::createFromFormat('!Y-m-d', '2017-10-06'));
         $tasklist2->addTask($task5);
 
+        $manager->persist($user);
         $manager->persist($task1);
         $manager->persist($task2);
         $manager->persist($task3);
