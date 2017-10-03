@@ -181,7 +181,7 @@ class Task
     public function setType($type)
     {
         if (!in_array($type, TaskType::values())) {
-            throw new \UnexpectedValueException("Invalid value for TaskType");
+            throw new \UnexpectedValueException('Invalid value for TaskType');
         }
 
         $this->type = $type;
@@ -213,15 +213,16 @@ class Task
      */
     public function setTasklist($tasklist)
     {
-        if ($tasklist === null) {
+        if ($this->tasklist !== $tasklist) {
             if ($this->tasklist !== null) {
-                $tempTasklist = $this->tasklist;
-                $this->tasklist = null;
-                $tempTasklist->removeTask($this);
+                $this->tasklist->removeTask($this);
             }
-        } else {
+
             $this->tasklist = $tasklist;
-            $this->tasklist->addTask($this);
+
+            if ($this->tasklist !== null) {
+                $this->tasklist->addTask($this);
+            }
         }
 
         return $this;

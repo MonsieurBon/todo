@@ -95,7 +95,7 @@ class Tasklist
     public function removeTask(Task $task)
     {
         if ($this->tasks->contains($task)) {
-            $this->tasks->remove($task);
+            $this->tasks->removeElement($task);
             $task->setTasklist(null);
         }
     }
