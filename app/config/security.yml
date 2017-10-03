@@ -22,6 +22,7 @@ security:
 
         api:
             pattern: ^/api
+            methods: [POST]
             anonymous: ~
             logout: ~
 
