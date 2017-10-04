@@ -12,7 +12,6 @@ namespace AppBundle\Schema\Types\Mutation;
 use AppBundle\Entity\Task;
 use AppBundle\Entity\Tasklist;
 use AppBundle\Schema\Types;
-use AppBundle\Security\Credentials;
 use Doctrine\Bundle\DoctrineBundle\Registry;
 use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Type\Definition\ResolveInfo;

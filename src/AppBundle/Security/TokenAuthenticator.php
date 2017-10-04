@@ -17,7 +17,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
-use Symfony\Component\Security\Core\Encoder\UserPasswordEncoder;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
@@ -28,19 +27,16 @@ class TokenAuthenticator extends AbstractGuardAuthenticator
     private $container;
     private $doctrine;
     private $kernel;
-    private $passwordEncoder;
 
     public function __construct(
         ContainerInterface $container,
         HttpKernelInterface $kernel,
-        Registry $doctrine,
-        UserPasswordEncoder $passwordEncoder
+        Registry $doctrine
     )
     {
         $this->container = $container;
         $this->doctrine = $doctrine;
         $this->kernel = $kernel;
-        $this->passwordEncoder = $passwordEncoder;
     }
 
     /**
@@ -222,7 +218,6 @@ class TokenAuthenticator extends AbstractGuardAuthenticator
      */
     public function supportsRememberMe()
     {
-        $rememberme = true;
-        return $rememberme;
+        return false;
     }
 }
