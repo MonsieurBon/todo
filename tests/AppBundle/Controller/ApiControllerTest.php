@@ -68,14 +68,39 @@ class ApiControllerTest extends WebTestCase
         $this->assertEquals('Invalid username or password', $json->data->createToken->error);
     }
 
-    private function sendApiQuery($query) {
+    public function testAuthenticationWithCorrectCredentials()
+    {
+        $query = '{"query":"mutation{\n  createToken(username: \"fgu\", password: \"test\"){\n    error\n    token\n  }\n}","variables":null}';
+        $client = $this->sendApiQuery($query);
+        $response = $client->getResponse();
+        $content = $response->getContent();
+        $json = json_decode($content);
+
+        $token = $json->data->createToken->token;
+
+        $client = $this->sendApiQuery("", $token);
+        $response = $client->getResponse();
+
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEquals(
+            '{"data":{"hello":"Your GraphQL endpoint is ready! Use GraphiQL to browse API."}}',
+            $response->getContent()
+        );
+    }
+
+    private function sendApiQuery($query, $token = null) {
+        $headers = array('CONTENT_TYPE' => 'application/json');
+        if ($token !== null) {
+            $headers['HTTP_X_AUTH_TOKEN'] = $token;
+        }
+
         $client = static::createClient();
         $client->request(
             'POST',
             '/api',
             array(),
             array(),
-            array('CONTENT_TYPE' => 'application/json'),
+            $headers,
             $query);
         return $client;
     }
