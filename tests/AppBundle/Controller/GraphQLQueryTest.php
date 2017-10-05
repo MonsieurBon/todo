@@ -94,6 +94,20 @@ class GraphQLQueryTest extends GraphQLTestCase
         $this->assertEquals('2017-10-20', $json->data->tasklist->tasks[0]->startDate);
     }
 
+    public function testInvalidQueryFails()
+    {
+        $query = '{"query":"query {\n  tasklists {\n    id\n    name\n  }\n}","variables":null}';
+        $client = static::sendApiQuery($query, static::$token);
+        $response = $client->getResponse();
+        $content = $response->getContent();
+        $json = json_decode($content);
+
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertCount(2, $json->data->tasklists);
+        $this->assertEquals('Home', $json->data->tasklists[0]->name);
+        $this->assertEquals('Office', $json->data->tasklists[1]->name);
+    }
+
     public static function tearDownAfterClass()
     {
 

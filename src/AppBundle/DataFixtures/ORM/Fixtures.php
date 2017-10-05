@@ -25,7 +25,6 @@ class Fixtures extends Fixture
         $user->setName('Gut');
         $user->setFirstname('Fabian');
         $user->setEmail('fabian.gut@ethy.ch');
-        $user->setIsActive(true);
         $encoder = $this->container->get('security.password_encoder');
         $password = $encoder->encodePassword($user, 'test');
         $user->setPassword($password);

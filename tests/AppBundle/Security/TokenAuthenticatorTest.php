@@ -52,7 +52,6 @@ class TokenAuthenticatorTest extends KernelTestCase
         $user->setEmail('foo@bar.ch');
         $user->setName('Test');
         $user->setFirstname('User');
-        $user->setIsActive(true);
         $this->objects[] = $user;
         $this->em->persist($user);
 
