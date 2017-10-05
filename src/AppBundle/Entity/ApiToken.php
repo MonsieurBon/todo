@@ -112,14 +112,23 @@ class ApiToken
     /**
      * Set user
      *
-     * @param User|null $user
+     * @param User $user
      * @return ApiToken
      */
-    public function setUser(User $user)
+    public function setUser($user)
     {
         if ($this->user !== $user) {
+            if ($this->user !== null) {
+                $tempUser = $this->user;
+                $this->user = null;
+                $tempUser->setApiToken(null);
+            }
+
             $this->user = $user;
-            $user->setToken($this);
+
+            if ($this->user !== null) {
+                $this->user->setApiToken($this);
+            }
         }
 
         return $this;

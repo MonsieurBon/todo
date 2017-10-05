@@ -89,7 +89,7 @@ class LoginType extends ObjectType
             );
         }
 
-        $oldToken = $user->getToken();
+        $oldToken = $user->getApiToken();
         if ($oldToken) {
             $em->remove($oldToken);
             $em->flush();

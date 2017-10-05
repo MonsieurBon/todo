@@ -230,16 +230,29 @@ class User implements UserInterface
     /**
      * @return ApiToken
      */
-    public function getToken()
+    public function getApiToken()
     {
         return $this->token;
     }
 
-    public function setToken(ApiToken $token)
+    /**
+     * @param ApiToken $token
+     * @return $this
+     */
+    public function setApiToken($token)
     {
         if ($this->token !== $token) {
+            if ($this->token !== null) {
+                $tempToken = $this->token;
+                $this->token = null;
+                $tempToken->setUser(null);
+            }
+
             $this->token = $token;
-            $token->setUser($this);
+
+            if ($this->token !== null) {
+                $this->token->setUser($this);
+            }
         }
 
         return $this;

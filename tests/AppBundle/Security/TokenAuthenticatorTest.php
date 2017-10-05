@@ -175,7 +175,7 @@ class TokenAuthenticatorTest extends KernelTestCase
             ->getRepository(User::class)
             ->findOneByUsername('test');
 
-        $validUntil = $user->getToken()->getValidUntil();
+        $validUntil = $user->getApiToken()->getValidUntil();
 
         $request = new Request();
 
@@ -188,7 +188,7 @@ class TokenAuthenticatorTest extends KernelTestCase
         $user = $this->em
             ->getRepository(User::class)
             ->findOneByUsername('test');
-        $token = $user->getToken();
+        $token = $user->getApiToken();
 
         $this->assertTrue($token->getValidUntil() > $validUntil);
     }

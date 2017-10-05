@@ -196,7 +196,7 @@ class TokenAuthenticator extends AbstractGuardAuthenticator
 
         /** @var User $user */
         $user = $token->getUser();
-        $user->getToken()->setValidUntil($validUntil);
+        $user->getApiToken()->setValidUntil($validUntil);
         $this->doctrine->getManager()->flush();
 
         return null;
