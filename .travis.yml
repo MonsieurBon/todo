@@ -2,6 +2,15 @@ language: php
 
 sudo: false
 
+addons:
+  sonarcloud:
+    organization: "monsieurbon-github"
+    token:
+      secure: "NRjfN+CpgyylNyPihQ6RUK4lEkI9BtR9aLbOd2GKgDWVTdX1MMv6P2kaTmeE085oRw/XM1iXqZSikt7EHbyIH771LkIcYTpIfSW5392gGDsgvqxvNQlywybM9q5lbBFA+ho543xs/KxOfqHAZxeLT0xkv7zD/BBJnidRLFpN7ANC6CxOKpWol6DiSdth7QX6RbXr+nImQOHUn79y6EAUjHF7qPfqfSnd39WB2EeHCcbKnmTWOswNlh6xxB9lWT19G3CBzR12GZRUGYlq0HQ4FNqZ7hHHyvRtSYNkOjBPGBgbRy8wVksn5TCnaQli8qZHmqOwrPmWtIb3Zsu1I4OUVu+hbaIoKWWg5qon9n6V9yVxm0yducasXGdMvCcfPRRGd0t7gDss31yloXYv7myVl1oC4AKyjcKXO+3RFcqlxSIbFjAdJH+68/u8zMS5XU5NDIc/1ZgCMQnmtc3Gb3xZKNFfOJY9wPRUaJstYPD6xMocg2eYtXKWM2DKH+mXctwKSi977iGi7NBaaTqmE8Qg+eCtV+RW9VLZDbiXRruZY/ytU03ZMfr5mzwipbavJDGWMsWh2PVsvfWpIXNVcGCQZgrn9o4lNN9BHTVDJZtYnAELYGSAcLN157Si7kHSs+8Uyab3cou+ruJG1jMYa6pfJ39rHJQAhcu2PELIzqd2gI4="
+
+jdk:
+  - oraclejdk8
+
 notifications:
   email:
     on_success: never
@@ -13,6 +22,7 @@ services:
 cache:
   directories:
     - $HOME/.composer/cache/files
+    - $HOME/.sonar/cache
 
 matrix:
   fast_finish: true
@@ -37,4 +47,5 @@ script:
   - phpunit --coverage-clover=coverage.xml
 
 after_success:
-- bash <(curl -s https://codecov.io/bash)
+  - bash <(curl -s https://codecov.io/bash)
+  - sonar-scanner
