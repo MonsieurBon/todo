@@ -2,9 +2,7 @@
 
 namespace Tests\AppBundle\Controller;
 
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-
-class ApiControllerTest extends WebTestCase
+class ApiControllerTest extends GraphQLTestCase
 {
     public function testRedirectionForGet()
     {
@@ -32,7 +30,7 @@ class ApiControllerTest extends WebTestCase
     public function testLogin()
     {
         $query = '{"query":"mutation{\n  createToken(username: \"fgu\", password: \"test\"){\n    error\n    token\n  }\n}","variables":null}';
-        $client = $this->sendApiQuery($query);
+        $client = static::sendApiQuery($query);
         $response = $client->getResponse();
         $content = $response->getContent();
         $json = json_decode($content);
@@ -45,7 +43,7 @@ class ApiControllerTest extends WebTestCase
     public function testLoginWithWrongPassword()
     {
         $query = '{"query":"mutation{\n  createToken(username: \"fgu\", password: \"test123\"){\n    error\n    token\n  }\n}","variables":null}';
-        $client = $this->sendApiQuery($query);
+        $client = static::sendApiQuery($query);
         $response = $client->getResponse();
         $content = $response->getContent();
         $json = json_decode($content);
@@ -58,7 +56,7 @@ class ApiControllerTest extends WebTestCase
     public function testLoginWithInvalidUser()
     {
         $query = '{"query":"mutation{\n  createToken(username: \"invalid\", password: \"test\"){\n    error\n    token\n  }\n}","variables":null}';
-        $client = $this->sendApiQuery($query);
+        $client = static::sendApiQuery($query);
         $response = $client->getResponse();
         $content = $response->getContent();
         $json = json_decode($content);
@@ -71,14 +69,14 @@ class ApiControllerTest extends WebTestCase
     public function testAuthenticationWithCorrectCredentials()
     {
         $query = '{"query":"mutation{\n  createToken(username: \"fgu\", password: \"test\"){\n    error\n    token\n  }\n}","variables":null}';
-        $client = $this->sendApiQuery($query);
+        $client = static::sendApiQuery($query);
         $response = $client->getResponse();
         $content = $response->getContent();
         $json = json_decode($content);
 
         $token = $json->data->createToken->token;
 
-        $client = $this->sendApiQuery("", $token);
+        $client = static::sendApiQuery("", $token);
         $response = $client->getResponse();
 
         $this->assertEquals(200, $response->getStatusCode());
@@ -86,22 +84,5 @@ class ApiControllerTest extends WebTestCase
             '{"data":{"hello":"Your GraphQL endpoint is ready! Use GraphiQL to browse API."}}',
             $response->getContent()
         );
-    }
-
-    private function sendApiQuery($query, $token = null) {
-        $headers = array('CONTENT_TYPE' => 'application/json');
-        if ($token !== null) {
-            $headers['HTTP_X_AUTH_TOKEN'] = $token;
-        }
-
-        $client = static::createClient();
-        $client->request(
-            'POST',
-            '/api',
-            array(),
-            array(),
-            $headers,
-            $query);
-        return $client;
     }
 }
