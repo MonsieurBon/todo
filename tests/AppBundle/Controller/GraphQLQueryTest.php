@@ -96,16 +96,27 @@ class GraphQLQueryTest extends GraphQLTestCase
 
     public function testInvalidQueryFails()
     {
-        $query = '{"query":"query {\n  tasklists {\n    id\n    name\n  }\n}","variables":null}';
+        $query = '{"query":"query {\n  foobar {\n    foo\n    bar\n  }\n}","variables":null}';
         $client = static::sendApiQuery($query, static::$token);
         $response = $client->getResponse();
         $content = $response->getContent();
         $json = json_decode($content);
 
         $this->assertEquals(200, $response->getStatusCode());
-        $this->assertCount(2, $json->data->tasklists);
-        $this->assertEquals('Home', $json->data->tasklists[0]->name);
-        $this->assertEquals('Office', $json->data->tasklists[1]->name);
+        $this->assertCount(1, $json->errors);
+        $this->assertEquals('Cannot query field "foobar" on type "Query".', $json->errors[0]->message);
+    }
+
+    public function testValidateSchema()
+    {
+        $query = '';
+        $parameters = array(
+            'debug_api' => '1'
+        );
+        $client = static::sendApiQuery($query, static::$token, $parameters);
+        $response = $client->getResponse();
+
+        $this->assertEquals(200, $response->getStatusCode());
     }
 
     public static function tearDownAfterClass()
