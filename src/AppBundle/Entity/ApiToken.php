@@ -60,6 +60,11 @@ class ApiToken
         return $this->id;
     }
 
+    public function getToken()
+    {
+        return $this->token;
+    }
+
     /**
      * Set token
      *
