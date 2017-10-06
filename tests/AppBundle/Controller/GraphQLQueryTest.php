@@ -9,6 +9,8 @@
 namespace Tests\AppBundle\Controller;
 
 
+use AppBundle\Entity\TaskType;
+
 class GraphQLQueryTest extends GraphQLTestCase
 {
     /** @var  string */
@@ -117,6 +119,46 @@ class GraphQLQueryTest extends GraphQLTestCase
         $response = $client->getResponse();
 
         $this->assertEquals(200, $response->getStatusCode());
+    }
+
+    public function testAddTask()
+    {
+        $query = '{"query":"query {\n  tasklists {\n    id\n    name\n  }\n}","variables":null}';
+        $client = static::sendApiQuery($query, static::$token);
+        $response = $client->getResponse();
+        $content = $response->getContent();
+        $json = json_decode($content);
+        $tasklist = $json->data->tasklists[0];
+
+        $query = '{"query":"mutation CreateNewTask($tasklistid: ID!) {\n addTask(\n title: \"My Title\"\n description: \"My description\"\n type: OPPORTUNITY_NOW\n startdate: \"2017-12-15\"\n duedate: \"2018-01-15\"\n tasklist: $tasklistid\n ) {\n id\n title\n description\n type\n startDate\n dueDate\n tasklist {\n id\n }\n }\n}"';
+        $variables = '"variables":{"tasklistid":' . $tasklist->id . '},"operationName":"CreateNewTask"}';
+
+        $client = static::sendApiQuery($query . ',' . $variables, static::$token);
+        $response = $client->getResponse();
+        $content = $response->getContent();
+        $json = json_decode($content);
+        $task = $json->data->addTask;
+
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertNotNull($task);
+        $this->assertNotNull($task->id);
+        $this->assertEquals('My Title', $task->title);
+        $this->assertEquals('My description', $task->description);
+        $this->assertEquals(TaskType::OPPORTUNITY_NOW, $task->type);
+        $this->assertEquals('2017-12-15', $task->startDate);
+        $this->assertEquals('2018-01-15', $task->dueDate);
+        $this->assertEquals($tasklist->id, $task->tasklist->id);
+    }
+
+    public function testAddTaskToInvalidTasklist()
+    {
+        $query = '{"query":"mutation CreateNewTask($tasklistid: ID!) {\n addTask(\n title: \"My Title\"\n description: \"My description\"\n type: OPPORTUNITY_NOW\n startdate: \"2017-12-15\"\n duedate: \"2018-01-15\"\n tasklist: $tasklistid\n ) {\n id\n title\n description\n type\n startDate\n dueDate\n tasklist {\n id\n }\n }\n}"';
+        $variables = '"variables":{"tasklistid":-1},"operationName":"CreateNewTask"}';
+
+        $client = static::sendApiQuery($query . ',' . $variables, static::$token);
+        $response = $client->getResponse();
+
+        $this->assertEquals(500, $response->getStatusCode());
     }
 
     public static function tearDownAfterClass()
