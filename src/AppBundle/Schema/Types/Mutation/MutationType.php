@@ -13,6 +13,7 @@ use AppBundle\Entity\Task;
 use AppBundle\Entity\Tasklist;
 use AppBundle\Schema\Types;
 use Doctrine\Bundle\DoctrineBundle\Registry;
+use GraphQL\Error\Error;
 use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Type\Definition\ResolveInfo;
 
@@ -57,7 +58,7 @@ class MutationType extends ObjectType
         $tasklist = $this->doctrine->getRepository(TaskList::class)->find($tasklistid);
 
         if (!$tasklist) {
-            throw new \Exception('Tasklist with id ' . $tasklistid . ' not found!');
+            throw new Error('Tasklist with id ' . $tasklistid . ' not found!');
         }
 
         $task = new Task();
