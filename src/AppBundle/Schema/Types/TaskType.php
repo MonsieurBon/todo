@@ -29,39 +29,12 @@ class TaskType extends ObjectType
                 if (method_exists($this, $method)) {
                     return $this->{$method}($value, $args, $context, $info);
                 } else {
-                    return $value->{$info->fieldName};
+                    $getter = 'get' . ucfirst($info->fieldName);
+                    return $value->{$getter}();
                 }
             }
         ];
         parent::__construct($config);
-    }
-
-    private function resolveId(Task $value)
-    {
-        return $value->getId();
-    }
-
-    private function resolveTitle(Task $value)
-    {
-        return $value->getTitle();
-    }
-
-    private function resolveDescription(Task $value)
-    {
-        return $value->getDescription();
-    }
-
-    private function resolveStartDate(Task $value)
-    {
-        return $value->getStartDate();
-    }
-
-    private function resolveDueDate(Task $value) {
-        return $value->getDueDate();
-    }
-
-    private function resolveType(Task $value) {
-        return $value->getType();
     }
 
     private function resolveTasklist(Task $value) {

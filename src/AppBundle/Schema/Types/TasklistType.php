@@ -32,21 +32,12 @@ class TasklistType extends ObjectType
                 if (method_exists($this, $method)) {
                     return $this->{$method}($value, $args, $context, $info);
                 } else {
-                    return $value->{$info->fieldName};
+                    $getter = 'get' . ucfirst($info->fieldName);
+                    return $value->{$getter}();
                 }
             }
         ];
         parent::__construct($config);
-    }
-
-    private function resolveId(Tasklist $value)
-    {
-        return $value->getId();
-    }
-
-    private function resolveName(Tasklist $value)
-    {
-        return $value->getName();
     }
 
     private function resolveTasks(Tasklist $value)
