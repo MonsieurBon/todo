@@ -77,7 +77,7 @@ class TokenAuthenticatorTest extends KernelTestCase
     public function testXAuthTokenHeader()
     {
         $request = new Request();
-        $request->headers->set('X-AUTH-TOKEN', 'a1b2c3');
+        $request->headers->set(TokenAuthenticator::X_AUTH_HEADER, 'a1b2c3');
 
         $credentials = $this->authenticator->getCredentials($request);
 
@@ -89,7 +89,7 @@ class TokenAuthenticatorTest extends KernelTestCase
     public function testTokenUrlParameter()
     {
         $request = new Request();
-        $request->headers->set('X-AUTH-TOKEN', 'a1b2c3');
+        $request->headers->set(TokenAuthenticator::X_AUTH_HEADER, 'a1b2c3');
         $request->query->set('token', 'd4e5f6');
 
         $credentials = $this->authenticator->getCredentials($request);

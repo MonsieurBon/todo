@@ -30,7 +30,7 @@ class GraphQLQueryExecutor
      * @param null $defaultQuery
      * @return ExecutionResult
      */
-    public function executeQuery(Request $request, Schema $schema, $logger, $defaultQuery = null)
+    public function executeQuery(Request $request, Schema $schema, $defaultQuery = null)
     {
         $this->validateSchemaIfDebug($request, $schema);
 

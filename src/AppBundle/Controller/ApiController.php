@@ -30,28 +30,26 @@ class ApiController extends Controller
      * @param LoggerInterface $logger
      * @return array
      */
-    public function indexAction(Request $request, GraphQLQueryExecutor $executor, LoggerInterface $logger)
+    public function indexAction(Request $request, GraphQLQueryExecutor $executor)
     {
         $schema = new Schema($this->getDoctrine());
 
         $result = $executor->executeQuery(
             $request,
             $schema,
-            $logger,
             self::$DEFAULT_QUERY
         );
 
         return $result->toArray();
     }
 
-    public function loginAction(Request $request, GraphQLQueryExecutor $executor, LoggerInterface $logger, UserPasswordEncoder $encoder)
+    public function loginAction(Request $request, GraphQLQueryExecutor $executor)
     {
         $schema = new LoginSchema($this->container);
 
         $result = $executor->executeQuery(
             $request,
             $schema,
-            $logger,
             self::$DEFAULT_QUERY
         );
 

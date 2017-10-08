@@ -37,6 +37,7 @@ class TaskType extends ObjectType
         parent::__construct($config);
     }
 
+    /** @noinspection PhpUnusedPrivateMethodInspection */
     private function resolveTasklist(Task $value) {
         return $value->getTasklist();
     }

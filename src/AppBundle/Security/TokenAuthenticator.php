@@ -24,6 +24,10 @@ use Symfony\Component\Security\Guard\AbstractGuardAuthenticator;
 
 class TokenAuthenticator extends AbstractGuardAuthenticator
 {
+    const TOKEN = 'token';
+    const X_AUTH_HEADER = 'X-AUTH-TOKEN';
+    const URL_PARAMETER_TOKEN = TokenAuthenticator::TOKEN;
+
     private $container;
     private $doctrine;
     private $kernel;
@@ -90,13 +94,13 @@ class TokenAuthenticator extends AbstractGuardAuthenticator
      */
     public function getCredentials(Request $request)
     {
-        $token = $request->headers->get('X-AUTH-TOKEN');
+        $token = $request->headers->get(TokenAuthenticator::X_AUTH_HEADER);
         if (!$token) {
-            $token = $request->query->get('token');
+            $token = $request->query->get(TokenAuthenticator::URL_PARAMETER_TOKEN);
         }
 
         return array(
-            'token' => $token
+            TokenAuthenticator::TOKEN => $token
         );
     }
 
@@ -118,7 +122,7 @@ class TokenAuthenticator extends AbstractGuardAuthenticator
     public function getUser($credentials, UserProviderInterface $userProvider)
     {
         $tokenRepo = $this->doctrine->getRepository(ApiToken::class);
-        $apiToken = $credentials['token'];
+        $apiToken = $credentials[TokenAuthenticator::TOKEN];
 
         if ($apiToken === null) {
             return null;
