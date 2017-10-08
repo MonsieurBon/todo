@@ -16,6 +16,9 @@ use GraphQL\Utils\Utils;
 
 class DateType extends ScalarType
 {
+    const PRINT_FORMAT = 'Y-m-d';
+    const PARSE_FORMAT = '!' . DateType::PRINT_FORMAT;
+
     /**
      * Serializes an internal value to include in a response.
      *
@@ -24,7 +27,7 @@ class DateType extends ScalarType
      */
     public function serialize($value)
     {
-        return $value->format('Y-m-d');
+        return $value->format(DateType::PRINT_FORMAT);
     }
 
     /**
@@ -36,7 +39,7 @@ class DateType extends ScalarType
     public function parseValue($value)
     {
         $timeZone = new \DateTimeZone('UTC');
-        $date = \DateTime::createFromFormat('!Y-m-d', $value, $timeZone);
+        $date = \DateTime::createFromFormat(DateType::PARSE_FORMAT, $value, $timeZone);
 
         if ($date === false) {
             throw new \UnexpectedValueException("Cannot represent value as date: " . Utils::printSafe($value));
