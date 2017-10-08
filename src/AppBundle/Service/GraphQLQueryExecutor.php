@@ -17,6 +17,9 @@ use Symfony\Component\HttpFoundation\Request;
 
 class GraphQLQueryExecutor
 {
+    const QUERY = 'query';
+    const VARIABLES = 'variables';
+
     private $logger;
 
     public function __construct(LoggerInterface $logger)
@@ -34,24 +37,24 @@ class GraphQLQueryExecutor
     {
         $this->validateSchemaIfDebug($request, $schema);
 
-        $query = $request->request->get('query');
-        $variables = $request->request->get('variables');
+        $query = $request->request->get(self::QUERY);
+        $variables = $request->request->get(self::VARIABLES);
 
         $input = [
-            'query' => trim($query) === "" ? null : $query,
-            'variables' => $variables === "" ? null : $variables
+            self::QUERY => trim($query) === "" ? null : $query,
+            self::VARIABLES => $variables === "" ? null : $variables
         ];
 
-        if ($input['query'] === null && $defaultQuery !== null) {
-            $input['query'] = $defaultQuery;
+        if ($input[self::QUERY] === null && $defaultQuery !== null) {
+            $input[self::QUERY] = $defaultQuery;
         }
 
         $result = GraphQL::executeQuery(
             $schema,
-            $input['query'],
+            $input[self::QUERY],
             null,
             null,
-            (array) $input['variables']
+            (array) $input[self::VARIABLES]
         );
 
         if (!empty($result->errors)) {

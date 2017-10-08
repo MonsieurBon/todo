@@ -20,6 +20,6 @@ abstract class TaskType
      */
     public static function values()
     {
-        return array(TaskType::CRITICAL_NOW, TaskType::OPPORTUNITY_NOW, TaskType::OVER_THE_HORIZON);
+        return array(self::CRITICAL_NOW, self::OPPORTUNITY_NOW, self::OVER_THE_HORIZON);
     }
 }

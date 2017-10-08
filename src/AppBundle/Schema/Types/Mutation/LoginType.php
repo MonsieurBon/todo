@@ -39,8 +39,8 @@ class LoginType extends ObjectType
                     'type' => new ObjectType([
                         'name' => 'Credentials',
                         'fields' => [
-                            LoginType::TOKEN_FIELD_NAME => Types::string(),
-                            LoginType::ERROR_FIELD_NAME => Types::string()
+                            self::TOKEN_FIELD_NAME => Types::string(),
+                            self::ERROR_FIELD_NAME => Types::string()
                         ],
                         'resolveField' => function ($val, $args, $context, ResolveInfo $info)
                         {
@@ -76,13 +76,13 @@ class LoginType extends ObjectType
 
         if ($user === null) {
             return array(
-                LoginType::ERROR_FIELD_NAME => 'Invalid username or password'
+                self::ERROR_FIELD_NAME => 'Invalid username or password'
             );
         }
 
         if (!$this->encoder->isPasswordValid($user, $password)) {
             return array(
-                LoginType::ERROR_FIELD_NAME => 'Invalid username or password'
+                self::ERROR_FIELD_NAME => 'Invalid username or password'
             );
         }
 
@@ -105,15 +105,15 @@ class LoginType extends ObjectType
         $em->flush();
 
         return array(
-            LoginType::TOKEN_FIELD_NAME => $tokenString
+            self::TOKEN_FIELD_NAME => $tokenString
         );
     }
 
     /** @noinspection PhpUnusedPrivateMethodInspection */
     private function resolveToken($val) {
-        if (array_key_exists(LoginType::TOKEN_FIELD_NAME, $val)
-            && !array_key_exists(LoginType::ERROR_FIELD_NAME, $val)) {
-            return $val[LoginType::TOKEN_FIELD_NAME];
+        if (array_key_exists(self::TOKEN_FIELD_NAME, $val)
+            && !array_key_exists(self::ERROR_FIELD_NAME, $val)) {
+            return $val[self::TOKEN_FIELD_NAME];
         }
 
         return null;
@@ -121,6 +121,6 @@ class LoginType extends ObjectType
 
     /** @noinspection PhpUnusedPrivateMethodInspection */
     private function resolveError($val) {
-        return array_key_exists(LoginType::ERROR_FIELD_NAME, $val) ? $val[LoginType::ERROR_FIELD_NAME] : null;
+        return array_key_exists(self::ERROR_FIELD_NAME, $val) ? $val[self::ERROR_FIELD_NAME] : null;
     }
 }

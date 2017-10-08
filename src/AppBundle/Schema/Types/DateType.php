@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabian
- * Date: 26.09.17
- * Time: 01:09
- */
 
 namespace AppBundle\Schema\Types;
 
@@ -17,7 +11,7 @@ use GraphQL\Utils\Utils;
 class DateType extends ScalarType
 {
     const PRINT_FORMAT = 'Y-m-d';
-    const PARSE_FORMAT = '!' . DateType::PRINT_FORMAT;
+    const PARSE_FORMAT = '!' . self::PRINT_FORMAT;
 
     /**
      * Serializes an internal value to include in a response.
@@ -27,7 +21,7 @@ class DateType extends ScalarType
      */
     public function serialize($value)
     {
-        return $value->format(DateType::PRINT_FORMAT);
+        return $value->format(self::PRINT_FORMAT);
     }
 
     /**
@@ -39,7 +33,7 @@ class DateType extends ScalarType
     public function parseValue($value)
     {
         $timeZone = new \DateTimeZone('UTC');
-        $date = \DateTime::createFromFormat(DateType::PARSE_FORMAT, $value, $timeZone);
+        $date = \DateTime::createFromFormat(self::PARSE_FORMAT, $value, $timeZone);
 
         if ($date === false) {
             throw new \UnexpectedValueException("Cannot represent value as date: " . Utils::printSafe($value));

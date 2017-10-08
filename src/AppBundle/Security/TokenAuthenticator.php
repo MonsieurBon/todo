@@ -26,7 +26,7 @@ class TokenAuthenticator extends AbstractGuardAuthenticator
 {
     const TOKEN = 'token';
     const X_AUTH_HEADER = 'X-AUTH-TOKEN';
-    const URL_PARAMETER_TOKEN = TokenAuthenticator::TOKEN;
+    const URL_PARAMETER_TOKEN = self::TOKEN;
 
     private $container;
     private $doctrine;
@@ -94,13 +94,13 @@ class TokenAuthenticator extends AbstractGuardAuthenticator
      */
     public function getCredentials(Request $request)
     {
-        $token = $request->headers->get(TokenAuthenticator::X_AUTH_HEADER);
+        $token = $request->headers->get(self::X_AUTH_HEADER);
         if (!$token) {
-            $token = $request->query->get(TokenAuthenticator::URL_PARAMETER_TOKEN);
+            $token = $request->query->get(self::URL_PARAMETER_TOKEN);
         }
 
         return array(
-            TokenAuthenticator::TOKEN => $token
+            self::TOKEN => $token
         );
     }
 
@@ -122,7 +122,7 @@ class TokenAuthenticator extends AbstractGuardAuthenticator
     public function getUser($credentials, UserProviderInterface $userProvider)
     {
         $tokenRepo = $this->doctrine->getRepository(ApiToken::class);
-        $apiToken = $credentials[TokenAuthenticator::TOKEN];
+        $apiToken = $credentials[self::TOKEN];
 
         if ($apiToken === null) {
             return null;

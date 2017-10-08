@@ -42,12 +42,12 @@ class MutationType extends ObjectType
                     'type' => Types::task(),
                     'description' => 'adds a Task',
                     'args' => [
-                        MutationType::TITLE_FIELD_NAME => Types::nonNull(Types::string()),
-                        MutationType::DESCRIPTION_FIELD_NAME => Types::string(),
-                        MutationType::TYPE_FIELD_NAME => Types::nonNull(Types::taskTypeEnum()),
-                        MutationType::STARTDATE_FIELD_NAME => Types::nonNull(Types::date()),
-                        MutationType::DUEDATE_FIELD_NAME => Types::date(),
-                        MutationType::TASKLIST_FIELD_NAME => Types::nonNull(Types::id())
+                        self::TITLE_FIELD_NAME => Types::nonNull(Types::string()),
+                        self::DESCRIPTION_FIELD_NAME => Types::string(),
+                        self::TYPE_FIELD_NAME => Types::nonNull(Types::taskTypeEnum()),
+                        self::STARTDATE_FIELD_NAME => Types::nonNull(Types::date()),
+                        self::DUEDATE_FIELD_NAME => Types::date(),
+                        self::TASKLIST_FIELD_NAME => Types::nonNull(Types::id())
                     ]
                 ]
             ],
@@ -62,7 +62,7 @@ class MutationType extends ObjectType
     /** @noinspection PhpUnusedPrivateMethodInspection */
     private function addTask($args)
     {
-        $tasklistid = $args[MutationType::TASKLIST_FIELD_NAME];
+        $tasklistid = $args[self::TASKLIST_FIELD_NAME];
         $tasklist = $this->doctrine->getRepository(TaskList::class)->find($tasklistid);
 
         if (!$tasklist) {
@@ -70,14 +70,14 @@ class MutationType extends ObjectType
         }
 
         $task = new Task();
-        $task->setTitle($args[MutationType::TITLE_FIELD_NAME]);
-        if (array_key_exists(MutationType::DESCRIPTION_FIELD_NAME, $args)) {
-            $task->setDescription($args[MutationType::DESCRIPTION_FIELD_NAME]);
+        $task->setTitle($args[self::TITLE_FIELD_NAME]);
+        if (array_key_exists(self::DESCRIPTION_FIELD_NAME, $args)) {
+            $task->setDescription($args[self::DESCRIPTION_FIELD_NAME]);
         }
-        $task->setType($args[MutationType::TYPE_FIELD_NAME]);
-        $task->setStartDate($args[MutationType::STARTDATE_FIELD_NAME]);
-        if (array_key_exists(MutationType::DUEDATE_FIELD_NAME, $args)) {
-            $task->setDueDate($args[MutationType::DUEDATE_FIELD_NAME]);
+        $task->setType($args[self::TYPE_FIELD_NAME]);
+        $task->setStartDate($args[self::STARTDATE_FIELD_NAME]);
+        if (array_key_exists(self::DUEDATE_FIELD_NAME, $args)) {
+            $task->setDueDate($args[self::DUEDATE_FIELD_NAME]);
         }
         $task->setTasklist($tasklist);
 
