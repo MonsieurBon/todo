@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabian
- * Date: 29.09.17
- * Time: 07:01
- */
 
 namespace AppBundle\Schema\Types\Mutation;
 
@@ -20,6 +14,8 @@ use Symfony\Component\Security\Core\Encoder\UserPasswordEncoder;
 
 class LoginType extends ObjectType
 {
+    const TOKEN_FIELD_NAME = 'token';
+    const ERROR_FIELD_NAME = 'error';
     /**
      * @var Registry
      */
@@ -43,8 +39,8 @@ class LoginType extends ObjectType
                     'type' => new ObjectType([
                         'name' => 'Credentials',
                         'fields' => [
-                            'token' => Types::string(),
-                            'error' => Types::string()
+                            LoginType::TOKEN_FIELD_NAME => Types::string(),
+                            LoginType::ERROR_FIELD_NAME => Types::string()
                         ],
                         'resolveField' => function ($val, $args, $context, ResolveInfo $info)
                         {
@@ -66,6 +62,7 @@ class LoginType extends ObjectType
         parent::__construct($config);
     }
 
+    /** @noinspection PhpUnusedPrivateMethodInspection */
     private function createToken($args)
     {
         $em = $this->doctrine->getManager();
@@ -79,13 +76,13 @@ class LoginType extends ObjectType
 
         if ($user === null) {
             return array(
-                'error' => 'Invalid username or password'
+                LoginType::ERROR_FIELD_NAME => 'Invalid username or password'
             );
         }
 
         if (!$this->encoder->isPasswordValid($user, $password)) {
             return array(
-                'error' => 'Invalid username or password'
+                LoginType::ERROR_FIELD_NAME => 'Invalid username or password'
             );
         }
 
@@ -108,20 +105,22 @@ class LoginType extends ObjectType
         $em->flush();
 
         return array(
-            'token' => $tokenString
+            LoginType::TOKEN_FIELD_NAME => $tokenString
         );
     }
 
+    /** @noinspection PhpUnusedPrivateMethodInspection */
     private function resolveToken($val) {
-        if (array_key_exists('token', $val)
-            && !array_key_exists('error', $val)) {
-            return $val['token'];
+        if (array_key_exists(LoginType::TOKEN_FIELD_NAME, $val)
+            && !array_key_exists(LoginType::ERROR_FIELD_NAME, $val)) {
+            return $val[LoginType::TOKEN_FIELD_NAME];
         }
 
         return null;
     }
 
+    /** @noinspection PhpUnusedPrivateMethodInspection */
     private function resolveError($val) {
-        return array_key_exists('error', $val) ? $val['error'] : null;
+        return array_key_exists(LoginType::ERROR_FIELD_NAME, $val) ? $val[LoginType::ERROR_FIELD_NAME] : null;
     }
 }
