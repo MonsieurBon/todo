@@ -19,6 +19,13 @@ use GraphQL\Type\Definition\ResolveInfo;
 
 class MutationType extends ObjectType
 {
+    const TITLE_FIELD_NAME = 'title';
+    const DESCRIPTION_FIELD_NAME = 'description';
+    const TYPE_FIELD_NAME = 'type';
+    const STARTDATE_FIELD_NAME = 'startdate';
+    const DUEDATE_FIELD_NAME = 'duedate';
+    const TASKLIST_FIELD_NAME = 'tasklist';
+
     /**
      * @var Registry
      */
@@ -35,12 +42,12 @@ class MutationType extends ObjectType
                     'type' => Types::task(),
                     'description' => 'adds a Task',
                     'args' => [
-                        'title' => Types::nonNull(Types::string()),
-                        'description' => Types::string(),
-                        'type' => Types::nonNull(Types::taskTypeEnum()),
-                        'startdate' => Types::nonNull(Types::date()),
-                        'duedate' => Types::date(),
-                        'tasklist' => Types::nonNull(Types::id())
+                        MutationType::TITLE_FIELD_NAME => Types::nonNull(Types::string()),
+                        MutationType::DESCRIPTION_FIELD_NAME => Types::string(),
+                        MutationType::TYPE_FIELD_NAME => Types::nonNull(Types::taskTypeEnum()),
+                        MutationType::STARTDATE_FIELD_NAME => Types::nonNull(Types::date()),
+                        MutationType::DUEDATE_FIELD_NAME => Types::date(),
+                        MutationType::TASKLIST_FIELD_NAME => Types::nonNull(Types::id())
                     ]
                 ]
             ],
@@ -52,9 +59,10 @@ class MutationType extends ObjectType
         parent::__construct($config);
     }
 
+    /** @noinspection PhpUnusedPrivateMethodInspection */
     private function addTask($args)
     {
-        $tasklistid = $args['tasklist'];
+        $tasklistid = $args[MutationType::TASKLIST_FIELD_NAME];
         $tasklist = $this->doctrine->getRepository(TaskList::class)->find($tasklistid);
 
         if (!$tasklist) {
@@ -62,14 +70,14 @@ class MutationType extends ObjectType
         }
 
         $task = new Task();
-        $task->setTitle($args['title']);
-        if (array_key_exists('description', $args)) {
-            $task->setDescription($args['description']);
+        $task->setTitle($args[MutationType::TITLE_FIELD_NAME]);
+        if (array_key_exists(MutationType::DESCRIPTION_FIELD_NAME, $args)) {
+            $task->setDescription($args[MutationType::DESCRIPTION_FIELD_NAME]);
         }
-        $task->setType($args['type']);
-        $task->setStartDate($args['startdate']);
-        if (array_key_exists('duedate', $args)) {
-            $task->setDueDate($args['duedate']);
+        $task->setType($args[MutationType::TYPE_FIELD_NAME]);
+        $task->setStartDate($args[MutationType::STARTDATE_FIELD_NAME]);
+        if (array_key_exists(MutationType::DUEDATE_FIELD_NAME, $args)) {
+            $task->setDueDate($args[MutationType::DUEDATE_FIELD_NAME]);
         }
         $task->setTasklist($tasklist);
 
