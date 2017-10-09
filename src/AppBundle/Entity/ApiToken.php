@@ -38,7 +38,7 @@ class ApiToken
     /**
      * @var \DateTime
      *
-     * @ORM\Column(name="validUntil", type="datetimetz")
+     * @ORM\Column(name="validUntil", type="datetime")
      */
     private $validUntil;
 

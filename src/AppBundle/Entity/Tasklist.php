@@ -36,9 +36,25 @@ class Tasklist
      */
     private $tasks;
 
+    /**
+     * @var User
+     *
+     * @ORM\ManyToOne(targetEntity="User")
+     * @ORM\JoinColumn(nullable=false)
+     */
+    private $owner;
+
+    /**
+     * @var ArrayCollection
+     *
+     * @ORM\ManyToMany(targetEntity="User")
+     */
+    private $users;
+
     public function __construct()
     {
         $this->tasks = new ArrayCollection();
+        $this->users = new ArrayCollection();
     }
 
 
@@ -90,6 +106,8 @@ class Tasklist
             $this->tasks->add($task);
             $task->setTasklist($this);
         }
+
+        return $this;
     }
 
     public function removeTask(Task $task)
@@ -98,6 +116,8 @@ class Tasklist
             $this->tasks->removeElement($task);
             $task->setTasklist(null);
         }
+
+        return $this;
     }
 
     public function removeAllTasks()
@@ -107,6 +127,50 @@ class Tasklist
         foreach ($tempTasks as $task) {
             $task->setTasklist(null);
         }
+
+        return $this;
+    }
+
+    /**
+     * @return User
+     */
+    public function getOwner()
+    {
+        return $this->owner;
+    }
+
+    /**
+     * @param User $user
+     * @return $this
+     */
+    public function setOwner($user)
+    {
+        $this->owner = $user;
+
+        return $this;
+    }
+
+    public function getUsers()
+    {
+        return $this->users;
+    }
+
+    public function addUser(User $user)
+    {
+        if (!$this->users->contains($user)) {
+            $this->users->add($user);
+        }
+
+        return $this;
+    }
+
+    public function removeUser(User $user)
+    {
+        if ($this->users->contains($user)) {
+            $this->users->removeElement($user);
+        }
+
+        return $this;
     }
 }
 

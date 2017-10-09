@@ -18,7 +18,7 @@ class GraphQLQueryTest extends GraphQLTestCase
 
     public static function setUpBeforeClass()
     {
-        $query = '{"query":"mutation{\n  createToken(username: \"fgu\", password: \"test\"){\n    error\n    token\n  }\n}","variables":null}';
+        $query = '{"query":"mutation{\n  createToken(username: \"foo\", password: \"test\"){\n    error\n    token\n  }\n}","variables":null}';
         $client = static::sendApiQuery($query);
         $content = $client->getResponse()->getContent();
         $json = json_decode($content);
@@ -48,7 +48,7 @@ class GraphQLQueryTest extends GraphQLTestCase
         $json = json_decode($content);
 
         $this->assertEquals(200, $response->getStatusCode());
-        $this->assertCount(2, $json->data->tasklists);
+        $this->assertCount(4, $json->data->tasklists);
         $this->assertEquals('Home', $json->data->tasklists[0]->name);
         $this->assertEquals('Office', $json->data->tasklists[1]->name);
     }

@@ -29,7 +29,7 @@ class ApiControllerTest extends GraphQLTestCase
 
     public function testLogin()
     {
-        $query = '{"query":"mutation{\n  createToken(username: \"fgu\", password: \"test\"){\n    error\n    token\n  }\n}","variables":null}';
+        $query = '{"query":"mutation{\n  createToken(username: \"foo\", password: \"test\"){\n    error\n    token\n  }\n}","variables":null}';
         $client = static::sendApiQuery($query);
         $response = $client->getResponse();
         $content = $response->getContent();
@@ -68,7 +68,7 @@ class ApiControllerTest extends GraphQLTestCase
 
     public function testAuthenticationWithCorrectCredentials()
     {
-        $query = '{"query":"mutation{\n  createToken(username: \"fgu\", password: \"test\"){\n    error\n    token\n  }\n}","variables":null}';
+        $query = '{"query":"mutation{\n  createToken(username: \"foo\", password: \"test\"){\n    error\n    token\n  }\n}","variables":null}';
         $client = static::sendApiQuery($query);
         $response = $client->getResponse();
         $content = $response->getContent();

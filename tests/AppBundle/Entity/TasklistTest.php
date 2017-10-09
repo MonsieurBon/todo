@@ -11,16 +11,21 @@ namespace tests\AppBundle\Entity;
 
 use AppBundle\Entity\Task;
 use AppBundle\Entity\Tasklist;
+use AppBundle\Entity\User;
 use PHPUnit\Framework\TestCase;
 
 class TasklistTest extends TestCase
 {
     public function testGetterAndSetter()
     {
+        $owner = new User();
+
         $tasklist = (new Tasklist())
-            ->setName('Testlist');
+            ->setName('Testlist')
+            ->setOwner($owner);
 
         $this->assertEquals('Testlist', $tasklist->getName());
+        $this->assertEquals($owner, $tasklist->getOwner());
     }
 
     public function testRemoveAllTasks()
@@ -45,5 +50,20 @@ class TasklistTest extends TestCase
         $this->assertNull($task1->getTasklist());
         $this->assertNull($task2->getTasklist());
         $this->assertNull($task3->getTasklist());
+    }
+
+    public function testAddAndRemoveUser()
+    {
+        $user1 = new User();
+        $user2 = new User();
+
+        $tasklist = (new Tasklist())
+            ->addUser($user1)
+            ->addUser($user2);
+
+        $this->assertCount(2, $tasklist->getUsers());
+
+        $tasklist->removeUser($user1);
+        $this->assertCount(1, $tasklist->getUsers());
     }
 }

@@ -49,7 +49,7 @@ class TokenAuthenticatorTest extends KernelTestCase
         $user = new User();
         $user->setUsername('test');
         $user->setPassword('1234');
-        $user->setEmail('foo@bar.ch');
+        $user->setEmail('test@bar.ch');
         $user->setName('Test');
         $user->setFirstname('User');
         $this->objects[] = $user;
