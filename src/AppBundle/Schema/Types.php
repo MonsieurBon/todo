@@ -16,6 +16,7 @@ use GraphQL\Type\Definition\NonNull;
 use GraphQL\Type\Definition\StringType;
 use GraphQL\Type\Definition\Type;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
 
 class Types
 {
@@ -42,9 +43,9 @@ class Types
         return self::$mutation ?: (self::$mutation = new MutationType($doctrine));
     }
 
-    public static function query(Registry $doctrine)
+    public static function query(Registry $doctrine, TokenStorage $tokenStorage)
     {
-        return self::$query ?: (self::$query = new QueryType($doctrine));
+        return self::$query ?: (self::$query = new QueryType($doctrine, $tokenStorage));
     }
 
     public static function task()

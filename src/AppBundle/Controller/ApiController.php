@@ -27,13 +27,13 @@ class ApiController extends Controller
      * @Rest\Post("", defaults={"_format" = "json"}, options={"expose" = true})
      * @param Request $request
      * @param GraphQLQueryExecutor $executor
-     * @param LoggerInterface $logger
+     * @param Schema $schema
      * @return array
+     * @internal param Schema $schema
+     * @internal param LoggerInterface $logger
      */
-    public function indexAction(Request $request, GraphQLQueryExecutor $executor)
+    public function indexAction(Request $request, GraphQLQueryExecutor $executor, Schema $schema)
     {
-        $schema = new Schema($this->getDoctrine());
-
         $result = $executor->executeQuery(
             $request,
             $schema,
@@ -43,10 +43,14 @@ class ApiController extends Controller
         return $result->toArray();
     }
 
-    public function loginAction(Request $request, GraphQLQueryExecutor $executor)
+    /**
+     * @param Request $request
+     * @param GraphQLQueryExecutor $executor
+     * @param LoginSchema $schema
+     * @return array
+     */
+    public function loginAction(Request $request, GraphQLQueryExecutor $executor, LoginSchema $schema)
     {
-        $schema = new LoginSchema($this->container);
-
         $result = $executor->executeQuery(
             $request,
             $schema,

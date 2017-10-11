@@ -8,13 +8,10 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 class ApiTokenRepositoryTest extends KernelTestCase
 {
-    /**
-     * @var EntityManager
-     */
+    /** @var  EntityManager */
     private $em;
     private static $VALID_TOKEN_STRING = '12345';
     private static $INVALID_TOKEN_STRING = '54321';
-    private $tokens = array();
 
     protected function setUp()
     {
@@ -24,18 +21,18 @@ class ApiTokenRepositoryTest extends KernelTestCase
             ->get('doctrine')
             ->getManager();
 
+        $this->em->getConnection()->beginTransaction();
+
         $validToken = new ApiToken();
         $validToken->setToken(self::$VALID_TOKEN_STRING);
         $validToken->setValidUntil(new \DateTime('+ 5 minutes'));
 
-        $this->tokens[] = $validToken;
         $this->em->persist($validToken);
 
         $invalidToken = new ApiToken();
         $invalidToken->setToken(self::$INVALID_TOKEN_STRING);
         $invalidToken->setValidUntil(new \DateTime('- 5 minutes'));
 
-        $this->tokens[] = $invalidToken;
         $this->em->persist($invalidToken);
         $this->em->flush();
     }
@@ -61,10 +58,7 @@ class ApiTokenRepositoryTest extends KernelTestCase
 
     protected function tearDown()
     {
-        foreach($this->tokens as $token) {
-            $this->em->remove($token);
-        }
-        $this->em->flush();
+        $this->em->getConnection()->rollBack();
 
         parent::tearDown();
 

@@ -12,16 +12,20 @@ namespace AppBundle\Schema\Types\Query;
 use AppBundle\Entity\Tasklist;
 use AppBundle\Schema\Types;
 use Doctrine\Bundle\DoctrineBundle\Registry;
+use GraphQL\Error\Error;
 use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Type\Definition\ResolveInfo;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
 
 class QueryType extends ObjectType
 {
     private $doctrine;
+    private $tokenStorage;
 
-    public function __construct(Registry $doctrine)
+    public function __construct(Registry $doctrine, TokenStorage $tokenStorage)
     {
         $this->doctrine = $doctrine;
+        $this->tokenStorage = $tokenStorage;
 
         $config = [
             'name' => 'Query',
@@ -54,11 +58,21 @@ class QueryType extends ObjectType
 
     private function tasklists()
     {
-        return $this->doctrine->getRepository(Tasklist::class)->findAll();
+        $user = $this->tokenStorage->getToken()->getUser();
+        return $this->doctrine->getRepository(Tasklist::class)->findAllWithAccess($user);
     }
 
     private function tasklist($val, $args)
     {
-        return $this->doctrine->getRepository(Tasklist::class)->find($args['id']);
+        $id = $args['id'];
+
+        $user = $this->tokenStorage->getToken()->getUser();
+        $tasklist = $this->doctrine->getRepository(Tasklist::class)->findByIdWithAccess($id, $user);
+
+        if ($tasklist !== null) {
+            return $tasklist;
+        }
+
+        throw new Error(sprintf('No tasklist with id=%d found', $id));
     }
 }

@@ -1,6 +1,8 @@
 <?php
 
 namespace AppBundle\Repository;
+use AppBundle\Entity\User;
+use Doctrine\ORM\QueryBuilder;
 
 /**
  * TasklistRepository
@@ -10,4 +12,43 @@ namespace AppBundle\Repository;
  */
 class TasklistRepository extends \Doctrine\ORM\EntityRepository
 {
+    /**
+     * @param User $user
+     * @return array
+     */
+    public function findAllWithAccess(User $user)
+    {
+        $query = $this->getAccessQuery($user)->getQuery();
+
+        return $query->getResult();
+    }
+
+    /**
+     * @param string $id
+     * @param User $user
+     * @return mixed
+     */
+    public function findByIdWithAccess($id, User $user)
+    {
+        $query = $this->getAccessQuery($user)
+            ->andWhere('t.id = :tasklist_id')
+            ->setParameter('tasklist_id', $id)
+            ->getQuery();
+
+        return $query->getOneOrNullResult();
+    }
+
+    /**
+     * @param User $user
+     * @return QueryBuilder
+     */
+    private function getAccessQuery(User $user)
+    {
+        return $this->createQueryBuilder('t')
+            ->innerJoin('t.owner', 'o')
+            ->leftJoin('t.users', 'u')
+            ->where('o.id = :user_id')
+            ->orWhere('u.id = :user_id')
+            ->setParameter('user_id', $user->getId());
+    }
 }

@@ -48,23 +48,16 @@ class GraphQLQueryTest extends GraphQLTestCase
         $json = json_decode($content);
 
         $this->assertEquals(200, $response->getStatusCode());
-        $this->assertCount(4, $json->data->tasklists);
-        $this->assertEquals('Home', $json->data->tasklists[0]->name);
-        $this->assertEquals('Office', $json->data->tasklists[1]->name);
+        $this->assertCount(3, $json->data->tasklists);
+        foreach($json->data->tasklists as $tasklist) {
+            $this->assertContains($tasklist->name, array('Home', 'Office', 'Shared'));
+        }
     }
 
     public function testQuerySpecifictTasklist()
     {
-        $query = '{"query":"query {\n  tasklists {\n    id\n    name\n  }\n}","variables":null}';
+        $query = '{"query":"query {\n  tasklist(id: 1) {\n    name\n  }\n}","variables":null}';
         $client = static::sendApiQuery($query, static::$token);
-        $response = $client->getResponse();
-        $content = $response->getContent();
-        $json = json_decode($content);
-        $tasklist = $json->data->tasklists[0];
-
-        $query = '{"query":"query SpecificTasklist($tasklistid: ID!) {\n  tasklist(id: $tasklistid) {\n    name\n  }\n}"';
-        $variables = '"variables":{"tasklistid":' . $tasklist->id . '},"operationName":"SpecificTasklist"}';
-        $client = static::sendApiQuery($query . ',' . $variables, static::$token);
         $response = $client->getResponse();
         $content = $response->getContent();
         $json = json_decode($content);
@@ -75,17 +68,9 @@ class GraphQLQueryTest extends GraphQLTestCase
 
     public function testQueryTasklistsWithTasks()
     {
-        $query = '{"query":"query {\n  tasklists {\n    id\n    name\n  }\n}","variables":null}';
+        $query = '{"query":"query {\n tasklist(id: 1) {\n name\n tasks {\n title\n description\n type\n startDate}\n }\n}","variables":null}';
+
         $client = static::sendApiQuery($query, static::$token);
-        $response = $client->getResponse();
-        $content = $response->getContent();
-        $json = json_decode($content);
-        $tasklist = $json->data->tasklists[0];
-
-        $query = '{"query":"query SpecificTasklist($tasklistid: ID!) {\n tasklist(id: $tasklistid) {\n name\n tasks {\n title\n description\n type\n startDate}\n }\n}"';
-        $variables = '"variables":{"tasklistid":' . $tasklist->id . '},"operationName":"SpecificTasklist"}';
-
-        $client = static::sendApiQuery($query . ',' . $variables, static::$token);
         $response = $client->getResponse();
         $content = $response->getContent();
         $json = json_decode($content);
@@ -94,6 +79,20 @@ class GraphQLQueryTest extends GraphQLTestCase
         $this->assertEquals('Home', $json->data->tasklist->name);
         $this->assertCount(3, $json->data->tasklist->tasks);
         $this->assertEquals('2017-10-20', $json->data->tasklist->tasks[0]->startDate);
+    }
+
+    public function testQueryTasklistWithNoAccess()
+    {
+        $query = '{"query":"query {\n tasklist(id: 3) {\n name\n }\n}","variables":null}';
+
+        $client = static::sendApiQuery($query, static::$token);
+        $response = $client->getResponse();
+        $content = $response->getContent();
+        $json = json_decode($content);
+
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertCount(1, $json->errors);
+        $this->assertEquals('No tasklist with id=3 found', $json->errors[0]->message);
     }
 
     public function testInvalidQueryFails()
@@ -123,17 +122,9 @@ class GraphQLQueryTest extends GraphQLTestCase
 
     public function testAddTask()
     {
-        $query = '{"query":"query {\n  tasklists {\n    id\n    name\n  }\n}","variables":null}';
+        $query = '{"query":"mutation {\n addTask(\n title: \"My Title\"\n description: \"My description\"\n type: OPPORTUNITY_NOW\n startdate: \"2017-12-15\"\n duedate: \"2018-01-15\"\n tasklist: 1\n ) {\n id\n title\n description\n type\n startDate\n dueDate\n tasklist {\n id\n }\n }\n}","variables":null}';
+
         $client = static::sendApiQuery($query, static::$token);
-        $response = $client->getResponse();
-        $content = $response->getContent();
-        $json = json_decode($content);
-        $tasklist = $json->data->tasklists[0];
-
-        $query = '{"query":"mutation CreateNewTask($tasklistid: ID!) {\n addTask(\n title: \"My Title\"\n description: \"My description\"\n type: OPPORTUNITY_NOW\n startdate: \"2017-12-15\"\n duedate: \"2018-01-15\"\n tasklist: $tasklistid\n ) {\n id\n title\n description\n type\n startDate\n dueDate\n tasklist {\n id\n }\n }\n}"';
-        $variables = '"variables":{"tasklistid":' . $tasklist->id . '},"operationName":"CreateNewTask"}';
-
-        $client = static::sendApiQuery($query . ',' . $variables, static::$token);
         $response = $client->getResponse();
         $content = $response->getContent();
         $json = json_decode($content);
@@ -147,22 +138,18 @@ class GraphQLQueryTest extends GraphQLTestCase
         $this->assertEquals(TaskType::OPPORTUNITY_NOW, $task->type);
         $this->assertEquals('2017-12-15', $task->startDate);
         $this->assertEquals('2018-01-15', $task->dueDate);
-        $this->assertEquals($tasklist->id, $task->tasklist->id);
+        $this->assertEquals(1, $task->tasklist->id);
     }
 
     public function testAddTaskToInvalidTasklist()
     {
-        $query = '{"query":"mutation CreateNewTask($tasklistid: ID!) {\n addTask(\n title: \"My Title\"\n description: \"My description\"\n type: OPPORTUNITY_NOW\n startdate: \"2017-12-15\"\n duedate: \"2018-01-15\"\n tasklist: $tasklistid\n ) {\n id\n title\n description\n type\n startDate\n dueDate\n tasklist {\n id\n }\n }\n}"';
-        $variables = '"variables":{"tasklistid":-1},"operationName":"CreateNewTask"}';
+        $query = '{"query":"mutation {\n addTask(\n title: \"My Title\"\n description: \"My description\"\n type: OPPORTUNITY_NOW\n startdate: \"2017-12-15\"\n duedate: \"2018-01-15\"\n tasklist: -1\n ) {\n id\n title\n description\n type\n startDate\n dueDate\n tasklist {\n id\n }\n }\n}","variables": null}';
 
-        $client = static::sendApiQuery($query . ',' . $variables, static::$token);
+        $client = static::sendApiQuery($query, static::$token);
         $response = $client->getResponse();
+        $json = json_decode($response->getContent());
 
-        $this->assertEquals(500, $response->getStatusCode());
-    }
-
-    public static function tearDownAfterClass()
-    {
-
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertContains("Tasklist with id -1 not found!", $json->errors[0]->message);
     }
 }

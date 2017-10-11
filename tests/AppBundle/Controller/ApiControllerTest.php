@@ -42,7 +42,7 @@ class ApiControllerTest extends GraphQLTestCase
 
     public function testLoginWithWrongPassword()
     {
-        $query = '{"query":"mutation{\n  createToken(username: \"fgu\", password: \"test123\"){\n    error\n    token\n  }\n}","variables":null}';
+        $query = '{"query":"mutation{\n  createToken(username: \"foo\", password: \"test123\"){\n    error\n    token\n  }\n}","variables":null}';
         $client = static::sendApiQuery($query);
         $response = $client->getResponse();
         $content = $response->getContent();
