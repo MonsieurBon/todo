@@ -9,10 +9,8 @@ security:
 
     # https://symfony.com/doc/current/security.html#b-configuring-how-users-are-loaded
     providers:
-        db_provider:
-            entity:
-                class: AppBundle:User
-                property: username
+        token_user_provider:
+            id: AppBundle\Security\TokenUserProvider
 
     firewalls:
         # disables authentication for assets and the profiler, adapt it according to your needs
@@ -22,13 +20,14 @@ security:
 
         api:
             pattern: ^/api
+            stateless: true
             methods: [POST]
             anonymous: ~
             logout: ~
+            simple_preauth:
+                authenticator: AppBundle\Security\TokenAuthenticator
+            provider: token_user_provider
 
-            guard:
-                authenticators:
-                    - AppBundle\Security\TokenAuthenticator
             # activate different ways to authenticate
 
             # https://symfony.com/doc/current/security.html#a-configuring-how-your-users-will-authenticate

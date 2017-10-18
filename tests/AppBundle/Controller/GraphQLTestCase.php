@@ -6,11 +6,12 @@
  * Time: 06:42
  */
 
-namespace tests\AppBundle\Controller;
+namespace Tests\AppBundle\Controller;
 
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-class GraphQLTestCase extends WebTestCase
+use Tests\AppBundle\DB\DbTestCase;
+
+class GraphQLTestCase extends DbTestCase
 {
     protected static function sendApiQuery($query, $token = null, $urlParam = array()) {
         $headers = array('CONTENT_TYPE' => 'application/json');

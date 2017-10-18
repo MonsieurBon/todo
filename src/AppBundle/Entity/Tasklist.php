@@ -100,6 +100,10 @@ class Tasklist
         return $this->tasks;
     }
 
+    /**
+     * @param Task $task
+     * @return Tasklist
+     */
     public function addTask(Task $task)
     {
         if (!$this->tasks->contains($task)) {
@@ -110,6 +114,10 @@ class Tasklist
         return $this;
     }
 
+    /**
+     * @param Task $task
+     * @return Tasklist
+     */
     public function removeTask(Task $task)
     {
         if ($this->tasks->contains($task)) {
@@ -120,6 +128,9 @@ class Tasklist
         return $this;
     }
 
+    /**
+     * @return Tasklist
+     */
     public function removeAllTasks()
     {
         $tempTasks = $this->tasks;
@@ -141,7 +152,7 @@ class Tasklist
 
     /**
      * @param User $user
-     * @return $this
+     * @return Tasklist
      */
     public function setOwner($user)
     {
@@ -150,11 +161,18 @@ class Tasklist
         return $this;
     }
 
+    /**
+     * @return ArrayCollection
+     */
     public function getUsers()
     {
         return $this->users;
     }
 
+    /**
+     * @param User $user
+     * @return Tasklist
+     */
     public function addUser(User $user)
     {
         if (!$this->users->contains($user)) {
@@ -164,6 +182,10 @@ class Tasklist
         return $this;
     }
 
+    /**
+     * @param User $user
+     * @return Tasklist
+     */
     public function removeUser(User $user)
     {
         if ($this->users->contains($user)) {

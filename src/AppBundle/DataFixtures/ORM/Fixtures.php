@@ -42,6 +42,7 @@ class Fixtures extends Fixture
         $tasklist1 = new Tasklist();
         $tasklist1->setName('Home');
         $tasklist1->setOwner($user1);
+        $this->addReference('tasklist1', $tasklist1);
 
         $tasklist2 = new Tasklist();
         $tasklist2->setName('Office');
@@ -50,6 +51,7 @@ class Fixtures extends Fixture
         $tasklist3 = new Tasklist();
         $tasklist3->setName('Büro');
         $tasklist3->setOwner($user2);
+        $this->addReference('tasklist3', $tasklist3);
 
         $tasklist4 = new Tasklist();
         $tasklist4->setName('Shared');

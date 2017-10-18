@@ -17,6 +17,8 @@ class LoginSchema extends Schema
 {
     public function __construct(ContainerInterface $container)
     {
+        Types::clear();
+
         $config = [
             'query' => new ObjectType([
                 'name' => 'Query',

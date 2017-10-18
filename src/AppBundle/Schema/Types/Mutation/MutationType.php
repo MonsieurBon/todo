@@ -16,6 +16,7 @@ use Doctrine\Bundle\DoctrineBundle\Registry;
 use GraphQL\Error\Error;
 use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Type\Definition\ResolveInfo;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
 
 class MutationType extends ObjectType
 {
@@ -26,14 +27,15 @@ class MutationType extends ObjectType
     const DUEDATE_FIELD_NAME = 'duedate';
     const TASKLIST_FIELD_NAME = 'tasklist';
 
-    /**
-     * @var Registry
-     */
+    /** @var Registry  */
     private $doctrine;
+    /** @var TokenStorage  */
+    private $tokenStorage;
 
-    public function __construct(Registry $doctrine)
+    public function __construct(Registry $doctrine, TokenStorage $tokenStorage)
     {
         $this->doctrine = $doctrine;
+        $this->tokenStorage = $tokenStorage;
 
         $config = [
             'name' => 'Mutation',
@@ -65,26 +67,26 @@ class MutationType extends ObjectType
         $tasklistid = $args[self::TASKLIST_FIELD_NAME];
         $tasklist = $this->doctrine->getRepository(TaskList::class)->find($tasklistid);
 
-        if (!$tasklist) {
-            throw new Error('Tasklist with id ' . $tasklistid . ' not found!');
+        if ($tasklist) {
+            $task = new Task();
+            $task->setTitle($args[self::TITLE_FIELD_NAME]);
+            if (array_key_exists(self::DESCRIPTION_FIELD_NAME, $args)) {
+                $task->setDescription($args[self::DESCRIPTION_FIELD_NAME]);
+            }
+            $task->setType($args[self::TYPE_FIELD_NAME]);
+            $task->setStartDate($args[self::STARTDATE_FIELD_NAME]);
+            if (array_key_exists(self::DUEDATE_FIELD_NAME, $args)) {
+                $task->setDueDate($args[self::DUEDATE_FIELD_NAME]);
+            }
+            $task->setTasklist($tasklist);
+
+            $em = $this->doctrine->getManager();
+            $em->persist($task);
+            $em->flush();
+
+            return $task;
         }
 
-        $task = new Task();
-        $task->setTitle($args[self::TITLE_FIELD_NAME]);
-        if (array_key_exists(self::DESCRIPTION_FIELD_NAME, $args)) {
-            $task->setDescription($args[self::DESCRIPTION_FIELD_NAME]);
-        }
-        $task->setType($args[self::TYPE_FIELD_NAME]);
-        $task->setStartDate($args[self::STARTDATE_FIELD_NAME]);
-        if (array_key_exists(self::DUEDATE_FIELD_NAME, $args)) {
-            $task->setDueDate($args[self::DUEDATE_FIELD_NAME]);
-        }
-        $task->setTasklist($tasklist);
-
-        $em = $this->doctrine->getManager();
-        $em->persist($task);
-        $em->flush();
-
-        return $task;
+        throw new Error('Tasklist with id ' . $tasklistid . ' not found!');
     }
 }

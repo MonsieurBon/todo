@@ -12,15 +12,20 @@ namespace Tests\AppBundle\Security;
 use AppBundle\Entity\ApiToken;
 use AppBundle\Entity\User;
 use AppBundle\Security\TokenAuthenticator;
+use AppBundle\Security\TokenUserProvider;
 use Doctrine\ORM\EntityManager;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Security\Core\Authentication\Token\PreAuthenticatedToken;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
 
 class TokenAuthenticatorTest extends KernelTestCase
 {
+    const TOKEN = 'a1b2c3';
+    const PROVIDER_KEY = 'api';
+
     /**
      * @var TokenAuthenticator
      */
@@ -56,7 +61,7 @@ class TokenAuthenticatorTest extends KernelTestCase
         $this->em->persist($user);
 
         $token = new ApiToken();
-        $token->setToken('a1b2c3');
+        $token->setToken(self::TOKEN);
         $token->setValidUntil(new \DateTime('+ 10 seconds'));
         $token->setUser($user);
         $this->objects[] = $token;
@@ -65,72 +70,122 @@ class TokenAuthenticatorTest extends KernelTestCase
         $this->em->flush();
     }
 
-    public function testStart()
-    {
-        $request = new Request();
-
-        $response = $this->authenticator->start($request);
-        $this->assertEquals(401, $response->getStatusCode());
-        $this->assertEquals('Auth header required', $response->getContent());
-    }
-
     public function testXAuthTokenHeader()
     {
         $request = new Request();
-        $request->headers->set(TokenAuthenticator::X_AUTH_HEADER, 'a1b2c3');
+        $request->headers->set(TokenAuthenticator::X_AUTH_HEADER, self::TOKEN);
 
-        $credentials = $this->authenticator->getCredentials($request);
+        /** @var PreAuthenticatedToken $credentials */
+        $credentials = $this->authenticator->createToken($request, self::PROVIDER_KEY);
 
-        $this->assertCount(1, $credentials);
-        $this->assertArrayHasKey('token', $credentials);
-        $this->assertEquals('a1b2c3', $credentials['token']);
+        self::assertEquals('anon.', $credentials->getUsername());
+        self::assertEquals(self::TOKEN, $credentials->getCredentials());
+        self::assertEquals(self::PROVIDER_KEY, $credentials->getProviderKey());
     }
 
     public function testTokenUrlParameter()
     {
         $request = new Request();
-        $request->headers->set(TokenAuthenticator::X_AUTH_HEADER, 'a1b2c3');
+        $request->headers->set(TokenAuthenticator::X_AUTH_HEADER, self::TOKEN);
         $request->query->set('token', 'd4e5f6');
 
-        $credentials = $this->authenticator->getCredentials($request);
+        /** @var PreAuthenticatedToken $credentials */
+        $credentials = $this->authenticator->createToken($request, self::PROVIDER_KEY);
 
-        $this->assertCount(1, $credentials);
-        $this->assertArrayHasKey('token', $credentials);
-        $this->assertEquals('a1b2c3', $credentials['token']);
+        self::assertEquals('anon.', $credentials->getUsername());
+        self::assertEquals(self::TOKEN, $credentials->getCredentials());
+        self::assertEquals(self::PROVIDER_KEY, $credentials->getProviderKey());
     }
 
     public function testHeaderTakesPrecedence()
     {
         $request = new Request();
-        $request->query->set('token', 'a1b2c3');
+        $request->headers->set(TokenAuthenticator::X_AUTH_HEADER, self::TOKEN);
+        $request->query->set('token', 'some_other_token');
 
-        $credentials = $this->authenticator->getCredentials($request);
+        /** @var PreAuthenticatedToken $credentials */
+        $credentials = $this->authenticator->createToken($request, self::PROVIDER_KEY);
 
-        $this->assertCount(1, $credentials);
-        $this->assertArrayHasKey('token', $credentials);
-        $this->assertEquals('a1b2c3', $credentials['token']);
+        self::assertEquals('anon.', $credentials->getUsername());
+        self::assertEquals(self::TOKEN, $credentials->getCredentials());
+        self::assertEquals(self::PROVIDER_KEY, $credentials->getProviderKey());
     }
 
-    public function testGetUser()
+    public function testSupportsToken()
+    {
+        // wrong token class
+        /** @var TokenInterface $mockToken */
+        $mockToken = $this->createMock(TokenInterface::class);
+        self::assertFalse($this->authenticator->supportsToken($mockToken, self::PROVIDER_KEY));
+
+        // providerKey does not match
+        $token = new PreAuthenticatedToken(
+            'anon.',
+            self::TOKEN,
+            self::PROVIDER_KEY
+        );
+        self::assertFalse($this->authenticator->supportsToken($token, 'foo'));
+
+        self::assertTrue($this->authenticator->supportsToken($token, self::PROVIDER_KEY));
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessageRegExp /^The user provider must be an instance of ApiKeyUserProvider/
+     */
+    public function testAuthenticateTokenInvalidUserProvider()
     {
         /** @var UserProviderInterface $userProvider */
         $userProvider = $this->createMock(UserProviderInterface::class);
 
-        $user = $this->authenticator->getUser(null, $userProvider);
-        $this->assertNull($user);
-
-        $credentials = array(
-            'token' => 'a1b2c3'
+        $preAuthToken = new PreAuthenticatedToken(
+            'anon.',
+            self::TOKEN,
+            self::PROVIDER_KEY
         );
 
-        $user = $this->authenticator->getUser($credentials, $userProvider);
-        $this->assertNotNull($user);
+        $this->authenticator->authenticateToken($preAuthToken, $userProvider, self::PROVIDER_KEY);
     }
 
-    public function testCheckCredentials()
+    /**
+     * @expectedException Symfony\Component\Security\Core\Exception\BadCredentialsException
+     */
+    public function testAuthenticateTokenNoUserFound()
     {
-        $check = $this->authenticator->checkCredentials(null, new User());
-        $this->assertTrue($check);
+        /** @var TokenUserProvider $userProvider */
+        $userProvider = $this->createMock(TokenUserProvider::class);
+
+        $preAuthToken = new PreAuthenticatedToken(
+            'anon.',
+            'invalid_token',
+            self::PROVIDER_KEY
+        );
+
+        $this->authenticator->authenticateToken($preAuthToken, $userProvider, self::PROVIDER_KEY);
+    }
+
+    public function testAuthenticateTokenSuccessfull()
+    {
+        /** @var User $user */
+        $user = $this->em
+            ->getRepository(User::class)
+            ->findOneByUsername('test');
+
+        /** @var TokenUserProvider $userProvider */
+        $userProvider = $this->createMock(TokenUserProvider::class);
+        $userProvider->method('getUserForToken')->willReturn($user);
+
+        $preAuthToken = new PreAuthenticatedToken(
+            'anon.',
+            self::TOKEN,
+            self::PROVIDER_KEY
+        );
+
+        $finalPreAuthToken = $this->authenticator->authenticateToken($preAuthToken, $userProvider, self::PROVIDER_KEY);
+        self::assertNotNull($finalPreAuthToken);
+        self::assertEquals($user, $finalPreAuthToken->getUser());
+        self::assertEquals(self::TOKEN, $finalPreAuthToken->getCredentials());
+        self::assertEquals(self::PROVIDER_KEY, $finalPreAuthToken->getProviderKey());
     }
 
     public function testOnAuthenticationFailure()
@@ -160,43 +215,12 @@ class TokenAuthenticatorTest extends KernelTestCase
 
         $response = $this->authenticator->onAuthenticationFailure($request, $exception);
 
-        $this->assertNotNull($response);
-        $this->assertEquals(200, $response->getStatusCode());
-        $this->assertEquals(
+        self::assertNotNull($response);
+        self::assertEquals(200, $response->getStatusCode());
+        self::assertEquals(
             '{"data":{"hello":"Your GraphQL endpoint is ready! Please log in to see the full API."}}',
             $response->getContent()
         );
-    }
-
-    public function testOnAuthenticationSuccess()
-    {
-        /** @var User $user */
-        $user = $this->em
-            ->getRepository(User::class)
-            ->findOneByUsername('test');
-
-        $validUntil = $user->getApiToken()->getValidUntil();
-
-        $request = new Request();
-
-        /** @var TokenInterface $tokenInterface */
-        $tokenInterface = $this->createMock(TokenInterface::class);
-        $tokenInterface->method('getUser')->willReturn($user);
-
-        $this->authenticator->onAuthenticationSuccess($request, $tokenInterface, null);
-
-        $user = $this->em
-            ->getRepository(User::class)
-            ->findOneByUsername('test');
-        $token = $user->getApiToken();
-
-        $this->assertTrue($token->getValidUntil() > $validUntil);
-    }
-
-    public function testDoesNotSupportRememberMe()
-    {
-        $rememberMe = $this->authenticator->supportsRememberMe();
-        $this->assertFalse($rememberMe);
     }
 
     protected function tearDown()

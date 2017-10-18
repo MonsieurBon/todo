@@ -10,30 +10,25 @@ namespace Tests\AppBundle\Controller;
 
 
 use AppBundle\Entity\TaskType;
+use Tests\AppBundle\DB\Fixtures\ValidToken;
 
 class GraphQLQueryTest extends GraphQLTestCase
 {
-    /** @var  string */
-    private static $token;
-
-    public static function setUpBeforeClass()
+    protected function setUp()
     {
-        $query = '{"query":"mutation{\n  createToken(username: \"foo\", password: \"test\"){\n    error\n    token\n  }\n}","variables":null}';
-        $client = static::sendApiQuery($query);
-        $content = $client->getResponse()->getContent();
-        $json = json_decode($content);
-
-        static::$token = $json->data->createToken->token;
+        $this->initialize(array(
+            'Tests\AppBundle\DB\Fixtures\ValidToken'
+        ));
     }
 
     public function testEmptyQueryShouldReturnHello()
     {
         $query = '';
-        $client = static::sendApiQuery($query, static::$token);
+        $client = static::sendApiQuery($query, ValidToken::TOKEN);
         $response = $client->getResponse();
 
-        $this->assertEquals(200, $response->getStatusCode());
-        $this->assertEquals(
+        self::assertEquals(200, $response->getStatusCode());
+        self::assertEquals(
             '{"data":{"hello":"Your GraphQL endpoint is ready! Use GraphiQL to browse API."}}',
             $response->getContent()
         );
@@ -42,70 +37,73 @@ class GraphQLQueryTest extends GraphQLTestCase
     public function testAllTasklistQuery()
     {
         $query = '{"query":"query {\n  tasklists {\n    id\n    name\n  }\n}","variables":null}';
-        $client = static::sendApiQuery($query, static::$token);
+        $client = static::sendApiQuery($query, ValidToken::TOKEN);
         $response = $client->getResponse();
         $content = $response->getContent();
         $json = json_decode($content);
 
-        $this->assertEquals(200, $response->getStatusCode());
-        $this->assertCount(3, $json->data->tasklists);
+        self::assertEquals(200, $response->getStatusCode());
+        self::assertCount(3, $json->data->tasklists);
         foreach($json->data->tasklists as $tasklist) {
-            $this->assertContains($tasklist->name, array('Home', 'Office', 'Shared'));
+            self::assertContains($tasklist->name, array('Home', 'Office', 'Shared'));
         }
     }
 
-    public function testQuerySpecifictTasklist()
+    public function testQuerySpecificTasklist()
     {
-        $query = '{"query":"query {\n  tasklist(id: 1) {\n    name\n  }\n}","variables":null}';
-        $client = static::sendApiQuery($query, static::$token);
+        $tasklistId = $this->fixtures->getReference('tasklist1')->getId();
+        $query = '{"query":"query {\n  tasklist(id: ' . $tasklistId . ') {\n    name\n  }\n}","variables":null}';
+        $client = static::sendApiQuery($query, ValidToken::TOKEN);
         $response = $client->getResponse();
         $content = $response->getContent();
         $json = json_decode($content);
 
-        $this->assertEquals(200, $response->getStatusCode());
-        $this->assertEquals('Home', $json->data->tasklist->name);
+        self::assertEquals(200, $response->getStatusCode());
+        self::assertEquals('Home', $json->data->tasklist->name);
     }
 
     public function testQueryTasklistsWithTasks()
     {
-        $query = '{"query":"query {\n tasklist(id: 1) {\n name\n tasks {\n title\n description\n type\n startDate}\n }\n}","variables":null}';
+        $tasklistId = $this->fixtures->getReference('tasklist1')->getId();
+        $query = '{"query":"query {\n tasklist(id: ' . $tasklistId . ') {\n name\n tasks {\n title\n description\n type\n startDate}\n }\n}","variables":null}';
 
-        $client = static::sendApiQuery($query, static::$token);
+        $client = static::sendApiQuery($query, ValidToken::TOKEN);
         $response = $client->getResponse();
         $content = $response->getContent();
         $json = json_decode($content);
 
-        $this->assertEquals(200, $response->getStatusCode());
-        $this->assertEquals('Home', $json->data->tasklist->name);
-        $this->assertCount(3, $json->data->tasklist->tasks);
-        $this->assertEquals('2017-10-20', $json->data->tasklist->tasks[0]->startDate);
+        self::assertEquals(200, $response->getStatusCode());
+        self::assertEquals('Home', $json->data->tasklist->name);
+        self::assertCount(3, $json->data->tasklist->tasks);
+        self::assertEquals('2017-10-20', $json->data->tasklist->tasks[0]->startDate);
     }
 
     public function testQueryTasklistWithNoAccess()
     {
-        $query = '{"query":"query {\n tasklist(id: 3) {\n name\n }\n}","variables":null}';
+        $tasklistId = $this->fixtures->getReference('tasklist3')->getId();
+        $query = '{"query":"query {\n tasklist(id: ' . $tasklistId . ') {\n name\n }\n}","variables":null}';
 
-        $client = static::sendApiQuery($query, static::$token);
+        $client = static::sendApiQuery($query, ValidToken::TOKEN);
         $response = $client->getResponse();
         $content = $response->getContent();
         $json = json_decode($content);
 
-        $this->assertEquals(200, $response->getStatusCode());
-        $this->assertCount(1, $json->errors);
-        $this->assertEquals('No tasklist with id=3 found', $json->errors[0]->message);
+        self::assertEquals(200, $response->getStatusCode());
+        self::assertCount(1, $json->errors);
+        self::assertEquals('No tasklist with id=' . $tasklistId . ' found', $json->errors[0]->message);
     }
 
     public function testInvalidQueryFails()
     {
         $query = '{"query":"query {\n  foobar {\n    foo\n    bar\n  }\n}","variables":null}';
-        $client = static::sendApiQuery($query, static::$token);
+        $client = static::sendApiQuery($query, ValidToken::TOKEN);
         $response = $client->getResponse();
         $content = $response->getContent();
         $json = json_decode($content);
 
-        $this->assertEquals(200, $response->getStatusCode());
-        $this->assertCount(1, $json->errors);
-        $this->assertEquals('Cannot query field "foobar" on type "Query".', $json->errors[0]->message);
+        self::assertEquals(200, $response->getStatusCode());
+        self::assertCount(1, $json->errors);
+        self::assertEquals('Cannot query field "foobar" on type "Query".', $json->errors[0]->message);
     }
 
     public function testValidateSchema()
@@ -114,42 +112,43 @@ class GraphQLQueryTest extends GraphQLTestCase
         $parameters = array(
             'debug_api' => '1'
         );
-        $client = static::sendApiQuery($query, static::$token, $parameters);
+        $client = static::sendApiQuery($query, ValidToken::TOKEN, $parameters);
         $response = $client->getResponse();
 
-        $this->assertEquals(200, $response->getStatusCode());
+        self::assertEquals(200, $response->getStatusCode());
     }
 
     public function testAddTask()
     {
-        $query = '{"query":"mutation {\n addTask(\n title: \"My Title\"\n description: \"My description\"\n type: OPPORTUNITY_NOW\n startdate: \"2017-12-15\"\n duedate: \"2018-01-15\"\n tasklist: 1\n ) {\n id\n title\n description\n type\n startDate\n dueDate\n tasklist {\n id\n }\n }\n}","variables":null}';
+        $tasklistId = $this->fixtures->getReference('tasklist1')->getId();
+        $query = '{"query":"mutation {\n addTask(\n title: \"My Title\"\n description: \"My description\"\n type: OPPORTUNITY_NOW\n startdate: \"2017-12-15\"\n duedate: \"2018-01-15\"\n tasklist: ' . $tasklistId . '\n ) {\n id\n title\n description\n type\n startDate\n dueDate\n tasklist {\n id\n }\n }\n}","variables":null}';
 
-        $client = static::sendApiQuery($query, static::$token);
+        $client = static::sendApiQuery($query, ValidToken::TOKEN);
         $response = $client->getResponse();
         $content = $response->getContent();
         $json = json_decode($content);
         $task = $json->data->addTask;
 
-        $this->assertEquals(200, $response->getStatusCode());
-        $this->assertNotNull($task);
-        $this->assertNotNull($task->id);
-        $this->assertEquals('My Title', $task->title);
-        $this->assertEquals('My description', $task->description);
-        $this->assertEquals(TaskType::OPPORTUNITY_NOW, $task->type);
-        $this->assertEquals('2017-12-15', $task->startDate);
-        $this->assertEquals('2018-01-15', $task->dueDate);
-        $this->assertEquals(1, $task->tasklist->id);
+        self::assertEquals(200, $response->getStatusCode());
+        self::assertNotNull($task);
+        self::assertNotNull($task->id);
+        self::assertEquals('My Title', $task->title);
+        self::assertEquals('My description', $task->description);
+        self::assertEquals(TaskType::OPPORTUNITY_NOW, $task->type);
+        self::assertEquals('2017-12-15', $task->startDate);
+        self::assertEquals('2018-01-15', $task->dueDate);
+        self::assertEquals($tasklistId, $task->tasklist->id);
     }
 
     public function testAddTaskToInvalidTasklist()
     {
         $query = '{"query":"mutation {\n addTask(\n title: \"My Title\"\n description: \"My description\"\n type: OPPORTUNITY_NOW\n startdate: \"2017-12-15\"\n duedate: \"2018-01-15\"\n tasklist: -1\n ) {\n id\n title\n description\n type\n startDate\n dueDate\n tasklist {\n id\n }\n }\n}","variables": null}';
 
-        $client = static::sendApiQuery($query, static::$token);
+        $client = static::sendApiQuery($query, ValidToken::TOKEN);
         $response = $client->getResponse();
         $json = json_decode($response->getContent());
 
-        $this->assertEquals(200, $response->getStatusCode());
-        $this->assertContains("Tasklist with id -1 not found!", $json->errors[0]->message);
+        self::assertEquals(200, $response->getStatusCode());
+        self::assertContains("Tasklist with id -1 not found!", $json->errors[0]->message);
     }
 }

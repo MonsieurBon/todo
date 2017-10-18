@@ -267,25 +267,5 @@ class User implements UserInterface
     public function eraseCredentials()
     {
     }
-
-    public function serialize()
-    {
-        return serialize(array(
-            $this->id,
-            $this->username,
-            $this->email,
-            $this->password
-        ));
-    }
-
-    public function unserialize($serialized)
-    {
-        list(
-            $this->id,
-            $this->username,
-            $this->email,
-            $this->password
-        ) = unserialize($serialized);
-    }
 }
 

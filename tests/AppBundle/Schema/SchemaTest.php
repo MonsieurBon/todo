@@ -17,10 +17,11 @@ class SchemaTest extends KernelTestCase
     public function testCanBeCreated()
     {
         $container = static::$kernel->getContainer();
+        $authChecker = $container->get('security.authorization_checker');
         $doctrine = $container->get('doctrine');
         $tokenStorage = $container->get('security.token_storage');
 
-        $schema = new Schema($doctrine, $tokenStorage);
+        $schema = new Schema($authChecker, $doctrine, $tokenStorage);
 
         $this->assertNotNull($schema);
         $this->assertTrue($schema->getQueryType() instanceof QueryType);

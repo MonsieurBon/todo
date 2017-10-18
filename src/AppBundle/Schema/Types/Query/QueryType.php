@@ -11,19 +11,26 @@ namespace AppBundle\Schema\Types\Query;
 
 use AppBundle\Entity\Tasklist;
 use AppBundle\Schema\Types;
+use AppBundle\Security\TasklistVoter;
 use Doctrine\Bundle\DoctrineBundle\Registry;
 use GraphQL\Error\Error;
 use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Type\Definition\ResolveInfo;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
+use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 class QueryType extends ObjectType
 {
+    /** @var AuthorizationCheckerInterface  */
+    private $authChecker;
+    /** @var Registry  */
     private $doctrine;
+    /** @var TokenStorage  */
     private $tokenStorage;
 
-    public function __construct(Registry $doctrine, TokenStorage $tokenStorage)
+    public function __construct(AuthorizationCheckerInterface $authChecker, Registry $doctrine, TokenStorage $tokenStorage)
     {
+        $this->authChecker = $authChecker;
         $this->doctrine = $doctrine;
         $this->tokenStorage = $tokenStorage;
 
@@ -65,11 +72,9 @@ class QueryType extends ObjectType
     private function tasklist($val, $args)
     {
         $id = $args['id'];
+        $tasklist = $this->doctrine->getRepository(Tasklist::class)->find($id);
 
-        $user = $this->tokenStorage->getToken()->getUser();
-        $tasklist = $this->doctrine->getRepository(Tasklist::class)->findByIdWithAccess($id, $user);
-
-        if ($tasklist !== null) {
+        if ($tasklist !== null && $this->authChecker->isGranted(TasklistVoter::ACCESS, $tasklist)) {
             return $tasklist;
         }
 
