@@ -86,22 +86,21 @@ class LoginType extends ObjectType
             );
         }
 
-        $oldToken = $user->getApiToken();
-        if ($oldToken) {
-            $em->remove($oldToken);
-            $em->flush();
-        }
-
         $tokenString = bin2hex(openssl_random_pseudo_bytes(16));
         $validUntil = (new \DateTime('now'))
             ->add(new \DateInterval('PT' . $this->sessionTimeout . 'M'));
 
-        $token = (new ApiToken())
-            ->setUser($user)
-            ->setValidUntil($validUntil)
+        $token = $user->getApiToken();
+
+        if ($token === null) {
+            $token = (new ApiToken())
+                ->setUser($user);
+            $em->persist($token);
+        }
+
+        $token->setValidUntil($validUntil)
             ->setToken($tokenString);
 
-        $em->persist($token);
         $em->flush();
 
         return array(
