@@ -68,4 +68,23 @@ class TaskVoterTest extends TestCase
         $vote = $taskVoter->testVoteOnAttribute(TaskVoter::ACCESS, $task, $token);
         self::assertTrue($vote);
     }
+
+    /**
+     * @expectedException \LogicException
+     * @expectedExceptionMessage This code should not be reached!
+     */
+    public function testVoteOnUnsupportedAttribute()
+    {
+        $decisionManager = new AccessDecisionManagerMock();
+        $tasklistVoter = new TaskVoterMock($decisionManager);
+
+        $task = new Task();
+        $user = new User();
+
+        /** @var TokenInterface $token */
+        $token = $this->createMock(TokenInterface::class);
+        $token->method('getUser')->willReturn($user);
+
+        $vote = $tasklistVoter->testVoteOnAttribute('invalid_attribute', $task, $token);
+    }
 }
