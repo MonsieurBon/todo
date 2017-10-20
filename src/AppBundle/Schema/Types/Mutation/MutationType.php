@@ -12,14 +12,19 @@ namespace AppBundle\Schema\Types\Mutation;
 use AppBundle\Entity\Task;
 use AppBundle\Entity\Tasklist;
 use AppBundle\Schema\Types;
+use AppBundle\Security\TasklistVoter;
+use AppBundle\Security\TaskVoter;
 use Doctrine\Bundle\DoctrineBundle\Registry;
+use Doctrine\ORM\EntityManager;
 use GraphQL\Error\Error;
 use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Type\Definition\ResolveInfo;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
+use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 class MutationType extends ObjectType
 {
+    const TASK_ID_FIELD_NAME = 'taskid';
     const TITLE_FIELD_NAME = 'title';
     const DESCRIPTION_FIELD_NAME = 'description';
     const TYPE_FIELD_NAME = 'type';
@@ -27,14 +32,17 @@ class MutationType extends ObjectType
     const DUEDATE_FIELD_NAME = 'duedate';
     const TASKLIST_FIELD_NAME = 'tasklist';
 
-    /** @var Registry  */
-    private $doctrine;
+    /** @var AuthorizationCheckerInterface  */
+    private $authChecker;
+    /** @var  EntityManager */
+    private $em;
     /** @var TokenStorage  */
     private $tokenStorage;
 
-    public function __construct(Registry $doctrine, TokenStorage $tokenStorage)
+    public function __construct(AuthorizationCheckerInterface $authChecker, Registry $doctrine, TokenStorage $tokenStorage)
     {
-        $this->doctrine = $doctrine;
+        $this->authChecker = $authChecker;
+        $this->em = $doctrine->getManager();
         $this->tokenStorage = $tokenStorage;
 
         $config = [
@@ -51,6 +59,13 @@ class MutationType extends ObjectType
                         self::DUEDATE_FIELD_NAME => Types::date(),
                         self::TASKLIST_FIELD_NAME => Types::nonNull(Types::id())
                     ]
+                ],
+                'deleteTask' => [
+                    'type' => Types::string(),
+                    'description' => 'deletes a Task',
+                    'args' => [
+                        self::TASK_ID_FIELD_NAME => Types::nonNull(Types::id())
+                    ]
                 ]
             ],
             'resolveField' => function ($val, $args, $context, ResolveInfo $info)
@@ -65,9 +80,9 @@ class MutationType extends ObjectType
     private function addTask($args)
     {
         $tasklistid = $args[self::TASKLIST_FIELD_NAME];
-        $tasklist = $this->doctrine->getRepository(TaskList::class)->find($tasklistid);
+        $tasklist = $this->em->getRepository(TaskList::class)->find($tasklistid);
 
-        if ($tasklist) {
+        if ($tasklist !== null && $this->authChecker->isGranted(TasklistVoter::ACCESS, $tasklist)) {
             $task = new Task();
             $task->setTitle($args[self::TITLE_FIELD_NAME]);
             if (array_key_exists(self::DESCRIPTION_FIELD_NAME, $args)) {
@@ -80,13 +95,37 @@ class MutationType extends ObjectType
             }
             $task->setTasklist($tasklist);
 
-            $em = $this->doctrine->getManager();
-            $em->persist($task);
-            $em->flush();
+            $this->em->persist($task);
+            $this->em->flush();
 
             return $task;
         }
 
-        throw new Error('Tasklist with id ' . $tasklistid . ' not found!');
+        throw new Error(
+            sprintf(
+                'Tasklist with id=%d not found!',
+                $tasklistid
+            )
+        );
+    }
+
+    private function deleteTask($args)
+    {
+        $taskid = $args[self::TASK_ID_FIELD_NAME];
+        $task = $this->em->getRepository(Task::class)->find($taskid);
+
+        if ($task !== null && $this->authChecker->isGranted(TaskVoter::ACCESS, $task)) {
+            $this->em->remove($task);
+            $this->em->flush();
+
+            return sprintf('Task with id=%d successfully deleted.', $taskid);
+        }
+
+        throw new Error(
+            sprintf(
+                'Task with id=%d not found!',
+                $taskid
+            )
+        );
     }
 }

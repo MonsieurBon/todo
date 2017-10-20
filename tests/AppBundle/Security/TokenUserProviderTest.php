@@ -6,10 +6,11 @@
  * Time: 22:18
  */
 
-namespace AppBundle\Security;
+namespace Tests\AppBundle\Security;
 
 
 use AppBundle\Entity\User;
+use AppBundle\Security\TokenUserProvider;
 use Doctrine\Bundle\DoctrineBundle\Registry;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Tests\AppBundle\DB\DbTestCase;

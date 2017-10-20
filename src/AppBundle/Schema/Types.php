@@ -39,9 +39,9 @@ class Types
         return self::$login ?: (self::$login = new LoginType($container));
     }
 
-    public static function mutation(Registry $doctrine, TokenStorage $tokenStorage)
+    public static function mutation(AuthorizationCheckerInterface $authChecker, Registry $doctrine, TokenStorage $tokenStorage)
     {
-        return self::$mutation ?: (self::$mutation = new MutationType($doctrine, $tokenStorage));
+        return self::$mutation ?: (self::$mutation = new MutationType($authChecker, $doctrine, $tokenStorage));
     }
 
     public static function query(AuthorizationCheckerInterface $authChecker, $doctrine, TokenStorage $tokenStorage)

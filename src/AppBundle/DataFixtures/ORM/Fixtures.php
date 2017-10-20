@@ -65,6 +65,7 @@ class Fixtures extends Fixture
         $task1->setStartDate(\DateTime::createFromFormat(DateType::PARSE_FORMAT, '2017-10-20'));
         $task1->setDueDate(\DateTime::createFromFormat(DateType::PARSE_FORMAT, '2017-12-12'));
         $tasklist1->addTask($task1);
+        $this->addReference('task-with-access', $task1);
 
         $task2 = new Task();
         $task2->setType(TaskType::OPPORTUNITY_NOW);
@@ -105,6 +106,7 @@ class Fixtures extends Fixture
         $task6->setStartDate(\DateTime::createFromFormat(DateType::PARSE_FORMAT, '2017-09-26'));
         $task6->setDueDate(\DateTime::createFromFormat(DateType::PARSE_FORMAT, '2017-09-29'));
         $tasklist3->addTask($task6);
+        $this->addReference('task-with-no-access', $task6);
 
         $task7 = new Task();
         $task7->setType(TaskType::OPPORTUNITY_NOW);

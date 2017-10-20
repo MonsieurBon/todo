@@ -78,6 +78,11 @@ class QueryType extends ObjectType
             return $tasklist;
         }
 
-        throw new Error(sprintf('No tasklist with id=%d found', $id));
+        throw new Error(
+            sprintf(
+                'No tasklist with id=%d found',
+                $id
+            )
+        );
     }
 }

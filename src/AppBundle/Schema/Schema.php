@@ -21,7 +21,7 @@ class Schema extends GraphQLSchema
 
         $config = [
             'query' => Types::query($authChecker, $doctrine, $tokenStorage),
-            'mutation' => Types::mutation($doctrine, $tokenStorage)
+            'mutation' => Types::mutation($authChecker, $doctrine, $tokenStorage)
         ];
         parent::__construct($config);
     }

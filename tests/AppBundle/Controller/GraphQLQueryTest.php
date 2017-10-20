@@ -9,6 +9,7 @@
 namespace Tests\AppBundle\Controller;
 
 
+use AppBundle\Entity\Task;
 use AppBundle\Entity\TaskType;
 use Doctrine\ORM\EntityManager;
 use Tests\AppBundle\DB\Fixtures\ValidToken;
@@ -150,7 +151,7 @@ class GraphQLQueryTest extends GraphQLTestCase
         $json = json_decode($response->getContent());
 
         self::assertEquals(200, $response->getStatusCode());
-        self::assertContains("Tasklist with id -1 not found!", $json->errors[0]->message);
+        self::assertContains("Tasklist with id=-1 not found!", $json->errors[0]->message);
     }
 
     public function testLoginInvalidatesExistingToken()
@@ -175,5 +176,35 @@ class GraphQLQueryTest extends GraphQLTestCase
         $result = $query->getResult();
 
         self::assertCount(0, $result);
+    }
+
+    public function testDeleteTaskWithAccess()
+    {
+        /** @var Task $task */
+        $task = $this->fixtures->getReference('task-with-access');
+        $id = $task->getId();
+
+        $query = '{"query":"mutation {\n  deleteTask(taskid: ' . $id . ')\n}","variables":null}';
+
+        $client = static::sendApiQuery($query, ValidToken::TOKEN);
+        $response = $client->getResponse();
+        $json = json_decode($response->getContent());
+
+        self::assertEquals('Task with id=' . $id . ' successfully deleted.', $json->data->deleteTask);
+    }
+
+    public function testDeleteTaskWithoutAccess()
+    {
+        /** @var Task $task */
+        $task = $this->fixtures->getReference('task-with-no-access');
+        $id = $task->getId();
+
+        $query = '{"query":"mutation {\n  deleteTask(taskid: ' . $id . ')\n}","variables":null}';
+
+        $client = static::sendApiQuery($query, ValidToken::TOKEN);
+        $response = $client->getResponse();
+        $json = json_decode($response->getContent());
+
+        self::assertEquals('Task with id=' . $id . ' not found!', $json->errors[0]->message);
     }
 }
