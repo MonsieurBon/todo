@@ -7,6 +7,13 @@ sudo: false
 
 addons:
   chrome: stable
+  sonarcloud:
+    organization: "monsieurbon-github"
+    token:
+      secure: "Xh7BFibJwp8VExoKkmAyW+3VGI0zf5ditsBIUG/SR+ppPPfMVXgYBhvnf62Kd4RjwY4YZn0bFVlrloL6YS3PE7fcPnnd4+sEdrIImE+S80uGR0W9uWE+adaVpE5a8qVCfk0x4AXF8M25wtA4/U7Rxp+ZiVEpgf+vdqfr6MFMAoC7hxYMNOqDjIcRTcnw+8QWOSLQ5joWJ5FugTYSxyZeMEZSXsbipKJd4vhI3IaKFfAroT6zviuVYWo6wUn5G4A65gFjfAQyMD70qeAYpzEwd1giXxC/yBqfWdRh37X4qsqpJ3gXRhvSlNnr5pVO7O45p9nRLyQl32rd0oBgbGxO9JHmhEmcFscUaCa42uuSXJ4nHntYQebHkBMv6lJP2Eqo5oiP/sH5G/ZxZSaDG0WWXDV3TPiq2CYuXVVd2oywJU5FxQ/aHEbheCD8JAei3TP3QRH6eF861VQINx6Ps0lwGV7u2aGh0uNDrAUEJ3exJcz8QwB9V4QOhI5RX5jTx5A6gcozDlrf5qlBVV2YNZ5PfpS9dFDKYTHC3Z0vg0oQsJlefH/RMu0ZfkcAwAIx2UGZX2WqVJuiak38DhSNwS83wN5I57x4n1w4ADtfTjVetKpo8uK7KyLOMK1TvUUm0LUJxEj7qYi9TgAYfISzVrkp5sQRFd52QuRppzR6xeNsXe4="
+
+jdk:
+  - oraclejdk8
 
 notifications:
   email:
@@ -15,6 +22,8 @@ notifications:
 
 cache:
   yarn: true
+  directories:
+    - $HOME/.sonar/cache
 
 before_install:
   - curl -o- -L https://yarnpkg.com/install.sh | bash -s
@@ -34,3 +43,4 @@ script:
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
+  - sonar-scanner
