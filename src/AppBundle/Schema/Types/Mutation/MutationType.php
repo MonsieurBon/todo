@@ -50,7 +50,6 @@ class MutationType extends ObjectType
             'fields' => [
                 'addTask' => [
                     'type' => Types::task(),
-                    'description' => 'adds a Task',
                     'args' => [
                         self::TITLE_FIELD_NAME => Types::nonNull(Types::string()),
                         self::DESCRIPTION_FIELD_NAME => Types::string(),
@@ -62,7 +61,6 @@ class MutationType extends ObjectType
                 ],
                 'deleteTask' => [
                     'type' => Types::string(),
-                    'description' => 'deletes a Task',
                     'args' => [
                         self::TASK_ID_FIELD_NAME => Types::nonNull(Types::id())
                     ]

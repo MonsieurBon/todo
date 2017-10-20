@@ -40,11 +40,9 @@ class QueryType extends ObjectType
                 'hello' => Types::string(),
                 'tasklists' => [
                     'type' => Types::listOf(Types::tasklist()),
-                    'description' => 'Returns all tasklists'
                 ],
                 'tasklist' => [
                     'type' => Types::tasklist(),
-                    'description' => 'Returns tasklist by id',
                     'args' => [
                             'id' => Types::nonNull(Types::id())
                     ]
