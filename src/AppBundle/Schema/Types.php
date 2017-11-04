@@ -5,6 +5,7 @@ namespace AppBundle\Schema;
 use AppBundle\Schema\Types\DateType;
 use AppBundle\Schema\Types\Mutation\LoginType;
 use AppBundle\Schema\Types\Mutation\MutationType;
+use AppBundle\Schema\Types\Query\TokenValidityType;
 use AppBundle\Schema\Types\Query\QueryType;
 use AppBundle\Schema\Types\TasklistType;
 use AppBundle\Schema\Types\TaskType;
@@ -21,6 +22,7 @@ use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 class Types
 {
+    private static $tokenValidity;
     private static $date;
     private static $login;
     private static $mutation;
@@ -28,6 +30,11 @@ class Types
     private static $task;
     private static $tasklist;
     private static $taskTypeEnum;
+
+    public static function tokenValidity()
+    {
+        return self::$tokenValidity ?: (self::$tokenValidity = new TokenValidityType());
+    }
 
     public static function date()
     {
