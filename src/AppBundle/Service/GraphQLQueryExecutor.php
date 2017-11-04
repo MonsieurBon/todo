@@ -60,7 +60,7 @@ class GraphQLQueryExecutor
         if (!empty($result->errors)) {
             $this->logger->error('GraphQL request failed!');
             $this->logger->error('    Query: ' . $query);
-            $this->logger->error('    Variables: ' . $variables);
+            $this->logger->error('    Variables: ' . json_encode($variables));
             foreach ($result->errors as $error) {
                 $this->logger->error('    Message:', array('error' => $error->getMessage()));
             }
