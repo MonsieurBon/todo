@@ -1,0 +1,13 @@
+<nav class="navbar navbar-light align-items-end">
+  <div ngbDropdown class="d-inline-block" placement="bottom-right">
+    <button class="navbar-toggler" type="button" id="dropdownBasic1" ngbDropdownToggle aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div ngbDropdownMenu aria-labelledby="dropdownBasic1">
+      <button class="dropdown-item" *ngFor="let tasklist of tasklists$ | async">{{tasklist.name}}</button>
+      <hr>
+      <button class="dropdown-item">Account</button>
+      <button class="dropdown-item">Logout</button>
+    </div>
+  </div>
+</nav>
