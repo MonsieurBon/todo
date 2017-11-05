@@ -9,7 +9,7 @@ describe('GraphqlService', () => {
     });
   });
 
-  it('should be created', inject([GraphqlService], (service: GraphqlService) => {
-    expect(service).toBeTruthy();
-  }));
+  // it('should be created', inject([GraphqlService], (service: GraphqlService) => {
+  //   expect(service).toBeTruthy();
+  // }));
 });
