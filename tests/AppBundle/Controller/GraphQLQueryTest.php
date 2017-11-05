@@ -178,6 +178,29 @@ class GraphQLQueryTest extends GraphQLTestCase
         self::assertCount(0, $result);
     }
 
+    public function testCheckTokenValid()
+    {
+        $query = '{"query":"{checkToken(token: \"' . ValidToken::TOKEN . '\") {token}}","variables":null}';
+
+        $client = static::sendApiQuery($query);
+        $response = $client->getResponse();
+        $json = json_decode($response->getContent());
+
+        self::assertEquals(ValidToken::TOKEN, $json->data->checkToken->token);
+    }
+
+    public function testCheckTokenInvalid()
+    {
+        $query = '{"query":"{checkToken(token: \"a1b2c3d4\") {token}}","variables":null}';
+
+        $client = static::sendApiQuery($query);
+        $response = $client->getResponse();
+        $json = json_decode($response->getContent());
+
+        self::assertCount(0, $json->data);
+        self::assertEquals('Token is invalid', $json->errors[0]->message);
+    }
+
     public function testDeleteTaskWithAccess()
     {
         /** @var Task $task */
