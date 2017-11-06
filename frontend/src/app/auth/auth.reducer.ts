@@ -21,7 +21,13 @@ export function authReducer(state: IAuthState = INITIAL_STATE, action): IAuthSta
       token = loginResult.error ? null : loginResult.token;
       error = loginResult.error ? loginResult.error : null;
 
-      state = {...state, token: token, error: error};
+      state = {...state, token: token, tokenChecked: false, error: error};
+      break;
+    case GraphqlActions.LOGIN_REJECTED:
+      token = null;
+      error = 'Login failed. Check your network connection.';
+
+      state = {...state, token: token, tokenChecked: false, error: error};
       break;
     case GraphqlActions.CHECK_TOKEN_FULFILLED:
       const checkTokenResult = action.payload.checkToken;
