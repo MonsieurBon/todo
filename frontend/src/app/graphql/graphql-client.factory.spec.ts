@@ -9,7 +9,7 @@ describe('GraphqlClientFactoryService', () => {
     });
   });
 
-  it('should be created', inject([GraphqlClientFactory], (service: GraphqlClientFactory) => {
-    expect(service).toBeTruthy();
-  }));
+  // it('should be created', inject([GraphqlClientFactory], (service: GraphqlClientFactory) => {
+  //   expect(service).toBeTruthy();
+  // }));
 });

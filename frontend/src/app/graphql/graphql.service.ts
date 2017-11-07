@@ -4,46 +4,49 @@ import { GraphqlClientFactory } from './graphql-client.factory';
 
 @Injectable()
 export class GraphqlService {
+  static loadDataQuery = `{
+    tasklists {
+      id
+      name
+    }
+  }`;
+
+  static loginMutation = `mutation login($username: String!, $password: String!) {
+    createToken(username: $username, password: $password) {
+      token
+      error
+    }
+  }`;
+
+  static checkTokenQuery = `query TokenValidity($token: String!) {
+    checkToken(token: $token) {
+      token
+    }
+  }`;
+
   constructor(private graphQlClientFactory: GraphqlClientFactory) {}
 
   loadAllData(): Promise<GraphQLAllData> {
-    const query = `{
-      tasklists {
-        id
-        name
-      }
-    }`;
-
-    return this.graphQlClientFactory.getClient().request<GraphQLAllData>(query);
+    const client = this.graphQlClientFactory.getClient();
+    return client.request<GraphQLAllData>(GraphqlService.loadDataQuery);
   }
 
   login(username: string, password: string): Promise<GraphQlLogin> {
-    const query = `mutation login($username: String!, $password: String!) {
-      createToken(username: $username, password: $password) {
-        token
-        error
-      }
-    }`;
-
     const variables = {
       username: username,
       password: password
     };
 
-    return this.graphQlClientFactory.getAuthClient().request<GraphQlLogin>(query, variables);
+    const authClient = this.graphQlClientFactory.getAuthClient();
+    return authClient.request<GraphQlLogin>(GraphqlService.loginMutation, variables);
   }
 
   checkToken(token: string): Promise<GraphQlCheckToken> {
-    const query = `query TokenValidity($token: String!) {
-      checkToken(token: $token) {
-        token
-      }
-    }`;
-
     const variables = {
       token: token
     };
 
-    return this.graphQlClientFactory.getAuthClient().request<GraphQlCheckToken>(query, variables);
+    const authClient = this.graphQlClientFactory.getAuthClient();
+    return authClient.request<GraphQlCheckToken>(GraphqlService.checkTokenQuery, variables);
   }
 }
