@@ -34,9 +34,13 @@ export class GraphqlActions {
 
   @dispatch()
   checkToken(token: string) {
-    return {
+    return dispatcher => dispatcher({
       type: GraphqlActions.CHECK_TOKEN,
-      payload: this.service.checkToken(token)
-    };
+      payload: this.service.checkToken(token),
+    }).catch(error => {
+      console.log(`Checking token failed: ${error.message}`);
+      console.log('Removing token from localStorage');
+      localStorage.removeItem('token');
+    });
   }
 }
