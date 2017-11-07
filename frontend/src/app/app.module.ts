@@ -12,6 +12,7 @@ import { LayoutModule } from './layout/layout.module';
 import { GraphqlActions } from './graphql/graphql.actions';
 import { GraphqlService } from './graphql/graphql.service';
 import { AuthGuard } from './security/auth-guard.service';
+import { GraphqlClientFactory } from './graphql/graphql-client.factory';
 
 @NgModule({
   declarations: [
@@ -30,6 +31,7 @@ import { AuthGuard } from './security/auth-guard.service';
   providers: [
     AuthGuard,
     GraphqlActions,
+    GraphqlClientFactory,
     GraphqlService
   ],
   bootstrap: [AppComponent],

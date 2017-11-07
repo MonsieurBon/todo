@@ -1,33 +1,10 @@
-import { Injectable, OnDestroy } from '@angular/core';
-import { environment } from '../../environments/environment';
-import { GraphQLClient } from 'graphql-request';
+import { Injectable } from '@angular/core';
 import { GraphQLAllData, GraphQlCheckToken, GraphQlLogin } from './graphql.definition';
-import { NgRedux } from '@angular-redux/store';
-import { IAppState } from '../store/root.model';
-import { IAuthState } from '../auth/auth.model';
+import { GraphqlClientFactory } from './graphql-client.factory';
 
 @Injectable()
-export class GraphqlService implements OnDestroy {
-  private client: GraphQLClient;
-  private endpoint: string;
-  private subscription;
-
-  constructor(private ngRedux: NgRedux<IAppState>) {
-    this.endpoint = environment.graphql.endpoint;
-    this.client = new GraphQLClient(this.endpoint);
-
-    this.subscription = this.ngRedux.select<IAuthState>('auth')
-      .subscribe(newAuthState => {
-        if (newAuthState.token) {
-          const headers = {
-            'X-AUTH-TOKEN': newAuthState.token
-          };
-          this.client = new GraphQLClient(this.endpoint, { headers: headers });
-        } else {
-          this.client = new GraphQLClient(this.endpoint);
-        }
-      });
-  }
+export class GraphqlService {
+  constructor(private graphQlClientFactory: GraphqlClientFactory) {}
 
   loadAllData(): Promise<GraphQLAllData> {
     const query = `{
@@ -37,7 +14,7 @@ export class GraphqlService implements OnDestroy {
       }
     }`;
 
-    return this.client.request<GraphQLAllData>(query);
+    return this.graphQlClientFactory.getClient().request<GraphQLAllData>(query);
   }
 
   login(username: string, password: string): Promise<GraphQlLogin> {
@@ -53,9 +30,7 @@ export class GraphqlService implements OnDestroy {
       password: password
     };
 
-    const loginClient = new GraphQLClient(this.endpoint);
-
-    return loginClient.request<GraphQlLogin>(query, variables);
+    return this.graphQlClientFactory.getAuthClient().request<GraphQlLogin>(query, variables);
   }
 
   checkToken(token: string): Promise<GraphQlCheckToken> {
@@ -69,12 +44,6 @@ export class GraphqlService implements OnDestroy {
       token: token
     };
 
-    const loginClient = new GraphQLClient(this.endpoint);
-
-    return loginClient.request<GraphQlCheckToken>(query, variables);
-  };
-
-  ngOnDestroy(): void {
-    this.subscription.unsubscribe();
+    return this.graphQlClientFactory.getAuthClient().request<GraphQlCheckToken>(query, variables);
   }
 }
