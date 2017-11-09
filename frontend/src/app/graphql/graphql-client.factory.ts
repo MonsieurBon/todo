@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, OnDestroy } from '@angular/core';
 import { GraphQLClient } from 'graphql-request';
 import { IAppState } from '../store/root.model';
 import { NgRedux } from '@angular-redux/store';
