@@ -8,6 +8,7 @@ import { IAppState } from '../../store/root.model';
 import { NgbModal, NgbModalOptions, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { LoadingModalComponent } from '../../layout/loading-modal/loading-modal.component';
 import { IAuthState } from '../auth.model';
+import { FormGroup } from '@angular/forms';
 
 @WithSubStore({
   basePathMethodName: 'getBasePath',
@@ -66,7 +67,6 @@ export class LoginComponent implements OnDestroy {
   private closeLoading() {
     if (this.loadingModalRef) {
       this.loadingModalRef.close();
-      this.loadingModalRef.dismiss();
       this.loadingModalRef = null;
     }
   }
