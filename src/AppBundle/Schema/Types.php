@@ -3,14 +3,17 @@
 namespace AppBundle\Schema;
 
 use AppBundle\Schema\Types\DateType;
+use AppBundle\Schema\Types\Mutation\DeleteTaskType;
+use AppBundle\Schema\Types\Mutation\DestroyTokenType;
 use AppBundle\Schema\Types\Mutation\LoginType;
 use AppBundle\Schema\Types\Mutation\MutationType;
-use AppBundle\Schema\Types\Query\TokenValidityType;
 use AppBundle\Schema\Types\Query\QueryType;
+use AppBundle\Schema\Types\Query\TokenValidityType;
 use AppBundle\Schema\Types\TasklistType;
 use AppBundle\Schema\Types\TaskType;
 use AppBundle\Schema\Types\TaskTypeEnum;
 use Doctrine\Bundle\DoctrineBundle\Registry;
+use GraphQL\Type\Definition\BooleanType;
 use GraphQL\Type\Definition\IDType;
 use GraphQL\Type\Definition\ListOfType;
 use GraphQL\Type\Definition\NonNull;
@@ -18,27 +21,35 @@ use GraphQL\Type\Definition\StringType;
 use GraphQL\Type\Definition\Type;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
+use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 class Types
 {
-    private static $tokenValidity;
     private static $date;
+    private static $deleteTask;
+    private static $destroyToken;
     private static $login;
     private static $mutation;
     private static $query;
     private static $task;
     private static $tasklist;
     private static $taskTypeEnum;
-
-    public static function tokenValidity()
-    {
-        return self::$tokenValidity ?: (self::$tokenValidity = new TokenValidityType());
-    }
+    private static $tokenValidity;
 
     public static function date()
     {
         return self::$date ?: (self::$date = new DateType());
+    }
+
+    public static function deleteTask()
+    {
+        return self::$deleteTask ?: (self::$deleteTask = new DeleteTaskType());
+    }
+
+    public static function destroyToken(Registry $doctrine, TokenStorage $tokenStorage)
+    {
+        return self::$destroyToken ?: (self::$destroyToken = new DestroyTokenType($doctrine, $tokenStorage));
     }
 
     public static function login(ContainerInterface $container)
@@ -46,9 +57,9 @@ class Types
         return self::$login ?: (self::$login = new LoginType($container));
     }
 
-    public static function mutation(AuthorizationCheckerInterface $authChecker, Registry $doctrine, TokenStorage $tokenStorage)
+    public static function mutation(AuthorizationCheckerInterface $authChecker, Registry $doctrine, TokenStorage $tokenInterface)
     {
-        return self::$mutation ?: (self::$mutation = new MutationType($authChecker, $doctrine, $tokenStorage));
+        return self::$mutation ?: (self::$mutation = new MutationType($authChecker, $doctrine, $tokenInterface));
     }
 
     public static function query(AuthorizationCheckerInterface $authChecker, $doctrine, TokenStorage $tokenStorage)
@@ -69,6 +80,19 @@ class Types
     public static function taskTypeEnum()
     {
         return self::$taskTypeEnum ?: (self::$taskTypeEnum = new TaskTypeEnum());
+    }
+
+    public static function tokenValidity()
+    {
+        return self::$tokenValidity ?: (self::$tokenValidity = new TokenValidityType());
+    }
+
+    /**
+     * @return BooleanType
+     */
+    public static function boolean()
+    {
+        return Type::boolean();
     }
 
     /**

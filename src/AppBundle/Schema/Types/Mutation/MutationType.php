@@ -18,19 +18,19 @@ use Doctrine\Bundle\DoctrineBundle\Registry;
 use Doctrine\ORM\EntityManager;
 use GraphQL\Error\Error;
 use GraphQL\Type\Definition\ObjectType;
-use GraphQL\Type\Definition\ResolveInfo;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 class MutationType extends ObjectType
 {
-    const TASK_ID_FIELD_NAME = 'taskid';
-    const TITLE_FIELD_NAME = 'title';
     const DESCRIPTION_FIELD_NAME = 'description';
-    const TYPE_FIELD_NAME = 'type';
-    const STARTDATE_FIELD_NAME = 'startdate';
     const DUEDATE_FIELD_NAME = 'duedate';
+    const STARTDATE_FIELD_NAME = 'startdate';
+    const TASK_ID_FIELD_NAME = 'taskid';
     const TASKLIST_FIELD_NAME = 'tasklist';
+    const TITLE_FIELD_NAME = 'title';
+    const TOKEN_FIELD_NAME = 'token';
+    const TYPE_FIELD_NAME = 'type';
 
     /** @var AuthorizationCheckerInterface  */
     private $authChecker;
@@ -57,19 +57,22 @@ class MutationType extends ObjectType
                         self::STARTDATE_FIELD_NAME => Types::nonNull(Types::date()),
                         self::DUEDATE_FIELD_NAME => Types::date(),
                         self::TASKLIST_FIELD_NAME => Types::nonNull(Types::id())
-                    ]
+                    ],
+                    'resolve' => function($val, $args) {
+                        return $this->addTask($args);
+                    }
                 ],
                 'deleteTask' => [
                     'type' => Types::string(),
                     'args' => [
                         self::TASK_ID_FIELD_NAME => Types::nonNull(Types::id())
-                    ]
-                ]
-            ],
-            'resolveField' => function ($val, $args, $context, ResolveInfo $info)
-            {
-                return $this->{$info->fieldName}($args);
-            }
+                    ],
+                    'resolve' => function($val, $args) {
+                        return $this->deleteTask($args);
+                    }
+                ],
+                'destroyToken' => Types::destroyToken($doctrine, $tokenStorage)
+            ]
         ];
         parent::__construct($config);
     }
