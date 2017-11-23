@@ -49,13 +49,8 @@ class MutationType extends ObjectType
             'name' => 'Mutation',
             'fields' => [
                 'addTask' => [
-                    'type' => Types::task(),
+                    'type' => Types::addTask($authChecker, $doctrine),
                     'args' => [
-                        self::TITLE_FIELD_NAME => Types::nonNull(Types::string()),
-                        self::DESCRIPTION_FIELD_NAME => Types::string(),
-                        self::TYPE_FIELD_NAME => Types::nonNull(Types::taskTypeEnum()),
-                        self::STARTDATE_FIELD_NAME => Types::nonNull(Types::date()),
-                        self::DUEDATE_FIELD_NAME => Types::date(),
                         self::TASKLIST_FIELD_NAME => Types::nonNull(Types::id())
                     ],
                     'resolve' => function($val, $args) {
@@ -84,22 +79,7 @@ class MutationType extends ObjectType
         $tasklist = $this->em->getRepository(TaskList::class)->find($tasklistid);
 
         if ($tasklist !== null && $this->authChecker->isGranted(TasklistVoter::ACCESS, $tasklist)) {
-            $task = new Task();
-            $task->setTitle($args[self::TITLE_FIELD_NAME]);
-            if (array_key_exists(self::DESCRIPTION_FIELD_NAME, $args)) {
-                $task->setDescription($args[self::DESCRIPTION_FIELD_NAME]);
-            }
-            $task->setType($args[self::TYPE_FIELD_NAME]);
-            $task->setStartDate($args[self::STARTDATE_FIELD_NAME]);
-            if (array_key_exists(self::DUEDATE_FIELD_NAME, $args)) {
-                $task->setDueDate($args[self::DUEDATE_FIELD_NAME]);
-            }
-            $task->setTasklist($tasklist);
-
-            $this->em->persist($task);
-            $this->em->flush();
-
-            return $task;
+            return $tasklist;
         }
 
         throw new Error(

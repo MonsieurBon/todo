@@ -123,13 +123,13 @@ class GraphQLQueryTest extends GraphQLTestCase
     public function testAddTask()
     {
         $tasklistId = $this->fixtures->getReference('tasklist1')->getId();
-        $query = '{"query":"mutation {\n addTask(\n title: \"My Title\"\n description: \"My description\"\n type: OPPORTUNITY_NOW\n startdate: \"2017-12-15\"\n duedate: \"2018-01-15\"\n tasklist: ' . $tasklistId . '\n ) {\n id\n title\n description\n type\n startDate\n dueDate\n tasklist {\n id\n }\n }\n}","variables":null}';
+        $query = '{"query":"mutation {\n addTask(\n tasklist: ' . $tasklistId . '\n ) {task(\n title: \"My Title\"\n description: \"My description\"\n type: OPPORTUNITY_NOW\n startdate: \"2017-12-15\"\n duedate: \"2018-01-15\"\n ){\n id\n title\n description\n type\n startDate\n dueDate\n tasklist {\n id\n }\n }\n}\n}","variables":null}';
 
         $client = static::sendApiQuery($query, ValidToken::TOKEN);
         $response = $client->getResponse();
         $content = $response->getContent();
         $json = json_decode($content);
-        $task = $json->data->addTask;
+        $task = $json->data->addTask->task;
 
         self::assertEquals(200, $response->getStatusCode());
         self::assertNotNull($task);
@@ -144,7 +144,7 @@ class GraphQLQueryTest extends GraphQLTestCase
 
     public function testAddTaskToInvalidTasklist()
     {
-        $query = '{"query":"mutation {\n addTask(\n title: \"My Title\"\n description: \"My description\"\n type: OPPORTUNITY_NOW\n startdate: \"2017-12-15\"\n duedate: \"2018-01-15\"\n tasklist: -1\n ) {\n id\n title\n description\n type\n startDate\n dueDate\n tasklist {\n id\n }\n }\n}","variables": null}';
+        $query = '{"query":"mutation {\n addTask(\n tasklist: -1\n ) {task(\n title: \"My Title\"\n description: \"My description\"\n type: OPPORTUNITY_NOW\n startdate: \"2017-12-15\"\n duedate: \"2018-01-15\"\n ){\n id\n title\n description\n type\n startDate\n dueDate\n tasklist {\n id\n }\n }\n}\n}","variables":null}';
 
         $client = static::sendApiQuery($query, ValidToken::TOKEN);
         $response = $client->getResponse();

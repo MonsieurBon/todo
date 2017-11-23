@@ -7,6 +7,7 @@ use AppBundle\Schema\Types\Mutation\DeleteTaskType;
 use AppBundle\Schema\Types\Mutation\DestroyTokenType;
 use AppBundle\Schema\Types\Mutation\LoginType;
 use AppBundle\Schema\Types\Mutation\MutationType;
+use AppBundle\Schema\Types\Mutation\Task\AddTaskType;
 use AppBundle\Schema\Types\Query\QueryType;
 use AppBundle\Schema\Types\Query\TokenValidityType;
 use AppBundle\Schema\Types\TasklistType;
@@ -26,6 +27,7 @@ use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 class Types
 {
+    private static $addTask;
     private static $date;
     private static $deleteTask;
     private static $destroyToken;
@@ -36,6 +38,11 @@ class Types
     private static $tasklist;
     private static $taskTypeEnum;
     private static $tokenValidity;
+
+    public static function addTask(AuthorizationCheckerInterface $authChecker, Registry $doctrine)
+    {
+        return self::$addTask ?: (self::$addTask = new AddTaskType($authChecker, $doctrine));
+    }
 
     public static function date()
     {
@@ -131,6 +138,8 @@ class Types
 
     public static function clear()
     {
+        self::$addTask = null;
+        self::$destroyToken = null;
         self::$login = null;
         self::$mutation = null;
         self::$query = null;
