@@ -48,6 +48,12 @@ class MutationType extends ObjectType
         $config = [
             'name' => 'Mutation',
             'fields' => [
+                'createTasklist' => [
+                    'type' => Types::createTasklist($doctrine, $tokenStorage),
+                    'resolve' => function() {
+                        return $this->createTasklist();
+                    }
+                ],
                 'addTask' => [
                     'type' => Types::addTask($authChecker, $doctrine),
                     'args' => [
@@ -72,7 +78,10 @@ class MutationType extends ObjectType
         parent::__construct($config);
     }
 
-    /** @noinspection PhpUnusedPrivateMethodInspection */
+    private function createTasklist() {
+        return new Tasklist();
+    }
+
     private function addTask($args)
     {
         $tasklistid = $args[self::TASKLIST_FIELD_NAME];

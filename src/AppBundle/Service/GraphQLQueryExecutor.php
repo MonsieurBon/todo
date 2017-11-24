@@ -35,6 +35,7 @@ class GraphQLQueryExecutor
      */
     public function executeQuery(Request $request, Schema $schema, $defaultQuery = null)
     {
+        $schema->assertValid();
         $this->validateSchemaIfDebug($request, $schema);
 
         $query = $request->request->get(self::QUERY);
