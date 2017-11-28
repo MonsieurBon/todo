@@ -40,20 +40,25 @@ class CreateTasklistType extends ObjectType
                         self::TYPE_TASKLIST_NAME => Types::nonNull(Types::string())
                     ],
                     'resolve' => function(Tasklist $tasklist, $args) {
-                        $name = $args[self::TYPE_TASKLIST_NAME];
-                        $user = $this->tokenInterface->getUser();
-
-                        $tasklist->setName($name)
-                            ->setOwner($user);
-
-                        $this->em->persist($tasklist);
-                        $this->em->flush();
-
-                        return $tasklist;
+                        return $this->createTasklist($tasklist, $args);
                     }
                 ],
             ]
         ];
         parent::__construct($config);
+    }
+
+    private function createTasklist(Tasklist $tasklist, $args)
+    {
+        $name = $args[self::TYPE_TASKLIST_NAME];
+        $user = $this->tokenInterface->getUser();
+
+        $tasklist->setName($name)
+            ->setOwner($user);
+
+        $this->em->persist($tasklist);
+        $this->em->flush();
+
+        return $tasklist;
     }
 }

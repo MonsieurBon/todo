@@ -27,7 +27,7 @@ class MutationType extends ObjectType
     const DUEDATE_FIELD_NAME = 'duedate';
     const STARTDATE_FIELD_NAME = 'startdate';
     const TASK_ID_FIELD_NAME = 'taskid';
-    const TASKLIST_FIELD_NAME = 'tasklist';
+    const TASKLIST_ID_FIELD_NAME = 'tasklist';
     const TITLE_FIELD_NAME = 'title';
     const TOKEN_FIELD_NAME = 'token';
     const TYPE_FIELD_NAME = 'type';
@@ -57,7 +57,7 @@ class MutationType extends ObjectType
                 'addTask' => [
                     'type' => Types::addTask($authChecker, $doctrine),
                     'args' => [
-                        self::TASKLIST_FIELD_NAME => Types::nonNull(Types::id())
+                        self::TASKLIST_ID_FIELD_NAME => Types::nonNull(Types::id())
                     ],
                     'resolve' => function($val, $args) {
                         return $this->addTask($args);
@@ -84,7 +84,7 @@ class MutationType extends ObjectType
 
     private function addTask($args)
     {
-        $tasklistid = $args[self::TASKLIST_FIELD_NAME];
+        $tasklistid = $args[self::TASKLIST_ID_FIELD_NAME];
         $tasklist = $this->em->getRepository(TaskList::class)->find($tasklistid);
 
         if ($tasklist !== null && $this->authChecker->isGranted(TasklistVoter::ACCESS, $tasklist)) {
