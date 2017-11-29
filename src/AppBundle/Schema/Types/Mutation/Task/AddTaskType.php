@@ -66,25 +66,19 @@ class AddTaskType extends ObjectType
         $task = new Task();
         $task->setTasklist($tasklist);
 
-        if ($this->authChecker->isGranted(TaskVoter::ACCESS, $task)) {
-            $task->setTitle($args[self::TITLE_FIELD_NAME]);
-            if (array_key_exists(self::DESCRIPTION_FIELD_NAME, $args)) {
-                $task->setDescription($args[self::DESCRIPTION_FIELD_NAME]);
-            }
-            $task->setType($args[self::TYPE_FIELD_NAME]);
-            $task->setStartDate($args[self::STARTDATE_FIELD_NAME]);
-            if (array_key_exists(self::DUEDATE_FIELD_NAME, $args)) {
-                $task->setDueDate($args[self::DUEDATE_FIELD_NAME]);
-            }
-
-            $this->em->persist($task);
-            $this->em->flush();
-
-            return $task;
+        $task->setTitle($args[self::TITLE_FIELD_NAME]);
+        if (array_key_exists(self::DESCRIPTION_FIELD_NAME, $args)) {
+            $task->setDescription($args[self::DESCRIPTION_FIELD_NAME]);
+        }
+        $task->setType($args[self::TYPE_FIELD_NAME]);
+        $task->setStartDate($args[self::STARTDATE_FIELD_NAME]);
+        if (array_key_exists(self::DUEDATE_FIELD_NAME, $args)) {
+            $task->setDueDate($args[self::DUEDATE_FIELD_NAME]);
         }
 
-        throw new Error(
-            'Authorization checker error occured'
-        );
+        $this->em->persist($task);
+        $this->em->flush();
+
+        return $task;
     }
 }
