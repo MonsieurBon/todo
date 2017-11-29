@@ -230,4 +230,16 @@ class GraphQLQueryTest extends GraphQLTestCase
 
         self::assertEquals('Task with id=' . $id . ' not found!', $json->errors[0]->message);
     }
+
+    public function testCreateTasklist()
+    {
+        $tasklistName = 'new tasklist name';
+        $query = '{"query":"mutation {\n\tcreateTasklist{\n tasklist(name: \"' . $tasklistName . '\"){\n id\n name\n }\n }\n}","variables":null}';
+
+        $client = static::sendApiQuery($query, ValidToken::TOKEN);
+        $response = $client->getResponse();
+        $json = json_decode($response->getContent());
+
+        self::assertEquals($tasklistName, $json->data->createTasklist->tasklist->name);
+    }
 }
