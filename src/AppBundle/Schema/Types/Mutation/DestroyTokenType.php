@@ -32,10 +32,12 @@ class DestroyTokenType extends ObjectType
         $config = [
             'name' => 'DestroyToken',
             'fields' => [
-                'success' => Types::boolean(),
-                'resolve' => function () {
-                    return $this->resolveSuccess();
-                }
+                'success' => [
+                    'type' => Types::boolean(),
+                    'resolve' => function () {
+                        return $this->resolveSuccess();
+                    }
+                ]
             ]
         ];
         parent::__construct($config);

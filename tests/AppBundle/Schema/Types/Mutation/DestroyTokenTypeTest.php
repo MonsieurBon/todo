@@ -49,7 +49,8 @@ class DestroyTokenTypeTest extends TestCase
 
         $destroyTokenType = new DestroyTokenType($doctrine, $tokenStorage);
 
-        call_user_func($destroyTokenType->resolveFieldFn, null, null, null, $resolveInfo);
+        $successResolveFn = $destroyTokenType->config['fields']['success']['resolve'];
+        call_user_func($successResolveFn, null, null, null, $resolveInfo);
 
         self::assertNotNull($apiToken->getValidUntil());
         self::assertLessThan(new \DateTime('now'), $apiToken->getValidUntil());
