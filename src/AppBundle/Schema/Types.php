@@ -3,11 +3,11 @@
 namespace AppBundle\Schema;
 
 use AppBundle\Schema\Types\DateType;
-use AppBundle\Schema\Types\Mutation\DeleteTaskType;
 use AppBundle\Schema\Types\Mutation\DestroyTokenType;
 use AppBundle\Schema\Types\Mutation\LoginType;
 use AppBundle\Schema\Types\Mutation\MutationType;
 use AppBundle\Schema\Types\Mutation\Task\AddTaskType;
+use AppBundle\Schema\Types\Mutation\Task\DeleteTaskType;
 use AppBundle\Schema\Types\Mutation\Tasklist\CreateTasklistType;
 use AppBundle\Schema\Types\Query\QueryType;
 use AppBundle\Schema\Types\Query\TokenValidityType;
@@ -56,9 +56,9 @@ class Types
         return self::$date ?: (self::$date = new DateType());
     }
 
-    public static function deleteTask()
+    public static function deleteTask(AuthorizationCheckerInterface $authChecker, Registry $doctrine)
     {
-        return self::$deleteTask ?: (self::$deleteTask = new DeleteTaskType());
+        return self::$deleteTask ?: (self::$deleteTask = new DeleteTaskType($authChecker, $doctrine));
     }
 
     public static function destroyToken(Registry $doctrine, TokenStorage $tokenStorage)
@@ -147,6 +147,7 @@ class Types
     {
         self::$addTask = null;
         self::$createTasklist = null;
+        self::$deleteTask = null;
         self::$destroyToken = null;
         self::$login = null;
         self::$mutation = null;

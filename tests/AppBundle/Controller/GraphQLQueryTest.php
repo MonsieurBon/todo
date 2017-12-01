@@ -201,28 +201,35 @@ class GraphQLQueryTest extends GraphQLTestCase
         self::assertEquals('Token is invalid', $json->errors[0]->message);
     }
 
+    /**
+     * @throws \Doctrine\Common\DataFixtures\OutOfBoundsException
+     */
     public function testDeleteTaskWithAccess()
     {
         /** @var Task $task */
         $task = $this->fixtures->getReference('task-with-access');
         $id = $task->getId();
+        $title = $task->getTitle();
 
-        $query = '{"query":"mutation {\n  deleteTask(taskid: ' . $id . ')\n}","variables":null}';
+        $query = '{"query":"mutation {\n deleteTask {\n task(task_id: ' . $id . ') {\n title\n }\n }\n}","variables":null}';
 
         $client = static::sendApiQuery($query, ValidToken::TOKEN);
         $response = $client->getResponse();
         $json = json_decode($response->getContent());
 
-        self::assertEquals('Task with id=' . $id . ' successfully deleted.', $json->data->deleteTask);
+        self::assertEquals($title, $json->data->deleteTask->task->title);
     }
 
+    /**
+     * @throws \Doctrine\Common\DataFixtures\OutOfBoundsException
+     */
     public function testDeleteTaskWithoutAccess()
     {
         /** @var Task $task */
         $task = $this->fixtures->getReference('task-with-no-access');
         $id = $task->getId();
 
-        $query = '{"query":"mutation {\n  deleteTask(taskid: ' . $id . ')\n}","variables":null}';
+        $query = '{"query":"mutation {\n deleteTask {\n task(task_id: ' . $id . ') {\n title\n }\n }\n}","variables":null}';
 
         $client = static::sendApiQuery($query, ValidToken::TOKEN);
         $response = $client->getResponse();

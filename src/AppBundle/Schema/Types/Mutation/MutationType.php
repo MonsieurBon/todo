@@ -23,15 +23,6 @@ use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 class MutationType extends ObjectType
 {
-    const DESCRIPTION_FIELD_NAME = 'description';
-    const DUEDATE_FIELD_NAME = 'duedate';
-    const STARTDATE_FIELD_NAME = 'startdate';
-    const TASK_ID_FIELD_NAME = 'taskid';
-    const TASKLIST_ID_FIELD_NAME = 'tasklist';
-    const TITLE_FIELD_NAME = 'title';
-    const TOKEN_FIELD_NAME = 'token';
-    const TYPE_FIELD_NAME = 'type';
-
     /** @var AuthorizationCheckerInterface  */
     private $authChecker;
     /** @var  EntityManager */
@@ -57,23 +48,18 @@ class MutationType extends ObjectType
                 'addTask' => [
                     'type' => Types::addTask($authChecker, $doctrine),
                     'args' => [
-                        self::TASKLIST_ID_FIELD_NAME => Types::nonNull(Types::id())
+                        Schema::TASKLIST_ID_FIELD_NAME => Types::nonNull(Types::id())
                     ],
                     'resolve' => function($val, $args) {
                         return $this->addTask($args);
                     }
                 ],
-                'deleteTask' => [
-                    'type' => Types::string(),
-                    'args' => [
-                        self::TASK_ID_FIELD_NAME => Types::nonNull(Types::id())
-                    ],
-                    'resolve' => function($val, $args) {
-                        return $this->deleteTask($args);
-                    }
-                ],
+                'deleteTask' => Types::deleteTask($authChecker, $doctrine),
                 'destroyToken' => Types::destroyToken($doctrine, $tokenStorage)
-            ]
+            ],
+            'resolveField' => function () {
+                return array();
+            }
         ];
         parent::__construct($config);
     }
@@ -84,7 +70,7 @@ class MutationType extends ObjectType
 
     private function addTask($args)
     {
-        $tasklistid = $args[self::TASKLIST_ID_FIELD_NAME];
+        $tasklistid = $args[Schema::TASKLIST_ID_FIELD_NAME];
         $tasklist = $this->em->getRepository(TaskList::class)->find($tasklistid);
 
         if ($tasklist !== null && $this->authChecker->isGranted(TasklistVoter::ACCESS, $tasklist)) {
@@ -95,26 +81,6 @@ class MutationType extends ObjectType
             sprintf(
                 'Tasklist with id=%d not found!',
                 $tasklistid
-            )
-        );
-    }
-
-    private function deleteTask($args)
-    {
-        $taskid = $args[self::TASK_ID_FIELD_NAME];
-        $task = $this->em->getRepository(Task::class)->find($taskid);
-
-        if ($task !== null && $this->authChecker->isGranted(TaskVoter::ACCESS, $task)) {
-            $this->em->remove($task);
-            $this->em->flush();
-
-            return sprintf('Task with id=%d successfully deleted.', $taskid);
-        }
-
-        throw new Error(
-            sprintf(
-                'Task with id=%d not found!',
-                $taskid
             )
         );
     }
