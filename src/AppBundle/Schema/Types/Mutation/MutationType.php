@@ -11,6 +11,7 @@ namespace AppBundle\Schema\Types\Mutation;
 
 use AppBundle\Entity\Task;
 use AppBundle\Entity\Tasklist;
+use AppBundle\Schema\Schema;
 use AppBundle\Schema\Types;
 use AppBundle\Security\TasklistVoter;
 use AppBundle\Security\TaskVoter;
