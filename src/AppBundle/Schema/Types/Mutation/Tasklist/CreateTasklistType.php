@@ -10,6 +10,7 @@ namespace AppBundle\Schema\Types\Mutation\Tasklist;
 
 
 use AppBundle\Entity\Tasklist;
+use AppBundle\Schema\Schema;
 use AppBundle\Schema\Types;
 use Doctrine\Bundle\DoctrineBundle\Registry;
 use Doctrine\ORM\EntityManager;
@@ -19,8 +20,6 @@ use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 
 class CreateTasklistType extends ObjectType
 {
-    const TYPE_TASKLIST_NAME = 'name';
-
     /** @var EntityManager */
     private $em;
     /** @var  TokenInterface */
@@ -37,10 +36,10 @@ class CreateTasklistType extends ObjectType
                 'tasklist' => [
                     'type' => Types::tasklist(),
                     'args' => [
-                        self::TYPE_TASKLIST_NAME => Types::nonNull(Types::string())
+                        Schema::TASKLIST_NAME_FIELD_NAME => Types::nonNull(Types::string())
                     ],
-                    'resolve' => function(Tasklist $tasklist, $args) {
-                        return $this->createTasklist($tasklist, $args);
+                    'resolve' => function($val, $args) {
+                        return $this->createTasklist($args);
                     }
                 ],
             ]
@@ -48,12 +47,13 @@ class CreateTasklistType extends ObjectType
         parent::__construct($config);
     }
 
-    private function createTasklist(Tasklist $tasklist, $args)
+    private function createTasklist($args)
     {
-        $name = $args[self::TYPE_TASKLIST_NAME];
+        $name = $args[Schema::TASKLIST_NAME_FIELD_NAME];
         $user = $this->tokenInterface->getUser();
 
-        $tasklist->setName($name)
+        $tasklist = (new Tasklist())
+            ->setName($name)
             ->setOwner($user);
 
         $this->em->persist($tasklist);

@@ -9,12 +9,10 @@
 namespace AppBundle\Schema\Types\Mutation;
 
 
-use AppBundle\Entity\Task;
 use AppBundle\Entity\Tasklist;
 use AppBundle\Schema\Schema;
 use AppBundle\Schema\Types;
 use AppBundle\Security\TasklistVoter;
-use AppBundle\Security\TaskVoter;
 use Doctrine\Bundle\DoctrineBundle\Registry;
 use Doctrine\ORM\EntityManager;
 use GraphQL\Error\Error;
@@ -40,12 +38,7 @@ class MutationType extends ObjectType
         $config = [
             'name' => 'Mutation',
             'fields' => [
-                'createTasklist' => [
-                    'type' => Types::createTasklist($doctrine, $tokenStorage),
-                    'resolve' => function() {
-                        return $this->createTasklist();
-                    }
-                ],
+                'createTasklist' => Types::createTasklist($doctrine, $tokenStorage),
                 'addTask' => [
                     'type' => Types::addTask($authChecker, $doctrine),
                     'args' => [
@@ -63,10 +56,6 @@ class MutationType extends ObjectType
             }
         ];
         parent::__construct($config);
-    }
-
-    private function createTasklist() {
-        return new Tasklist();
     }
 
     private function addTask($args)

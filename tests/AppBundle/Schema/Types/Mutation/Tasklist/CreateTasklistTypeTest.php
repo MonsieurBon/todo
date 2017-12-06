@@ -22,11 +22,10 @@ class CreateTasklistTypeTest extends TestCase
     public function testCreateTasklist()
     {
         $user = new User();
-        $tasklist = new Tasklist();
 
         /** @var EntityManager $em */
         $em = $this->createMock(EntityManager::class);
-        $em->expects(self::once())->method('persist')->with(self::equalTo($tasklist));
+        $em->expects(self::once())->method('persist')->with(self::isInstanceOf(Tasklist::class));
         $em->expects(self::once())->method('flush');
 
         /** @var Registry $doctrine */
@@ -45,7 +44,7 @@ class CreateTasklistTypeTest extends TestCase
 
         $tasklistResolveFn = $createTasklistType->config['fields']['tasklist']['resolve'];
 
-        call_user_func($tasklistResolveFn, $tasklist, array('name' => 'tasklistName'));
+        $tasklist = call_user_func($tasklistResolveFn, null, array('name' => 'tasklistName'));
 
         self::assertEquals("tasklistName", $tasklist->getName());
         self::assertEquals($user, $tasklist->getOwner());
