@@ -9,6 +9,8 @@ use AppBundle\Schema\Types\Mutation\MutationType;
 use AppBundle\Schema\Types\Mutation\Task\AddTaskType;
 use AppBundle\Schema\Types\Mutation\Task\DeleteTaskType;
 use AppBundle\Schema\Types\Mutation\Tasklist\CreateTasklistType;
+use AppBundle\Schema\Types\Mutation\Tasklist\DeleteTasklistType;
+use AppBundle\Schema\Types\Mutation\Tasklist\ShareTasklistType;
 use AppBundle\Schema\Types\Query\QueryType;
 use AppBundle\Schema\Types\Query\TokenValidityType;
 use AppBundle\Schema\Types\TasklistType;
@@ -32,10 +34,12 @@ class Types
     private static $createTasklist;
     private static $date;
     private static $deleteTask;
+    private static $deleteTasklist;
     private static $destroyToken;
     private static $login;
     private static $mutation;
     private static $query;
+    private static $shareTasklist;
     private static $task;
     private static $tasklist;
     private static $taskTypeEnum;
@@ -61,6 +65,11 @@ class Types
         return self::$deleteTask ?: (self::$deleteTask = new DeleteTaskType($authChecker, $doctrine));
     }
 
+    public static function deleteTasklist(AuthorizationCheckerInterface $authChecker, Registry $doctrine, TokenStorage $tokenStorage)
+    {
+        return self::$deleteTasklist ?: (self::$deleteTasklist = new DeleteTasklistType($authChecker, $doctrine, $tokenStorage));
+    }
+
     public static function destroyToken(Registry $doctrine, TokenStorage $tokenStorage)
     {
         return self::$destroyToken ?: (self::$destroyToken = new DestroyTokenType($doctrine, $tokenStorage));
@@ -79,6 +88,11 @@ class Types
     public static function query(AuthorizationCheckerInterface $authChecker, $doctrine, TokenStorage $tokenStorage)
     {
         return self::$query ?: (self::$query = new QueryType($authChecker, $doctrine, $tokenStorage));
+    }
+
+    public static function shareTasklist(AuthorizationCheckerInterface $authChecker, Registry $doctrine)
+    {
+        return self::$shareTasklist ?: (self::$shareTasklist = new ShareTasklistType($authChecker, $doctrine));
     }
 
     public static function task()
@@ -148,9 +162,11 @@ class Types
         self::$addTask = null;
         self::$createTasklist = null;
         self::$deleteTask = null;
+        self::$deleteTasklist = null;
         self::$destroyToken = null;
         self::$login = null;
         self::$mutation = null;
         self::$query = null;
+        self::$shareTasklist = null;
     }
 }

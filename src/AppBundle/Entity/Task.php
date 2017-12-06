@@ -60,7 +60,7 @@ class Task
      * @var Tasklist
      *
      * @ORM\ManyToOne(targetEntity="Tasklist", inversedBy="tasks")
-     * @ORM\JoinColumn(name="tasklist_id", referencedColumnName="id")
+     * @ORM\JoinColumn(name="tasklist_id", referencedColumnName="id", onDelete="CASCADE")
      */
     private $tasklist;
 

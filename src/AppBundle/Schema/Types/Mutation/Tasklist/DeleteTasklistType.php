@@ -1,71 +1,67 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabian
- * Date: 28.09.17
- * Time: 07:06
- */
 
-namespace AppBundle\Schema\Types\Mutation;
+namespace AppBundle\Schema\Types\Mutation\Tasklist;
 
 
 use AppBundle\Entity\Tasklist;
+use AppBundle\Entity\User;
 use AppBundle\Schema\Schema;
 use AppBundle\Schema\Types;
 use AppBundle\Security\TasklistVoter;
 use Doctrine\Bundle\DoctrineBundle\Registry;
 use Doctrine\ORM\EntityManager;
-use GraphQL\Error\Error;
 use GraphQL\Type\Definition\ObjectType;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
+use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
-class MutationType extends ObjectType
+class DeleteTasklistType extends ObjectType
 {
-    /** @var AuthorizationCheckerInterface  */
+    /** @var  AuthorizationCheckerInterface */
     private $authChecker;
     /** @var  EntityManager */
     private $em;
-    /** @var TokenStorage  */
-    private $tokenStorage;
+    /** @var  TokenInterface */
+    private $tokenInterface;
 
     public function __construct(AuthorizationCheckerInterface $authChecker, Registry $doctrine, TokenStorage $tokenStorage)
     {
         $this->authChecker = $authChecker;
         $this->em = $doctrine->getManager();
-        $this->tokenStorage = $tokenStorage;
+        $this->tokenInterface = $tokenStorage->getToken();
 
         $config = [
-            'name' => 'Mutation',
+            'name' => 'DeleteTasklist',
             'fields' => [
-                'createTasklist' => Types::createTasklist($doctrine, $tokenStorage),
-                'deleteTaskList' => Types::deleteTasklist($authChecker, $doctrine, $tokenStorage),
-                'shareTasklist' => Types::shareTasklist($authChecker, $doctrine),
-                'addTask' => [
-                    'type' => Types::addTask($authChecker, $doctrine),
+                'tasklist' => [
+                    'type' => Types::tasklist(),
                     'args' => [
                         Schema::TASKLIST_ID_FIELD_NAME => Types::nonNull(Types::id())
                     ],
                     'resolve' => function($val, $args) {
-                        return $this->addTask($args);
+                        return $this->deleteTasklist($args);
                     }
-                ],
-                'deleteTask' => Types::deleteTask($authChecker, $doctrine),
-                'destroyToken' => Types::destroyToken($doctrine, $tokenStorage)
-            ],
-            'resolveField' => function () {
-                return array();
-            }
+                ]
+            ]
         ];
         parent::__construct($config);
     }
 
-    private function addTask($args)
+    private function deleteTasklist($args)
     {
         $tasklistid = $args[Schema::TASKLIST_ID_FIELD_NAME];
-        $tasklist = $this->em->getRepository(TaskList::class)->find($tasklistid);
+        $tasklist = $this->em->getRepository(Tasklist::class)->find($tasklistid);
 
-        if ($tasklist !== null && $this->authChecker->isGranted(TasklistVoter::ACCESS, $tasklist)) {
+        if ($tasklist !== null) {
+            if ($this->authChecker->isGranted(TasklistVoter::OWNER, $tasklist)) {
+                $this->em->remove($tasklist);
+                $this->em->flush();
+            } else if ($this->authChecker->isGranted(TasklistVoter::ACCESS, $tasklist)) {
+                /** @var User $user */
+                $user = $this->tokenInterface->getUser();
+                $tasklist->removeUser($user);
+                $this->em->flush();
+            }
             return $tasklist;
         }
 
