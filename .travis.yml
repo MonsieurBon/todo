@@ -1,8 +1,11 @@
 language: php
+php:
+  - 7.1.11
 
 sudo: false
 
 addons:
+  chrome: stable
   sonarcloud:
     organization: "monsieurbon-github"
     token:
@@ -20,22 +23,21 @@ services:
   - mysql
 
 cache:
+  yarn: true
   directories:
     - $HOME/.composer/cache/files
     - $HOME/.sonar/cache
 
-matrix:
-  fast_finish: true
-  include:
-    - php: 5.6
-    - php: 7.0
-
-before-install:
+before_install:
+  - curl -o- -L https://yarnpkg.com/install.sh | bash -s
+  - export PATH="$HOME/.yarn/bin:$PATH"
   - composer self-update
+  - nvm install 8.5.0
 
 install:
   - composer install
   - cp app/config/parameters.yml.dist app/config/parameters.yml
+  - yarn install
 
 before_script:
   - echo "USE mysql;\nUPDATE user SET password=PASSWORD('symfony') WHERE user='root';\nFLUSH PRIVILEGES;\n" | mysql -u root
@@ -43,9 +45,13 @@ before_script:
   - bin/console doctrine:database:create --if-not-exists --env=test
   - bin/console doctrine:migrations:migrate -n --env=test
   - bin/console doctrine:fixtures:load -n --env=test
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
 
 script:
   - phpunit --coverage-clover=coverage.xml
+  - yarn test:coverage
+  - yarn e2e
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

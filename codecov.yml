@@ -1,2 +1,4 @@
 ignore:
     - "src/AppBundle/DataFixtures/*"
+    - "frontend/src/polyfill.ts"
+    - "frontend/src/test.ts"

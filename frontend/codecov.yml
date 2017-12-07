@@ -1,3 +1,0 @@
-ignore:
-    - "src/polyfills.ts"
-    - "src/test.ts"

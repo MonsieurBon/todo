@@ -5,8 +5,8 @@
   },
   "apps": [
     {
-      "root": "src",
-      "outDir": "dist",
+      "root": "frontend/src",
+      "outDir": "frontend/dist",
       "assets": [
         "assets",
         "favicon.ico"
@@ -20,7 +20,7 @@
       "prefix": "app",
       "styles": [
         "styles.css",
-        "../node_modules/bootstrap/dist/css/bootstrap.min.css",
+        "../../node_modules/bootstrap/dist/css/bootstrap.min.css",
         "bootstrap-spacelab.min.css"
       ],
       "scripts": [],
@@ -33,26 +33,26 @@
   ],
   "e2e": {
     "protractor": {
-      "config": "./protractor.conf.js"
+      "config": "./frontend/protractor.conf.js"
     }
   },
   "lint": [
     {
-      "project": "src/tsconfig.app.json",
+      "project": "frontend/src/tsconfig.app.json",
       "exclude": "**/node_modules/**"
     },
     {
-      "project": "src/tsconfig.spec.json",
+      "project": "frontend/src/tsconfig.spec.json",
       "exclude": "**/node_modules/**"
     },
     {
-      "project": "e2e/tsconfig.e2e.json",
+      "project": "frontend/e2e/tsconfig.e2e.json",
       "exclude": "**/node_modules/**"
     }
   ],
   "test": {
     "karma": {
-      "config": "./karma.conf.js"
+      "config": "./frontend/karma.conf.js"
     }
   },
   "defaults": {
