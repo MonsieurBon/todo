@@ -20,12 +20,12 @@ import { FormGroup } from '@angular/forms';
   styleUrls: ['./login.component.css']
 })
 export class LoginComponent implements OnDestroy {
-  @select() private error$: Observable<string>;
+  @select() error$: Observable<string>;
+
+  username;
+  password;
 
   private subscription;
-
-  private username;
-  private password;
   private loadingModalRef: NgbModalRef;
 
   constructor(

@@ -50,6 +50,7 @@ before_script:
 
 script:
   - phpunit --coverage-clover=coverage.xml
+  - yarn build:prod
   - yarn test:coverage
   - yarn e2e
 

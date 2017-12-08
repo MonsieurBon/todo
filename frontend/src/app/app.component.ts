@@ -9,7 +9,7 @@ import { IAppState } from './store/root.model';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
-  private checked = false;
+  checked = false;
   private subscription;
 
   constructor(
