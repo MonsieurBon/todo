@@ -16,9 +16,18 @@ use AppBundle\Entity\User;
 use AppBundle\Schema\Types\DateType;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\Persistence\ObjectManager;
+use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 
 class Fixtures extends Fixture
 {
+    /** @var UserPasswordEncoderInterface */
+    private $encoder;
+
+    public function __construct(UserPasswordEncoderInterface $encoder)
+    {
+        $this->encoder = $encoder;
+    }
+
     public function load(ObjectManager $manager)
     {
         $user1 = new User();
@@ -26,8 +35,7 @@ class Fixtures extends Fixture
         $user1->setName('Foo');
         $user1->setFirstname('Bar');
         $user1->setEmail('foo@bar.ch');
-        $encoder = $this->container->get('security.password_encoder');
-        $password = $encoder->encodePassword($user1, 'test');
+        $password = $this->encoder->encodePassword($user1, 'test');
         $user1->setPassword($password);
 
         $user2 = new User();
@@ -35,8 +43,7 @@ class Fixtures extends Fixture
         $user2->setName('Bar');
         $user2->setFirstname('Foo');
         $user2->setEmail('bar@foo.ch');
-        $encoder = $this->container->get('security.password_encoder');
-        $password = $encoder->encodePassword($user2, 'test');
+        $password = $this->encoder->encodePassword($user2, 'test');
         $user2->setPassword($password);
 
         $tasklist1 = new Tasklist();
