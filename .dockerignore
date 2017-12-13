@@ -1,0 +1,14 @@
+.travis.yml
+bin/symfony_requirements
+codecov.yml
+frontend
+LICENSE
+phpunit.xml.dist
+README.md
+sonar-project.properties
+tests
+var/cache/*
+var/logs/*
+var/sessions/*
+vendor
+web/config.php

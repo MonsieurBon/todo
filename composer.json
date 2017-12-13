@@ -59,6 +59,11 @@
         ],
         "post-update-cmd": [
             "@symfony-scripts"
+        ],
+        "dockerize": [
+            "yarn build:prod",
+	        "yarn deploy",
+	        "docker build -t todo ."
         ]
     },
     "config": {

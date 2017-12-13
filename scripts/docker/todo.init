@@ -1,0 +1,51 @@
+#!/bin/bash
+
+TODO_DIR="/var/www/html"
+TODO_PARAMETERS_DIR="${TODO_DIR}/app/config"
+
+GENERATED_SECRET=`cat /dev/urandom | strings --bytes 1 | tr -d '\n\t [](){}"' | head --bytes 40`
+
+DB_HOST=${DB_HOST:-mysql}
+DB_PORT=${DB_PORT:-3306}
+DB_NAME=${DB_NAME:-todo}
+DB_USER=${DB_USER:-todo}
+DB_PASS=${DB_PASS:-}
+MAILER_TRANSPORT=${MAILER_TRANSPORT:-smtp}
+MAILER_HOST=${MAILER_HOST:-127.0.0.1}
+MAILER_USER=${MAILER_USER:-null}
+MAILER_PASS=${MAILER_PASS:-null}
+SECRET=${SECRET:-$GENERATED_SECRET}
+SESSION_TIMEOUT=${SESSION_TIMEOUT:-20}
+
+## Input validation
+# Check DB_PASS
+if [ -z "${DB_PASS}" ]; then
+    echo "ERROR: "
+    echo " Please configure the database password."
+    echo " Cannot continue without a database. Aborting..."
+    exit 1
+fi
+
+# Configure parameters
+sed -i 's/{{DB_HOST}}/'"${DB_HOST}"'/' ${TODO_PARAMETERS_DIR}/parameters.yml
+sed -i 's/{{DB_PORT}}/'"${DB_PORT}"'/' ${TODO_PARAMETERS_DIR}/parameters.yml
+sed -i 's/{{DB_NAME}}/'"${DB_NAME}"'/' ${TODO_PARAMETERS_DIR}/parameters.yml
+sed -i 's/{{DB_USER}}/'"${DB_USER}"'/' ${TODO_PARAMETERS_DIR}/parameters.yml
+sed -i 's/{{DB_PASS}}/'"${DB_PASS}"'/' ${TODO_PARAMETERS_DIR}/parameters.yml
+sed -i 's/{{MAILER_TRANSPORT}}/'"${MAILER_TRANSPORT}"'/' ${TODO_PARAMETERS_DIR}/parameters.yml
+sed -i 's/{{MAILER_HOST}}/'"${MAILER_HOST}"'/' ${TODO_PARAMETERS_DIR}/parameters.yml
+sed -i 's/{{MAILER_USER}}/'"${MAILER_USER}"'/' ${TODO_PARAMETERS_DIR}/parameters.yml
+sed -i 's/{{MAILER_PASS}}/'"${MAILER_PASS}"'/' ${TODO_PARAMETERS_DIR}/parameters.yml
+sed -i 's/{{SECRET}}/'"${SECRET}"'/' ${TODO_PARAMETERS_DIR}/parameters.yml
+sed -i 's/{{SESSION_TIMEOUT}}/'"${SESSION_TIMEOUT}"'/' ${TODO_PARAMETERS_DIR}/parameters.yml
+
+a2enmod rewrite
+
+php bin/console cache:clear --env=prod --no-debug --no-warmup
+php bin/console cache:warmup --env=prod
+php bin/console doctrine:database:create --env=prod --if-not-exists --no-interaction
+php bin/console doctrine:migrations:migrate --env=prod --no-interaction
+
+chown -R www-data:www-data /var/www/html
+
+apachectl -D FOREGROUND
