@@ -19,12 +19,6 @@
             "vendor/symfony/symfony/src/Symfony/Component/VarDumper/Resources/functions/dump.php"
         ]
     },
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/MonsieurBon/LiipFunctionalTestBundle"
-        }
-    ],
     "require": {
         "php": ">=7.1.11",
         "beberlei/DoctrineExtensions": "^1.0",
@@ -47,7 +41,6 @@
     },
     "require-dev": {
         "doctrine/doctrine-fixtures-bundle": "^3.0",
-        "liip/functional-test-bundle": "dev-master",
         "sensio/generator-bundle": "^3.0",
         "symfony/phpunit-bridge": "^4.0"
     },

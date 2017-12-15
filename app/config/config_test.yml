@@ -15,5 +15,3 @@ web_profiler:
 
 swiftmailer:
     disable_delivery: true
-
-liip_functional_test: ~

@@ -23,7 +23,7 @@ class TokenUserProviderTest extends DbTestCase
 
     protected function setUp()
     {
-        $doctrine = $this->getContainer()->get('doctrine');
+        $doctrine = static::createClient()->getContainer()->get('doctrine');
         $this->tokenUserProvider = new TokenUserProvider($doctrine);
 
         $this->initialize(array(

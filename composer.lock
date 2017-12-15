@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "cc0c8b88ea2d18b2757cacfa08ab4967",
+    "content-hash": "437fc30ef7b616abb6b871b54173672b",
     "packages": [
         {
             "name": "beberlei/DoctrineExtensions",
@@ -3546,86 +3546,6 @@
             "time": "2017-12-04T20:26:38+00:00"
         },
         {
-            "name": "liip/functional-test-bundle",
-            "version": "dev-master",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/MonsieurBon/LiipFunctionalTestBundle.git",
-                "reference": "ade79cf3c5d81b3ee2912a9b489a8e48ba499161"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/MonsieurBon/LiipFunctionalTestBundle/zipball/ade79cf3c5d81b3ee2912a9b489a8e48ba499161",
-                "reference": "ade79cf3c5d81b3ee2912a9b489a8e48ba499161",
-                "shasum": ""
-            },
-            "require": {
-                "doctrine/common": "~2.0",
-                "php": "^5.6|^7.0",
-                "symfony/browser-kit": "^2.7|^3.0|^4.0",
-                "symfony/framework-bundle": "^2.7|^3.0|^4.0"
-            },
-            "require-dev": {
-                "brianium/paratest": "~0.12.0|~0.13.2",
-                "doctrine/data-fixtures": "1.2.2",
-                "doctrine/doctrine-fixtures-bundle": "~2.3",
-                "doctrine/orm": "~2.5",
-                "doctrine/phpcr-bundle": "~1.3",
-                "doctrine/phpcr-odm": "~1.3",
-                "hautelook/alice-bundle": "~0.2|~1.2",
-                "jackalope/jackalope-doctrine-dbal": "1.1.*|1.2.*",
-                "nelmio/alice": "~1.7|~2.0",
-                "phpunit/phpunit": "^4.8.35|^5.7|^6.1",
-                "symfony/assetic-bundle": "^2.7|^3.0|^4.0",
-                "symfony/console": "^2.7|^3.0|^4.0",
-                "symfony/monolog-bundle": "^2.7|^3.0|^4.0",
-                "symfony/phpunit-bridge": "^2.7|^3.0|^4.0",
-                "symfony/symfony": "^2.7.1|^3.3|^4.0",
-                "twig/twig": "~1.12|~2.0"
-            },
-            "suggest": {
-                "brianium/paratest": "Required when using paratest to parallelize tests",
-                "doctrine/dbal": "Required when using the fixture loading functionality with an ORM and SQLite",
-                "doctrine/doctrine-fixtures-bundle": "Required when using the fixture loading functionality",
-                "doctrine/orm": "Required when using the fixture loading functionality with an ORM and SQLite",
-                "hautelook/alice-bundle": "Required when using loadFixtureFiles functionality with custom providers",
-                "nelmio/alice": "Required when using loadFixtureFiles functionality",
-                "symfony/framework-bundle": "To use assertStatusCode and assertValidationErrors ~2.5"
-            },
-            "type": "symfony-bundle",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.x-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Liip\\FunctionalTestBundle\\": ""
-                }
-            },
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Liip AG",
-                    "homepage": "http://www.liip.ch/"
-                },
-                {
-                    "name": "Community contributions",
-                    "homepage": "https://github.com/liip/LiipFunctionalTestBundle/contributors"
-                }
-            ],
-            "description": "This bundles provides additional functional test-cases for Symfony2 applications",
-            "keywords": [
-                "symfony2"
-            ],
-            "support": {
-                "source": "https://github.com/MonsieurBon/LiipFunctionalTestBundle/tree/master"
-            },
-            "time": "2017-12-14T13:41:30+00:00"
-        },
-        {
             "name": "sensio/generator-bundle",
             "version": "v3.1.7",
             "source": {
@@ -3744,9 +3664,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "liip/functional-test-bundle": 20
-    },
+    "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {

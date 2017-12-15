@@ -10,7 +10,7 @@ namespace Tests\AppBundle\DB;
 
 
 use Doctrine\Common\DataFixtures\ReferenceRepository;
-use Liip\FunctionalTestBundle\Test\WebTestCase;
+use Tests\AppBundle\Base\WebTestCase;
 
 class DbTestCase extends WebTestCase
 {
@@ -19,8 +19,6 @@ class DbTestCase extends WebTestCase
 
     protected function setUp()
     {
-        parent::setUp();
-
         $this->initialize();
     }
 
