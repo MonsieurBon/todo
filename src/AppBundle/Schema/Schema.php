@@ -8,9 +8,9 @@
 
 namespace AppBundle\Schema;
 
-use Doctrine\Bundle\DoctrineBundle\Registry;
 use GraphQL\Type\Schema as GraphQLSchema;
-use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
+use Symfony\Bridge\Doctrine\RegistryInterface;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 class Schema extends GraphQLSchema
@@ -26,7 +26,7 @@ class Schema extends GraphQLSchema
     const TYPE_FIELD_NAME = 'type';
     const USER_ID_FIELD_NAME = 'user_id';
 
-    public function __construct(AuthorizationCheckerInterface $authChecker, Registry $doctrine, TokenStorage $tokenStorage)
+    public function __construct(AuthorizationCheckerInterface $authChecker, RegistryInterface $doctrine, TokenStorageInterface $tokenStorage)
     {
         Types::clear();
 

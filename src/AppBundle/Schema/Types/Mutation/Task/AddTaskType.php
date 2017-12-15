@@ -13,11 +13,9 @@ use AppBundle\Entity\Task;
 use AppBundle\Entity\Tasklist;
 use AppBundle\Schema\Schema;
 use AppBundle\Schema\Types;
-use AppBundle\Security\TaskVoter;
-use Doctrine\Bundle\DoctrineBundle\Registry;
 use Doctrine\ORM\EntityManager;
-use GraphQL\Error\Error;
 use GraphQL\Type\Definition\ObjectType;
+use Symfony\Bridge\Doctrine\RegistryInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 class AddTaskType extends ObjectType
@@ -27,7 +25,7 @@ class AddTaskType extends ObjectType
     /** @var  EntityManager */
     private $em;
 
-    public function __construct(AuthorizationCheckerInterface $authChecker, Registry $doctrine)
+    public function __construct(AuthorizationCheckerInterface $authChecker, RegistryInterface $doctrine)
     {
         $this->authChecker = $authChecker;
         $this->em = $doctrine->getManager();

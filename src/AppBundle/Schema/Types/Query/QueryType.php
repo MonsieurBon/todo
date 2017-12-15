@@ -16,19 +16,21 @@ use Doctrine\Bundle\DoctrineBundle\Registry;
 use GraphQL\Error\Error;
 use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Type\Definition\ResolveInfo;
+use Symfony\Bridge\Doctrine\RegistryInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 class QueryType extends ObjectType
 {
     /** @var AuthorizationCheckerInterface  */
     private $authChecker;
-    /** @var Registry  */
+    /** @var RegistryInterface  */
     private $doctrine;
-    /** @var TokenStorage  */
+    /** @var TokenStorageInterface  */
     private $tokenStorage;
 
-    public function __construct(AuthorizationCheckerInterface $authChecker, Registry $doctrine, TokenStorage $tokenStorage)
+    public function __construct(AuthorizationCheckerInterface $authChecker, RegistryInterface $doctrine, TokenStorageInterface $tokenStorage)
     {
         $this->authChecker = $authChecker;
         $this->doctrine = $doctrine;

@@ -11,7 +11,6 @@ namespace AppBundle\Schema;
 
 use AppBundle\Entity\ApiToken;
 use AppBundle\Repository\ApiTokenRepository;
-use Doctrine\Bundle\DoctrineBundle\Registry;
 use GraphQL\Error\Error;
 use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Type\Schema;

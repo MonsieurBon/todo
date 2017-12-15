@@ -10,6 +10,7 @@ namespace AppBundle\Security;
 
 
 use Doctrine\Bundle\DoctrineBundle\Registry;
+use Symfony\Bridge\Doctrine\RegistryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -31,7 +32,7 @@ class TokenAuthenticator implements SimplePreAuthenticatorInterface, Authenticat
 
     /** @var ContainerInterface  */
     private $container;
-    /** @var Registry  */
+    /** @var RegistryInterface  */
     private $doctrine;
     /** @var HttpKernelInterface  */
     private $kernel;
@@ -39,7 +40,7 @@ class TokenAuthenticator implements SimplePreAuthenticatorInterface, Authenticat
     public function __construct(
         ContainerInterface $container,
         HttpKernelInterface $kernel,
-        Registry $doctrine
+        RegistryInterface $doctrine
     )
     {
         $this->container = $container;

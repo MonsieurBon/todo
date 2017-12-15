@@ -13,11 +13,11 @@ use AppBundle\Entity\Tasklist;
 use AppBundle\Schema\Schema;
 use AppBundle\Schema\Types;
 use AppBundle\Security\TasklistVoter;
-use Doctrine\Bundle\DoctrineBundle\Registry;
 use Doctrine\ORM\EntityManager;
 use GraphQL\Error\Error;
 use GraphQL\Type\Definition\ObjectType;
-use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
+use Symfony\Bridge\Doctrine\RegistryInterface;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 class MutationType extends ObjectType
@@ -26,10 +26,10 @@ class MutationType extends ObjectType
     private $authChecker;
     /** @var  EntityManager */
     private $em;
-    /** @var TokenStorage  */
+    /** @var TokenStorageInterface  */
     private $tokenStorage;
 
-    public function __construct(AuthorizationCheckerInterface $authChecker, Registry $doctrine, TokenStorage $tokenStorage)
+    public function __construct(AuthorizationCheckerInterface $authChecker, RegistryInterface $doctrine, TokenStorageInterface $tokenStorage)
     {
         $this->authChecker = $authChecker;
         $this->em = $doctrine->getManager();

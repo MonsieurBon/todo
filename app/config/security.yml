@@ -37,3 +37,4 @@ security:
             #form_login: ~
         main:
             anonymous: ~
+            logout_on_user_change: true

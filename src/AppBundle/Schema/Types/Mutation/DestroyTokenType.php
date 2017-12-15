@@ -11,20 +11,19 @@ namespace AppBundle\Schema\Types\Mutation;
 
 use AppBundle\Entity\User;
 use AppBundle\Schema\Types;
-use Doctrine\Bundle\DoctrineBundle\Registry;
 use Doctrine\ORM\EntityManager;
 use GraphQL\Type\Definition\ObjectType;
-use GraphQL\Type\Definition\ResolveInfo;
-use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
+use Symfony\Bridge\Doctrine\RegistryInterface;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
 class DestroyTokenType extends ObjectType
 {
     /** @var EntityManager */
     private $em;
-    /** @var TokenStorage */
+    /** @var TokenStorageInterface */
     private $tokenStorage;
 
-    public function __construct(Registry $doctrine, TokenStorage $tokenStorage)
+    public function __construct(RegistryInterface $doctrine, TokenStorageInterface $tokenStorage)
     {
         $this->em = $doctrine->getManager();
         $this->tokenStorage = $tokenStorage;

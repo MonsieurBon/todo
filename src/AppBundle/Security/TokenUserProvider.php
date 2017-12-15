@@ -14,6 +14,7 @@ use AppBundle\Entity\User;
 use AppBundle\Repository\ApiTokenRepository;
 use AppBundle\Repository\UserRepository;
 use Doctrine\Bundle\DoctrineBundle\Registry;
+use Symfony\Bridge\Doctrine\RegistryInterface;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\Exception\UsernameNotFoundException;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -26,7 +27,7 @@ class TokenUserProvider implements UserProviderInterface
     /** @var UserRepository */
     private $userRepo;
 
-    public function __construct(Registry $doctrine)
+    public function __construct(RegistryInterface $doctrine)
     {
         $this->apiTokenRepo = $doctrine->getRepository(ApiToken::class);
         $this->userRepo = $doctrine->getRepository(User::class);

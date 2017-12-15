@@ -18,6 +18,7 @@ use Doctrine\Bundle\DoctrineBundle\Registry;
 use Doctrine\ORM\EntityManager;
 use GraphQL\Error\Error;
 use GraphQL\Type\Definition\ObjectType;
+use Symfony\Bridge\Doctrine\RegistryInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
@@ -29,7 +30,7 @@ class ShareTasklistType extends ObjectType
     /** @var  EntityManager */
     private $em;
 
-    public function __construct(AuthorizationCheckerInterface $authChecker, Registry $doctrine)
+    public function __construct(AuthorizationCheckerInterface $authChecker, RegistryInterface $doctrine)
     {
         $this->authChecker = $authChecker;
         $this->em = $doctrine->getManager();

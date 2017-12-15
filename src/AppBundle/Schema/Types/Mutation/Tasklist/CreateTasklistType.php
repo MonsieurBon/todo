@@ -12,10 +12,10 @@ namespace AppBundle\Schema\Types\Mutation\Tasklist;
 use AppBundle\Entity\Tasklist;
 use AppBundle\Schema\Schema;
 use AppBundle\Schema\Types;
-use Doctrine\Bundle\DoctrineBundle\Registry;
 use Doctrine\ORM\EntityManager;
 use GraphQL\Type\Definition\ObjectType;
-use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
+use Symfony\Bridge\Doctrine\RegistryInterface;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 
 class CreateTasklistType extends ObjectType
@@ -25,7 +25,7 @@ class CreateTasklistType extends ObjectType
     /** @var  TokenInterface */
     private $tokenInterface;
 
-    public function __construct(Registry $doctrine, TokenStorage $tokenStorage)
+    public function __construct(RegistryInterface $doctrine, TokenStorageInterface $tokenStorage)
     {
         $this->em = $doctrine->getManager();
         $this->tokenInterface = $tokenStorage->getToken();

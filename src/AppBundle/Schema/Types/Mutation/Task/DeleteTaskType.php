@@ -7,10 +7,10 @@ use AppBundle\Entity\Task;
 use AppBundle\Schema\Schema;
 use AppBundle\Schema\Types;
 use AppBundle\Security\TaskVoter;
-use Doctrine\Bundle\DoctrineBundle\Registry;
 use Doctrine\ORM\EntityManager;
 use GraphQL\Error\Error;
 use GraphQL\Type\Definition\ObjectType;
+use Symfony\Bridge\Doctrine\RegistryInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 class DeleteTaskType extends ObjectType
@@ -20,7 +20,7 @@ class DeleteTaskType extends ObjectType
     /** @var  AuthorizationCheckerInterface */
     private $authChecker;
 
-    public function __construct(AuthorizationCheckerInterface $authChecker, Registry $doctrine)
+    public function __construct(AuthorizationCheckerInterface $authChecker, RegistryInterface $doctrine)
     {
         $this->em = $doctrine->getManager();
         $this->authChecker = $authChecker;
