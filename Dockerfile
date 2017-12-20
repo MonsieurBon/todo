@@ -1,14 +1,10 @@
 FROM ubuntu:17.10
 
-ARG DEBIAN_FRONTEND=noninteractive
+ENV APP_ENV=prod
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        apt-utils
-
-RUN apt-get install -y --no-install-recommends \
         apache2 \
-        binutils \
         ca-certificates \
         curl \
         libapache2-mod-php \
@@ -29,18 +25,18 @@ RUN EXPECTED_SIGNATURE=$(curl https://composer.github.io/installer.sig) && \
     php composer-setup.php --quiet && \
     rm composer-setup.php
 
-RUN rm /var/www/html/index.html
-COPY scripts/docker/000-default.conf /etc/apache2/sites-available/000-default.conf
 COPY composer.json composer.lock /var/www/html/
 RUN php composer.phar install --no-dev --no-scripts --no-plugins --no-autoloader
+RUN rm /var/www/html/index.html
+COPY scripts/docker/000-default.conf /etc/apache2/sites-available/000-default.conf
 COPY scripts/docker/todo.init /var/www/html/todo.init
 RUN chmod u+x /var/www/html/todo.init
-COPY var /var/www/html/var/
 COPY bin /var/www/html/bin/
-COPY app /var/www/html/app/
-COPY scripts/docker/parameters.yml /var/www/html/app/config/parameters.yml
+COPY config /var/www/html/config/
+COPY public /var/www/html/public
 COPY src /var/www/html/src/
-COPY web /var/www/html/web/
+COPY templates /var/www/html/templates
+COPY var /var/www/html/var/
 RUN php composer.phar dump-autoload --optimize
 
 

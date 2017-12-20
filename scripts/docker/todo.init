@@ -1,20 +1,13 @@
 #!/bin/bash
 
-TODO_DIR="/var/www/html"
-TODO_PARAMETERS_DIR="${TODO_DIR}/app/config"
-
-GENERATED_SECRET=`cat /dev/urandom | strings --bytes 1 | tr -d '\n\t [](){}"' | head --bytes 40`
+GENERATED_SECRET=$(md5sum<<<`date +"%s"` | cut -d ' ' -f 1)
 
 DB_HOST=${DB_HOST:-mysql}
 DB_PORT=${DB_PORT:-3306}
 DB_NAME=${DB_NAME:-todo}
 DB_USER=${DB_USER:-todo}
 DB_PASS=${DB_PASS:-}
-MAILER_TRANSPORT=${MAILER_TRANSPORT:-smtp}
-MAILER_HOST=${MAILER_HOST:-127.0.0.1}
-MAILER_USER=${MAILER_USER:-null}
-MAILER_PASS=${MAILER_PASS:-null}
-SECRET=${SECRET:-$GENERATED_SECRET}
+APP_SECRET=${APP_SECRET:-$GENERATED_SECRET}
 SESSION_TIMEOUT=${SESSION_TIMEOUT:-20}
 
 ## Input validation
@@ -27,17 +20,16 @@ if [ -z "${DB_PASS}" ]; then
 fi
 
 # Configure parameters
-sed -i 's/{{DB_HOST}}/'"${DB_HOST}"'/' ${TODO_PARAMETERS_DIR}/parameters.yml
-sed -i 's/{{DB_PORT}}/'"${DB_PORT}"'/' ${TODO_PARAMETERS_DIR}/parameters.yml
-sed -i 's/{{DB_NAME}}/'"${DB_NAME}"'/' ${TODO_PARAMETERS_DIR}/parameters.yml
-sed -i 's/{{DB_USER}}/'"${DB_USER}"'/' ${TODO_PARAMETERS_DIR}/parameters.yml
-sed -i 's/{{DB_PASS}}/'"${DB_PASS}"'/' ${TODO_PARAMETERS_DIR}/parameters.yml
-sed -i 's/{{MAILER_TRANSPORT}}/'"${MAILER_TRANSPORT}"'/' ${TODO_PARAMETERS_DIR}/parameters.yml
-sed -i 's/{{MAILER_HOST}}/'"${MAILER_HOST}"'/' ${TODO_PARAMETERS_DIR}/parameters.yml
-sed -i 's/{{MAILER_USER}}/'"${MAILER_USER}"'/' ${TODO_PARAMETERS_DIR}/parameters.yml
-sed -i 's/{{MAILER_PASS}}/'"${MAILER_PASS}"'/' ${TODO_PARAMETERS_DIR}/parameters.yml
-sed -i 's/{{SECRET}}/'"${SECRET}"'/' ${TODO_PARAMETERS_DIR}/parameters.yml
-sed -i 's/{{SESSION_TIMEOUT}}/'"${SESSION_TIMEOUT}"'/' ${TODO_PARAMETERS_DIR}/parameters.yml
+export APP_SECRET="${APP_SECRET}"
+export DATABASE_URL="mysql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+export SESSION_TIMEOUT="${SESSION_TIMEOUT}"
+sed -i 's/{{DB_HOST}}/'"${DB_HOST}"'/' /etc/apache2/sites-available/000-default.conf
+sed -i 's/{{DB_PORT}}/'"${DB_PORT}"'/' /etc/apache2/sites-available/000-default.conf
+sed -i 's/{{DB_NAME}}/'"${DB_NAME}"'/' /etc/apache2/sites-available/000-default.conf
+sed -i 's/{{DB_USER}}/'"${DB_USER}"'/' /etc/apache2/sites-available/000-default.conf
+sed -i 's/{{DB_PASS}}/'"${DB_PASS}"'/' /etc/apache2/sites-available/000-default.conf
+sed -i 's/{{APP_SECRET}}/'"${APP_SECRET}"'/' /etc/apache2/sites-available/000-default.conf
+sed -i 's/{{SESSION_TIMEOUT}}/'"${SESSION_TIMEOUT}"'/' /etc/apache2/sites-available/000-default.conf
 
 a2enmod rewrite
 

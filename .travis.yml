@@ -6,6 +6,7 @@ sudo: required
 
 env:
   global:
+    - APP_ENV=test
     - DOCKER_USER=monsieurbon
     - secure: "tsv/b0obUP09DC3NH+W/0SNmSih2HNSttcuPoTCBrMIe4AppJWDs5lbUBrO3uOqj6Utcak/2yIZQcbIvIFogI+lk9jUAuiefkJpHvVubpNOt1iE2alc1og+Z+IBs9/IiVC9qm9D50+GEiyTfnuPCJW8oGlHROvNOV67FQC4KrgzUI0QH+DHh5bFZvyxXAbeWosurIrF6Rh1bw2wzYryTdEyBb7FXuq9+qNILUXiDjhzmH04Y47gJ/TtwIe0X1mWjLid0RHq/hQGdFsov60GLwGqiR606W0tCAYGs6B2ZHKHPPscq/WgCVtduD5BxKWRgwGNBSeoqiLW+RRANTSUNStwbLEJXwiKgyQ1KceEbGv+Y0QnOFMmB7dkFcGcd+dhtgQ9DM4jWNkcXupx5I6Vvo8lMjDNm8hXXjFIUumB6mwxlWsPNGYyaND2XSAxaxLhUVW692Pi4KWowbrxwzRAyPqLHW2xT6JAmUecNYpo4S0FDyiW858X4U0mRMWHHOH3rPblXj8EWLVDKG0e6HWcK15FXKUjIuq3B9+eh2M5tjv39Pn2zBIQ9tF25fzwCiPpX+rO3t6wdPbWJ1JC7LZGotg9qhNdog00o285yq5+/pRfjVXUv/rvw6y9b+++OedG1Yq5czO7QSlv8ois9iuYjCom/BaDWGQkxWt3jQUVEBDE="
 
@@ -41,15 +42,13 @@ before_install:
 
 install:
   - composer install
-  - cp app/config/parameters.yml.dist app/config/parameters.yml
   - yarn install
 
 before_script:
   - echo "USE mysql;\nUPDATE user SET password=PASSWORD('symfony') WHERE user='root';\nFLUSH PRIVILEGES;\n" | mysql -u root
-  - bin/console doctrine:database:drop --if-exists --force --env=test
-  - bin/console doctrine:database:create --if-not-exists --env=test
-  - bin/console doctrine:migrations:migrate -n --env=test
-  - bin/console doctrine:fixtures:load -n --env=test
+  - bin/console doctrine:database:create --if-not-exists
+  - bin/console doctrine:migrations:migrate -n
+  - bin/console doctrine:fixtures:load -n
   - export DISPLAY=:99.0
   - sh -e /etc/init.d/xvfb start
 
