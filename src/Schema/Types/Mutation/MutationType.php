@@ -1,13 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabian
- * Date: 28.09.17
- * Time: 07:06
- */
 
 namespace App\Schema\Types\Mutation;
-
 
 use App\Entity\Tasklist;
 use App\Schema\Schema;
@@ -22,11 +15,11 @@ use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 class MutationType extends ObjectType
 {
-    /** @var AuthorizationCheckerInterface  */
+    /** @var AuthorizationCheckerInterface */
     private $authChecker;
-    /** @var  EntityManager */
+    /** @var EntityManager */
     private $em;
-    /** @var TokenStorageInterface  */
+    /** @var TokenStorageInterface */
     private $tokenStorage;
 
     public function __construct(AuthorizationCheckerInterface $authChecker, RegistryInterface $doctrine, TokenStorageInterface $tokenStorage)
@@ -46,7 +39,7 @@ class MutationType extends ObjectType
                     'args' => [
                         Schema::TASKLIST_ID_FIELD_NAME => Types::nonNull(Types::id())
                     ],
-                    'resolve' => function($val, $args) {
+                    'resolve' => function ($val, $args) {
                         return $this->addTask($args);
                     }
                 ],
@@ -54,7 +47,7 @@ class MutationType extends ObjectType
                 'destroyToken' => Types::destroyToken($doctrine, $tokenStorage)
             ],
             'resolveField' => function () {
-                return array();
+                return [];
             }
         ];
         parent::__construct($config);

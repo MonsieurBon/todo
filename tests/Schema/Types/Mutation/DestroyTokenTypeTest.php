@@ -1,13 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabian
- * Date: 22.11.17
- * Time: 07:24
- */
 
 namespace App\Tests\Schema\Types\Mutation;
-
 
 use App\Entity\ApiToken;
 use App\Entity\User;

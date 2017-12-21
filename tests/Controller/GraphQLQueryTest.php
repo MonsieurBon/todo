@@ -1,13 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabian
- * Date: 05.10.17
- * Time: 06:39
- */
 
 namespace App\Tests\Controller;
-
 
 use App\Entity\Task;
 use App\Entity\TaskType;
@@ -18,9 +11,9 @@ class GraphQLQueryTest extends GraphQLTestCase
 {
     protected function setUp()
     {
-        $this->initialize(array(
+        $this->initialize([
             'App\Tests\DB\Fixtures\ValidToken'
-        ));
+        ]);
     }
 
     public function testEmptyQueryShouldReturnHello()
@@ -46,8 +39,8 @@ class GraphQLQueryTest extends GraphQLTestCase
 
         self::assertEquals(200, $response->getStatusCode());
         self::assertCount(3, $json->data->tasklists);
-        foreach($json->data->tasklists as $tasklist) {
-            self::assertContains($tasklist->name, array('Home', 'Office', 'Shared'));
+        foreach ($json->data->tasklists as $tasklist) {
+            self::assertContains($tasklist->name, ['Home', 'Office', 'Shared']);
         }
     }
 
@@ -111,9 +104,9 @@ class GraphQLQueryTest extends GraphQLTestCase
     public function testValidateSchema()
     {
         $query = '';
-        $parameters = array(
+        $parameters = [
             'debug_api' => '1'
-        );
+        ];
         $client = static::sendApiQuery($query, ValidToken::TOKEN, $parameters);
         $response = $client->getResponse();
 
@@ -151,7 +144,7 @@ class GraphQLQueryTest extends GraphQLTestCase
         $json = json_decode($response->getContent());
 
         self::assertEquals(200, $response->getStatusCode());
-        self::assertContains("Tasklist with id=-1 not found!", $json->errors[0]->message);
+        self::assertContains('Tasklist with id=-1 not found!', $json->errors[0]->message);
     }
 
     public function testLoginInvalidatesExistingToken()

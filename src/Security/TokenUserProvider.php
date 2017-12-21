@@ -1,19 +1,11 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabian
- * Date: 17.10.17
- * Time: 16:43
- */
 
 namespace App\Security;
-
 
 use App\Entity\ApiToken;
 use App\Entity\User;
 use App\Repository\ApiTokenRepository;
 use App\Repository\UserRepository;
-use Doctrine\Bundle\DoctrineBundle\Registry;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\Exception\UsernameNotFoundException;
@@ -35,11 +27,13 @@ class TokenUserProvider implements UserProviderInterface
 
     /**
      * @param $token string
+     *
      * @return User|null
      */
     public function getUserForToken($token)
     {
         $apiToken = $this->apiTokenRepo->findValidToken($token);
+
         return $apiToken != null ? $apiToken->getUser() : null;
     }
 
@@ -94,6 +88,6 @@ class TokenUserProvider implements UserProviderInterface
      */
     public function supportsClass($class)
     {
-        return User::class === $class;
+        return $class === User::class;
     }
 }

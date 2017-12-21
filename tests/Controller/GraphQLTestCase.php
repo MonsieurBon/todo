@@ -1,20 +1,14 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabian
- * Date: 05.10.17
- * Time: 06:42
- */
 
 namespace App\Tests\Controller;
-
 
 use App\Tests\DB\DbTestCase;
 
 class GraphQLTestCase extends DbTestCase
 {
-    protected static function sendApiQuery($query, $token = null, $urlParam = array()) {
-        $headers = array('CONTENT_TYPE' => 'application/json');
+    protected static function sendApiQuery($query, $token = null, $urlParam = [])
+    {
+        $headers = ['CONTENT_TYPE' => 'application/json'];
         if ($token !== null) {
             $headers['HTTP_X_AUTH_TOKEN'] = $token;
         }
@@ -23,7 +17,7 @@ class GraphQLTestCase extends DbTestCase
 
         if (count($urlParam) > 0) {
             $url .= '?';
-            $param = array_map(function($k, $v) {
+            $param = array_map(function ($k, $v) {
                 return $k . '=' . $v;
             }, array_keys($urlParam), $urlParam);
             $url .= implode('&', $param);
@@ -33,11 +27,12 @@ class GraphQLTestCase extends DbTestCase
         $client->request(
             'POST',
             $url,
-            array(),
-            array(),
+            [],
+            [],
             $headers,
             $query
         );
+
         return $client;
     }
 }

@@ -15,6 +15,7 @@ class ApiTokenRepository extends EntityRepository
 {
     /**
      * @param $token
+     *
      * @return ApiToken
      */
     public function findValidToken($token)

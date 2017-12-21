@@ -1,24 +1,15 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabian
- * Date: 18.10.17
- * Time: 22:18
- */
 
 namespace App\Tests\Security;
 
-
 use App\Entity\User;
 use App\Security\TokenUserProvider;
-use Doctrine\Bundle\DoctrineBundle\Registry;
-use Symfony\Component\Security\Core\User\UserInterface;
 use App\Tests\DB\DbTestCase;
 use App\Tests\DB\Fixtures\ValidToken;
 
 class TokenUserProviderTest extends DbTestCase
 {
-    /** @var  TokenUserProvider */
+    /** @var TokenUserProvider */
     private $tokenUserProvider;
 
     protected function setUp()
@@ -26,9 +17,9 @@ class TokenUserProviderTest extends DbTestCase
         $doctrine = static::createClient()->getContainer()->get('doctrine');
         $this->tokenUserProvider = new TokenUserProvider($doctrine);
 
-        $this->initialize(array(
+        $this->initialize([
             'App\Tests\DB\Fixtures\ValidToken'
-        ));
+        ]);
     }
 
     public function testGetUserForToken()
@@ -39,7 +30,7 @@ class TokenUserProviderTest extends DbTestCase
     }
 
     /**
-     * @expectedException Symfony\Component\Security\Core\Exception\UsernameNotFoundException
+     * @expectedException \Symfony\Component\Security\Core\Exception\UsernameNotFoundException
      */
     public function testLoadInvalidUserByUsername()
     {
@@ -54,7 +45,7 @@ class TokenUserProviderTest extends DbTestCase
     }
 
     /**
-     * @expectedException Symfony\Component\Security\Core\Exception\UnsupportedUserException
+     * @expectedException \Symfony\Component\Security\Core\Exception\UnsupportedUserException
      */
     public function testRefreshUser()
     {

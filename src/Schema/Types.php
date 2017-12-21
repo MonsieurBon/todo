@@ -132,6 +132,7 @@ class Types
 
     /**
      * @param $type
+     *
      * @return ListOfType
      */
     public static function listOf($type)
@@ -141,6 +142,7 @@ class Types
 
     /**
      * @param $type
+     *
      * @return NonNull
      */
     public static function nonNull($type)

@@ -11,16 +11,16 @@ use Symfony\Component\HttpKernel\KernelEvents;
 
 class CorsListener implements EventSubscriberInterface
 {
-
     public static function getSubscribedEvents()
     {
-        return array(
-            KernelEvents::REQUEST => array('onKernelRequest', 0),
-            KernelEvents::RESPONSE => array('onKernelResponse', 0)
-        );
+        return [
+            KernelEvents::REQUEST => ['onKernelRequest', 0],
+            KernelEvents::RESPONSE => ['onKernelResponse', 0]
+        ];
     }
 
-    public function onKernelRequest(GetResponseEvent $event) {
+    public function onKernelRequest(GetResponseEvent $event)
+    {
         if (!$event->isMasterRequest()) {
             return;
         }
@@ -28,13 +28,14 @@ class CorsListener implements EventSubscriberInterface
         $request = $event->getRequest();
         $method = $request->getRealMethod();
 
-        if (Request::METHOD_OPTIONS === $method) {
+        if ($method === Request::METHOD_OPTIONS) {
             $response = new Response();
             $event->setResponse($response);
         }
     }
 
-    public function onKernelResponse(FilterResponseEvent $event) {
+    public function onKernelResponse(FilterResponseEvent $event)
+    {
         if (!$event->isMasterRequest()) {
             return;
         }

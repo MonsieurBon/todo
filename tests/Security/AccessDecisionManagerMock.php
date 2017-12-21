@@ -1,13 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabian
- * Date: 20.10.17
- * Time: 17:07
- */
 
 namespace App\Tests\Security;
-
 
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\AccessDecisionManagerInterface;

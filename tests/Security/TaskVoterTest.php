@@ -1,13 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabian
- * Date: 20.10.17
- * Time: 07:28
- */
 
 namespace App\Tests\Security;
-
 
 use App\Entity\Task;
 use App\Entity\Tasklist;
@@ -15,7 +8,6 @@ use App\Entity\User;
 use App\Security\TaskVoter;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
-use Symfony\Component\Security\Core\Authorization\AccessDecisionManagerInterface;
 use Symfony\Component\Security\Core\User\User as CoreUser;
 
 class TaskVoterTest extends TestCase

@@ -57,7 +57,6 @@ class Tasklist
         $this->users = new ArrayCollection();
     }
 
-
     /**
      * Get id
      *
@@ -102,6 +101,7 @@ class Tasklist
 
     /**
      * @param Task $task
+     *
      * @return Tasklist
      */
     public function addTask(Task $task)
@@ -116,6 +116,7 @@ class Tasklist
 
     /**
      * @param Task $task
+     *
      * @return Tasklist
      */
     public function removeTask(Task $task)
@@ -152,6 +153,7 @@ class Tasklist
 
     /**
      * @param User $user
+     *
      * @return Tasklist
      */
     public function setOwner($user)
@@ -171,6 +173,7 @@ class Tasklist
 
     /**
      * @param User $user
+     *
      * @return Tasklist
      */
     public function addUser(User $user)
@@ -184,6 +187,7 @@ class Tasklist
 
     /**
      * @param User $user
+     *
      * @return Tasklist
      */
     public function removeUser(User $user)
@@ -195,4 +199,3 @@ class Tasklist
         return $this;
     }
 }
-

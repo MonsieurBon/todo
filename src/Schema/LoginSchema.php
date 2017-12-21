@@ -1,13 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabian
- * Date: 02.10.17
- * Time: 06:47
- */
 
 namespace App\Schema;
-
 
 use App\Entity\ApiToken;
 use App\Repository\ApiTokenRepository;
@@ -33,8 +26,8 @@ class LoginSchema extends Schema
                 'fields' => [
                     'hello' => [
                         'type' => Types::string(),
-                        'resolve' => function() {
-                            return "Your GraphQL endpoint is ready! Please log in to see the full API.";
+                        'resolve' => function () {
+                            return 'Your GraphQL endpoint is ready! Please log in to see the full API.';
                         }
                     ],
                     'checkToken' => [
@@ -42,7 +35,7 @@ class LoginSchema extends Schema
                         'args' => [
                             'token' => Types::nonNull(Types::string())
                         ],
-                        'resolve' => function($val, $args) {
+                        'resolve' => function ($val, $args) {
                             return $this->checkToken($val, $args);
                         }
                     ]
@@ -53,7 +46,8 @@ class LoginSchema extends Schema
         parent::__construct($config);
     }
 
-    private function checkToken($val, $args) {
+    private function checkToken($val, $args)
+    {
         $token = $args['token'];
 
         $apiToken = $this->tokenRepo->findValidToken($token);

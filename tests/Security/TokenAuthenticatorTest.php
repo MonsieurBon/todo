@@ -1,13 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabian
- * Date: 04.10.17
- * Time: 06:41
- */
 
 namespace App\Tests\Security;
-
 
 use App\Entity\ApiToken;
 use App\Entity\User;
@@ -34,7 +27,7 @@ class TokenAuthenticatorTest extends KernelTestCase
      * @var EntityManager
      */
     private $em;
-    private $objects = array();
+    private $objects = [];
 
     protected function setUp()
     {
@@ -148,7 +141,7 @@ class TokenAuthenticatorTest extends KernelTestCase
     }
 
     /**
-     * @expectedException Symfony\Component\Security\Core\Exception\BadCredentialsException
+     * @expectedException \Symfony\Component\Security\Core\Exception\BadCredentialsException
      */
     public function testAuthenticateTokenNoUserFound()
     {
@@ -191,23 +184,23 @@ class TokenAuthenticatorTest extends KernelTestCase
     public function testOnAuthenticationFailure()
     {
         $request = new Request(
-            array(),
-            array(
+            [],
+            [
                 'query' => '',
                 'variables' => null
-            ),
-            array(
+            ],
+            [
                 '_format' => 'json',
                 '_controller' => 'App\Controller\ApiController::indexAction',
                 '_route' => 'app_api_index',
-                '_route_params' => array(
+                '_route_params' => [
                     '_format' => 'json'
-                ),
+                ],
                 '_firewall_context' => 'security.firewall.map.context.api'
-            ),
-            array(),
-            array(),
-            array(),
+            ],
+            [],
+            [],
+            [],
             '{"query":"","variables":null}'
         );
 

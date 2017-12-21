@@ -1,13 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabian
- * Date: 28.11.17
- * Time: 16:54
- */
 
 namespace App\Schema\Types\Mutation\Tasklist;
-
 
 use App\Entity\Tasklist;
 use App\Entity\User;
@@ -22,9 +15,9 @@ use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 class ShareTasklistType extends ObjectType
 {
-    /** @var  AuthorizationCheckerInterface */
+    /** @var AuthorizationCheckerInterface */
     private $authChecker;
-    /** @var  EntityManager */
+    /** @var EntityManager */
     private $em;
 
     public function __construct(AuthorizationCheckerInterface $authChecker, RegistryInterface $doctrine)
@@ -41,7 +34,7 @@ class ShareTasklistType extends ObjectType
                         Schema::TASKLIST_ID_FIELD_NAME => Types::nonNull(Types::id()),
                         Schema::USER_ID_FIELD_NAME => Types::nonNull(Types::id())
                     ],
-                    'resolve' => function($vals, $args) {
+                    'resolve' => function ($vals, $args) {
                         return $this->shareTasklist($args);
                     }
                 ]
@@ -50,7 +43,8 @@ class ShareTasklistType extends ObjectType
         parent::__construct($config);
     }
 
-    private function shareTasklist($args) {
+    private function shareTasklist($args)
+    {
         $tasklistid = $args[Schema::TASKLIST_ID_FIELD_NAME];
         $userid = $args[Schema::USER_ID_FIELD_NAME];
 

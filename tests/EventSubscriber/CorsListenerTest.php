@@ -1,13 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabian
- * Date: 05.11.17
- * Time: 13:32
- */
 
 namespace App\Tests\EventSubscriber;
-
 
 use App\EventSubscriber\CorsListener;
 use PHPUnit\Framework\Assert;
@@ -77,7 +70,7 @@ class CorsListenerTest extends TestCase
             ->method('getRequest');
         $event->expects(static::once())
             ->method('setResponse')
-            ->will(static::returnCallback(function($response) {
+            ->will(static::returnCallback(function ($response) {
                 Assert::assertNotNull($response);
                 Assert::assertTrue($response instanceof Response);
             }));

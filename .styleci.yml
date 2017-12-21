@@ -1,0 +1,24 @@
+preset: symfony
+
+risky: false
+
+enabled:
+  - concat_with_spaces
+  - short_array_syntax
+
+disabled:
+  - concat_without_spaces
+  - const_separation
+  - phpdoc_summary
+  - property_separation
+  - trailing_comma_in_multiline_array
+  - yoda_style
+
+finder:
+  exclude:
+    - "config"
+    - "var"
+    - "vendor"
+  not-path:
+    - "src/Kernel.php"
+    - "public/index.php"

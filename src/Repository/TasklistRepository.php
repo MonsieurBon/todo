@@ -14,6 +14,7 @@ class TasklistRepository extends \Doctrine\ORM\EntityRepository
 {
     /**
      * @param User $user
+     *
      * @return array
      */
     public function findAllWithAccess(User $user)

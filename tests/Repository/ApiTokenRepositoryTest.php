@@ -8,7 +8,7 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 class ApiTokenRepositoryTest extends KernelTestCase
 {
-    /** @var  EntityManager */
+    /** @var EntityManager */
     private $em;
     private static $VALID_TOKEN_STRING = '12345';
     private static $INVALID_TOKEN_STRING = '54321';
@@ -65,5 +65,4 @@ class ApiTokenRepositoryTest extends KernelTestCase
         $this->em->close();
         $this->em = null;
     }
-
 }

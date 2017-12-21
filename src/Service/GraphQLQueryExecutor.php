@@ -1,13 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabian
- * Date: 29.09.17
- * Time: 06:40
- */
 
 namespace App\Service;
-
 
 use GraphQL\Executor\ExecutionResult;
 use GraphQL\GraphQL;
@@ -29,8 +22,9 @@ class GraphQLQueryExecutor
 
     /**
      * @param Request $request
-     * @param Schema $schema
-     * @param null $defaultQuery
+     * @param Schema  $schema
+     * @param null    $defaultQuery
+     *
      * @return ExecutionResult
      */
     public function executeQuery(Request $request, Schema $schema, $defaultQuery = null)
@@ -42,8 +36,8 @@ class GraphQLQueryExecutor
         $variables = $request->request->get(self::VARIABLES);
 
         $input = [
-            self::QUERY => trim($query) === "" ? null : $query,
-            self::VARIABLES => $variables === "" ? null : $variables
+            self::QUERY => trim($query) === '' ? null : $query,
+            self::VARIABLES => $variables === '' ? null : $variables
         ];
 
         if ($input[self::QUERY] === null && $defaultQuery !== null) {
@@ -63,7 +57,7 @@ class GraphQLQueryExecutor
             $this->logger->error('    Query: ' . $query);
             $this->logger->error('    Variables: ' . json_encode($variables));
             foreach ($result->errors as $error) {
-                $this->logger->error('    Message:', array('error' => $error->getMessage()));
+                $this->logger->error('    Message:', ['error' => $error->getMessage()]);
             }
         }
 
@@ -72,7 +66,7 @@ class GraphQLQueryExecutor
 
     /**
      * @param Request $request
-     * @param Schema $schema
+     * @param Schema  $schema
      */
     private function validateSchemaIfDebug(Request $request, Schema $schema)
     {

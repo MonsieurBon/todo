@@ -1,13 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabian
- * Date: 23.11.17
- * Time: 17:28
- */
 
 namespace App\Schema\Types\Mutation\Tasklist;
-
 
 use App\Entity\Tasklist;
 use App\Schema\Schema;
@@ -22,7 +15,7 @@ class CreateTasklistType extends ObjectType
 {
     /** @var EntityManager */
     private $em;
-    /** @var  TokenInterface */
+    /** @var TokenInterface */
     private $tokenInterface;
 
     public function __construct(RegistryInterface $doctrine, TokenStorageInterface $tokenStorage)
@@ -38,7 +31,7 @@ class CreateTasklistType extends ObjectType
                     'args' => [
                         Schema::TASKLIST_NAME_FIELD_NAME => Types::nonNull(Types::string())
                     ],
-                    'resolve' => function($val, $args) {
+                    'resolve' => function ($val, $args) {
                         return $this->createTasklist($args);
                     }
                 ],

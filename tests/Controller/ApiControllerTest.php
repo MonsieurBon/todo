@@ -76,7 +76,7 @@ class ApiControllerTest extends GraphQLTestCase
 
         $token = $json->data->createToken->token;
 
-        $client = static::sendApiQuery("", $token);
+        $client = static::sendApiQuery('', $token);
         $response = $client->getResponse();
 
         $this->assertEquals(200, $response->getStatusCode());

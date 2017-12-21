@@ -2,6 +2,9 @@
     "beberlei/doctrineextensions": {
         "version": "v1.0.20"
     },
+    "composer/semver": {
+        "version": "1.4.2"
+    },
     "doctrine/annotations": {
         "version": "1.0",
         "recipe": {
@@ -71,6 +74,15 @@
     "doctrine/orm": {
         "version": "v2.5.13"
     },
+    "friendsofphp/php-cs-fixer": {
+        "version": "2.2",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "master",
+            "version": "2.2",
+            "ref": "9d60c231a92e69c68b89897813ec4931d0697b1f"
+        }
+    },
     "friendsofsymfony/rest-bundle": {
         "version": "2.2",
         "recipe": {
@@ -79,6 +91,9 @@
             "version": "2.2",
             "ref": "258300d52be6ad59b32a888d5ddafbf9638540ff"
         }
+    },
+    "gecko-packages/gecko-php-unit": {
+        "version": "v3.0"
     },
     "jdorn/sql-formatter": {
         "version": "v1.2.17"
@@ -109,6 +124,9 @@
     },
     "ocramius/proxy-manager": {
         "version": "2.1.1"
+    },
+    "php-cs-fixer/diff": {
+        "version": "v1.2.0"
     },
     "phpcollection/phpcollection": {
         "version": "0.5.0"
@@ -224,10 +242,16 @@
             "ref": "c24944bd87dacf0bb8fa218dc21e4a70fff56882"
         }
     },
+    "symfony/options-resolver": {
+        "version": "v4.0.2"
+    },
     "symfony/orm-pack": {
         "version": "v1.0.5"
     },
     "symfony/polyfill-mbstring": {
+        "version": "v1.6.0"
+    },
+    "symfony/polyfill-php72": {
         "version": "v1.6.0"
     },
     "symfony/process": {
@@ -258,6 +282,9 @@
         }
     },
     "symfony/security-http": {
+        "version": "v4.0.2"
+    },
+    "symfony/stopwatch": {
         "version": "v4.0.2"
     },
     "symfony/templating": {

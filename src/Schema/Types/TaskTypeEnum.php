@@ -2,7 +2,6 @@
 
 namespace App\Schema\Types;
 
-
 use App\Entity\TaskType as EntityTaskType;
 use GraphQL\Type\Definition\EnumType;
 

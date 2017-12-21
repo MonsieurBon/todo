@@ -1,13 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabian
- * Date: 24.11.17
- * Time: 07:06
- */
 
 namespace App\Tests\Schema\Types\Mutation\Tasklist;
-
 
 use App\Entity\Tasklist;
 use App\Entity\User;
@@ -45,9 +38,9 @@ class CreateTasklistTypeTest extends TestCase
 
         $tasklistResolveFn = $createTasklistType->config['fields']['tasklist']['resolve'];
 
-        $tasklist = call_user_func($tasklistResolveFn, null, array('name' => 'tasklistName'));
+        $tasklist = call_user_func($tasklistResolveFn, null, ['name' => 'tasklistName']);
 
-        self::assertEquals("tasklistName", $tasklist->getName());
+        self::assertEquals('tasklistName', $tasklist->getName());
         self::assertEquals($user, $tasklist->getOwner());
     }
 }

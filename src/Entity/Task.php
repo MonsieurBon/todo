@@ -64,7 +64,6 @@ class Task
      */
     private $tasklist;
 
-
     /**
      * Get id
      *
@@ -209,6 +208,7 @@ class Task
 
     /**
      * @param Tasklist $tasklist
+     *
      * @return Task
      */
     public function setTasklist($tasklist)
@@ -228,4 +228,3 @@ class Task
         return $this;
     }
 }
-

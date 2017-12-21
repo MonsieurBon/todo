@@ -1,13 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabian
- * Date: 17.10.17
- * Time: 16:36
- */
 
 namespace App\Security;
-
 
 use Symfony\Bridge\Doctrine\RegistryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -28,19 +21,18 @@ class TokenAuthenticator implements SimplePreAuthenticatorInterface, Authenticat
     const URL_PARAMETER_TOKEN = self::TOKEN;
     const X_AUTH_HEADER = 'X-AUTH-TOKEN';
 
-    /** @var ContainerInterface  */
+    /** @var ContainerInterface */
     private $container;
-    /** @var RegistryInterface  */
+    /** @var RegistryInterface */
     private $doctrine;
-    /** @var HttpKernelInterface  */
+    /** @var HttpKernelInterface */
     private $kernel;
 
     public function __construct(
         ContainerInterface $container,
         HttpKernelInterface $kernel,
         RegistryInterface $doctrine
-    )
-    {
+    ) {
         $this->container = $container;
         $this->doctrine = $doctrine;
         $this->kernel = $kernel;
@@ -87,7 +79,7 @@ class TokenAuthenticator implements SimplePreAuthenticatorInterface, Authenticat
         $validUntil = (new \DateTime('now'))
             ->add(new \DateInterval('PT' . $sessionTimeout . 'M'));
 
-        /** @var User $user */
+        /* @var User $user */
         $user->getApiToken()->setValidUntil($validUntil);
         $this->doctrine->getManager()->flush();
 
@@ -104,7 +96,7 @@ class TokenAuthenticator implements SimplePreAuthenticatorInterface, Authenticat
      * called by authentication listeners inheriting from
      * AbstractAuthenticationListener.
      *
-     * @param Request $request
+     * @param Request                 $request
      * @param AuthenticationException $exception
      *
      * @return Response The response to return, never null

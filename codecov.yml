@@ -1,4 +1,6 @@
 ignore:
-    - "src/AppBundle/DataFixtures/*"
+    - "src/DataFixtures/*"
+    - "src/Migrations/*"
+    - "src/Kernel.php"
     - "frontend/src/polyfill.ts"
     - "frontend/src/test.ts"

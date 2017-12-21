@@ -1,13 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabian
- * Date: 19.10.17
- * Time: 07:07
- */
 
 namespace App\Tests\Security;
-
 
 use App\Security\TasklistVoter;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;

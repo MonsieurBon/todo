@@ -1,13 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabian
- * Date: 26.09.17
- * Time: 10:34
- */
 
 namespace App\Entity;
-
 
 abstract class TaskType
 {
@@ -20,6 +13,6 @@ abstract class TaskType
      */
     public static function values()
     {
-        return array(self::CRITICAL_NOW, self::OPPORTUNITY_NOW, self::OVER_THE_HORIZON);
+        return [self::CRITICAL_NOW, self::OPPORTUNITY_NOW, self::OVER_THE_HORIZON];
     }
 }

@@ -2,7 +2,6 @@
 
 namespace App\Tests\Schema\Types;
 
-
 use App\Schema\Types\DateType;
 use GraphQL\Language\AST\IntValueNode;
 use GraphQL\Language\AST\StringValueNode;
@@ -10,11 +9,11 @@ use PHPUnit\Framework\TestCase;
 
 class DateTypeTest extends TestCase
 {
-    /** @var  string */
+    /** @var string */
     private static $expectedDateString;
-    /** @var  \DateTime */
+    /** @var \DateTime */
     private static $date;
-    /** @var  DateType */
+    /** @var DateType */
     private static $dateType;
 
     public static function setUpBeforeClass()
@@ -49,7 +48,7 @@ class DateTypeTest extends TestCase
 
     public function testParseLiteralStringValueNode()
     {
-        $stringValueNode = new StringValueNode(array());
+        $stringValueNode = new StringValueNode([]);
         $stringValueNode->value = static::$expectedDateString;
 
         $date = static::$dateType->parseLiteral($stringValueNode);
@@ -63,7 +62,7 @@ class DateTypeTest extends TestCase
      */
     public function testParseLiteralOtherNode()
     {
-        $intValueNode = new IntValueNode(array());
+        $intValueNode = new IntValueNode([]);
         $intValueNode->value = static::$expectedDateString;
 
         static::$dateType->parseLiteral($intValueNode);

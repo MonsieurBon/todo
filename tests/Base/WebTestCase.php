@@ -2,13 +2,9 @@
 
 namespace App\Tests\Base;
 
-
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Common\DataFixtures\ProxyReferenceRepository;
-use Doctrine\DBAL\Driver\PDOSqlite\Driver as SqliteDriver;
 use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\Tools\SchemaTool;
-use Nelmio\Alice\Fixtures;
 use Symfony\Bridge\Doctrine\ManagerRegistry;
 use Symfony\Bundle\DoctrineFixturesBundle\Common\DataFixtures\Loader;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase as BaseWebTestCase;
@@ -19,7 +15,7 @@ abstract class WebTestCase extends BaseWebTestCase
     /**
      * @var array
      */
-    private $excludedDoctrineTables = array();
+    private $excludedDoctrineTables = [];
 
     protected function getContainer()
     {
@@ -35,9 +31,9 @@ abstract class WebTestCase extends BaseWebTestCase
         $om = $registry->getManager($omName);
         $type = $registry->getName();
 
-        $executorClass = 'PHPCR' === $type && class_exists('Doctrine\Bundle\PHPCRBundle\DataFixtures\PHPCRExecutor')
-            ? 'Doctrine\Bundle\PHPCRBundle\DataFixtures\PHPCRExecutor'
-            : 'Doctrine\\Common\\DataFixtures\\Executor\\'.$type.'Executor';
+        $executorClass = $type === 'PHPCR' && class_exists('Doctrine\\Bundle\\PHPCRBundle\\DataFixtures\\PHPCRExecutor')
+            ? 'Doctrine\\Bundle\\PHPCRBundle\\DataFixtures\\PHPCRExecutor'
+            : 'Doctrine\\Common\\DataFixtures\\Executor\\' . $type . 'Executor';
         $referenceRepository = new ProxyReferenceRepository($om);
         $cacheDriver = $om->getMetadataFactory()->getCacheDriver();
 
@@ -45,11 +41,11 @@ abstract class WebTestCase extends BaseWebTestCase
             $cacheDriver->deleteAll();
         }
 
-        $purgerClass = 'Doctrine\\Common\\DataFixtures\\Purger\\'.$type.'Purger';
+        $purgerClass = 'Doctrine\\Common\\DataFixtures\\Purger\\' . $type . 'Purger';
 
         $purger = new $purgerClass(null, $this->excludedDoctrineTables);
 
-        if (null !== $purgeMode) {
+        if ($purgeMode !== null) {
             $purger->setPurgeMode($purgeMode);
         }
 

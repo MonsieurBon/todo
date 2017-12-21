@@ -8,7 +8,6 @@
 
 namespace App\DataFixtures\ORM;
 
-
 use App\Entity\Task;
 use App\Entity\Tasklist;
 use App\Entity\TaskType;

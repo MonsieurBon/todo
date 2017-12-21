@@ -1,13 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabian
- * Date: 06.10.17
- * Time: 18:05
- */
 
 namespace App\Tests\Entity;
-
 
 use App\Entity\Task;
 use App\Entity\Tasklist;

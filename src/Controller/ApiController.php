@@ -14,8 +14,6 @@ use Symfony\Component\Routing\Annotation\Route;
  * Class ApiController
  *
  * @Route("/api")
- *
- * @package App\Controller
  */
 class ApiController extends Controller
 {
@@ -23,10 +21,13 @@ class ApiController extends Controller
 
     /**
      * @Rest\Post("", defaults={"_format" = "json"}, options={"expose" = true})
-     * @param Request $request
+     *
+     * @param Request              $request
      * @param GraphQLQueryExecutor $executor
-     * @param Schema $schema
+     * @param Schema               $schema
+     *
      * @return array
+     *
      * @internal param Schema $schema
      * @internal param LoggerInterface $logger
      */
@@ -42,9 +43,10 @@ class ApiController extends Controller
     }
 
     /**
-     * @param Request $request
+     * @param Request              $request
      * @param GraphQLQueryExecutor $executor
-     * @param LoginSchema $schema
+     * @param LoginSchema          $schema
+     *
      * @return array
      */
     public function loginAction(Request $request, GraphQLQueryExecutor $executor, LoginSchema $schema)

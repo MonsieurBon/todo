@@ -118,6 +118,7 @@ class ApiToken
      * Set user
      *
      * @param User $user
+     *
      * @return ApiToken
      */
     public function setUser($user)
@@ -149,4 +150,3 @@ class ApiToken
         return $this->user;
     }
 }
-

@@ -2,28 +2,25 @@
 
 namespace App\Schema\Types\Mutation\Tasklist;
 
-
 use App\Entity\Tasklist;
 use App\Entity\User;
 use App\Schema\Schema;
 use App\Schema\Types;
 use App\Security\TasklistVoter;
-use Doctrine\Bundle\DoctrineBundle\Registry;
 use Doctrine\ORM\EntityManager;
 use GraphQL\Type\Definition\ObjectType;
 use Symfony\Bridge\Doctrine\RegistryInterface;
-use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 class DeleteTasklistType extends ObjectType
 {
-    /** @var  AuthorizationCheckerInterface */
+    /** @var AuthorizationCheckerInterface */
     private $authChecker;
-    /** @var  EntityManager */
+    /** @var EntityManager */
     private $em;
-    /** @var  TokenInterface */
+    /** @var TokenInterface */
     private $tokenInterface;
 
     public function __construct(AuthorizationCheckerInterface $authChecker, RegistryInterface $doctrine, TokenStorageInterface $tokenStorage)
@@ -40,7 +37,7 @@ class DeleteTasklistType extends ObjectType
                     'args' => [
                         Schema::TASKLIST_ID_FIELD_NAME => Types::nonNull(Types::id())
                     ],
-                    'resolve' => function($val, $args) {
+                    'resolve' => function ($val, $args) {
                         return $this->deleteTasklist($args);
                     }
                 ]
@@ -58,12 +55,13 @@ class DeleteTasklistType extends ObjectType
             if ($this->authChecker->isGranted(TasklistVoter::OWNER, $tasklist)) {
                 $this->em->remove($tasklist);
                 $this->em->flush();
-            } else if ($this->authChecker->isGranted(TasklistVoter::ACCESS, $tasklist)) {
+            } elseif ($this->authChecker->isGranted(TasklistVoter::ACCESS, $tasklist)) {
                 /** @var User $user */
                 $user = $this->tokenInterface->getUser();
                 $tasklist->removeUser($user);
                 $this->em->flush();
             }
+
             return $tasklist;
         }
 

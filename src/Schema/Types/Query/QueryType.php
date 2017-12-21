@@ -1,33 +1,24 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabian
- * Date: 26.09.17
- * Time: 09:48
- */
 
 namespace App\Schema\Types\Query;
-
 
 use App\Entity\Tasklist;
 use App\Schema\Types;
 use App\Security\TasklistVoter;
-use Doctrine\Bundle\DoctrineBundle\Registry;
 use GraphQL\Error\Error;
 use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Type\Definition\ResolveInfo;
 use Symfony\Bridge\Doctrine\RegistryInterface;
-use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 class QueryType extends ObjectType
 {
-    /** @var AuthorizationCheckerInterface  */
+    /** @var AuthorizationCheckerInterface */
     private $authChecker;
-    /** @var RegistryInterface  */
+    /** @var RegistryInterface */
     private $doctrine;
-    /** @var TokenStorageInterface  */
+    /** @var TokenStorageInterface */
     private $tokenStorage;
 
     public function __construct(AuthorizationCheckerInterface $authChecker, RegistryInterface $doctrine, TokenStorageInterface $tokenStorage)
@@ -50,8 +41,7 @@ class QueryType extends ObjectType
                     ]
                 ]
             ],
-            'resolveField' => function ($val, $args, $context, ResolveInfo $info)
-            {
+            'resolveField' => function ($val, $args, $context, ResolveInfo $info) {
                 return $this->{$info->fieldName}($val, $args, $context, $info);
             }
         ];
@@ -60,12 +50,13 @@ class QueryType extends ObjectType
 
     private function hello()
     {
-        return "Your GraphQL endpoint is ready! Use GraphiQL to browse API.";
+        return 'Your GraphQL endpoint is ready! Use GraphiQL to browse API.';
     }
 
     private function tasklists()
     {
         $user = $this->tokenStorage->getToken()->getUser();
+
         return $this->doctrine->getRepository(Tasklist::class)->findAllWithAccess($user);
     }
 

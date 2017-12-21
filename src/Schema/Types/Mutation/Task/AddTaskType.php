@@ -1,13 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabian
- * Date: 23.11.17
- * Time: 07:24
- */
 
 namespace App\Schema\Types\Mutation\Task;
-
 
 use App\Entity\Task;
 use App\Entity\Tasklist;
@@ -20,9 +13,9 @@ use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 class AddTaskType extends ObjectType
 {
-    /** @var  AuthorizationCheckerInterface */
+    /** @var AuthorizationCheckerInterface */
     private $authChecker;
-    /** @var  EntityManager */
+    /** @var EntityManager */
     private $em;
 
     public function __construct(AuthorizationCheckerInterface $authChecker, RegistryInterface $doctrine)
@@ -42,7 +35,7 @@ class AddTaskType extends ObjectType
                         Schema::STARTDATE_FIELD_NAME => Types::nonNull(Types::date()),
                         Schema::DUEDATE_FIELD_NAME => Types::date(),
                     ],
-                    'resolve' => function($tasklist, $args) {
+                    'resolve' => function ($tasklist, $args) {
                         return $this->addTask($tasklist, $args);
                     }
                 ]
@@ -53,9 +46,10 @@ class AddTaskType extends ObjectType
 
     /**
      * @param Tasklist $tasklist
-     * @param array $args
+     * @param array    $args
      */
-    private function addTask($tasklist, $args) {
+    private function addTask($tasklist, $args)
+    {
         $task = new Task();
         $task->setTasklist($tasklist);
 

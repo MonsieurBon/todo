@@ -1,13 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabian
- * Date: 26.09.17
- * Time: 10:24
- */
 
 namespace App\Tests\DB\Fixtures;
-
 
 use App\Entity\ApiToken;
 use App\Entity\User;
@@ -22,6 +15,7 @@ class ValidToken extends Fixture
     {
         /** @var User $user1 */
         $user1 = null;
+
         try {
             $user1 = $this->getReference('user1');
         } catch (\OutOfBoundsException $e) {

@@ -2,7 +2,6 @@
 
 namespace App\Schema\Types\Mutation\Task;
 
-
 use App\Entity\Task;
 use App\Schema\Schema;
 use App\Schema\Types;
@@ -15,9 +14,9 @@ use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 class DeleteTaskType extends ObjectType
 {
-    /** @var  EntityManager */
+    /** @var EntityManager */
     private $em;
-    /** @var  AuthorizationCheckerInterface */
+    /** @var AuthorizationCheckerInterface */
     private $authChecker;
 
     public function __construct(AuthorizationCheckerInterface $authChecker, RegistryInterface $doctrine)
@@ -33,7 +32,7 @@ class DeleteTaskType extends ObjectType
                     'args' => [
                         Schema::TASK_ID_FIELD_NAME => Types::nonNull(Types::id())
                     ],
-                    'resolve' => function($val, $args) {
+                    'resolve' => function ($val, $args) {
                         return $this->deleteTask($args);
                     }
                 ]
@@ -44,7 +43,9 @@ class DeleteTaskType extends ObjectType
 
     /**
      * @param $args
+     *
      * @return Task|null|object
+     *
      * @throws Error
      */
     private function deleteTask($args)

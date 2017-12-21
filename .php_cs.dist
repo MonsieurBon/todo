@@ -1,0 +1,23 @@
+<?php
+
+$finder = PhpCsFixer\Finder::create()
+    ->exclude('config')
+    ->exclude('var')
+    ->exclude('vendor')
+    ->notPath('src/Kernel.php')
+    ->notPath('public/index.php')
+    ->in(__DIR__)
+;
+
+return PhpCsFixer\Config::create()
+    ->setRules([
+        '@Symfony' => true,
+        'array_syntax' => ['syntax' => 'short'],
+        'blank_line_before_statement' => ['statements' => ['break', 'continue', 'declare', 'return', 'throw', 'try']],
+        'concat_space' => ['spacing' => 'one'],
+        'phpdoc_summary' => false,
+        'trailing_comma_in_multiline_array' => false,
+        'yoda_style' => ['equal' => false, 'identical' => false, 'less_and_greater' => false]
+    ])
+    ->setFinder($finder)
+;

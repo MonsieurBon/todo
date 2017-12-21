@@ -200,7 +200,7 @@ class User implements UserInterface
      * <code>
      * public function getRoles()
      * {
-     *     return array('ROLE_USER');
+     *     return ['ROLE_USER'];
      * }
      * </code>
      *
@@ -212,7 +212,7 @@ class User implements UserInterface
      */
     public function getRoles()
     {
-        return array('ROLE_USER');
+        return ['ROLE_USER'];
     }
 
     /**
@@ -237,6 +237,7 @@ class User implements UserInterface
 
     /**
      * @param ApiToken $token
+     *
      * @return $this
      */
     public function setApiToken($token)
@@ -268,4 +269,3 @@ class User implements UserInterface
     {
     }
 }
-

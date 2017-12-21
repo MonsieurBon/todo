@@ -1,13 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabian
- * Date: 21.11.17
- * Time: 06:50
- */
 
 namespace App\Schema\Types\Mutation;
-
 
 use App\Entity\User;
 use App\Schema\Types;

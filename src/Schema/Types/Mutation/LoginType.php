@@ -2,7 +2,6 @@
 
 namespace App\Schema\Types\Mutation;
 
-
 use App\Entity\ApiToken;
 use App\Entity\User;
 use App\Schema\Types;
@@ -16,10 +15,12 @@ class LoginType extends ObjectType
 {
     const TOKEN_FIELD_NAME = 'token';
     const ERROR_FIELD_NAME = 'error';
+
     /**
      * @var Registry
      */
     private $doctrine;
+
     /**
      * @var UserPasswordEncoder
      */
@@ -42,9 +43,9 @@ class LoginType extends ObjectType
                             self::TOKEN_FIELD_NAME => Types::string(),
                             self::ERROR_FIELD_NAME => Types::string()
                         ],
-                        'resolveField' => function ($val, $args, $context, ResolveInfo $info)
-                        {
+                        'resolveField' => function ($val, $args, $context, ResolveInfo $info) {
                             $methodName = 'resolve' . ucfirst($info->fieldName);
+
                             return $this->{$methodName}($val);
                         }
                     ]),
@@ -54,8 +55,7 @@ class LoginType extends ObjectType
                     ]
                 ]
             ],
-            'resolveField' => function ($val, $args, $context, ResolveInfo $info)
-            {
+            'resolveField' => function ($val, $args, $context, ResolveInfo $info) {
                 return $this->{$info->fieldName}($args);
             }
         ];
@@ -75,15 +75,15 @@ class LoginType extends ObjectType
         $user = $userRepo->findOneByUsername($username);
 
         if ($user === null) {
-            return array(
+            return [
                 self::ERROR_FIELD_NAME => 'Invalid username or password'
-            );
+            ];
         }
 
         if (!$this->encoder->isPasswordValid($user, $password)) {
-            return array(
+            return [
                 self::ERROR_FIELD_NAME => 'Invalid username or password'
-            );
+            ];
         }
 
         $tokenString = bin2hex(openssl_random_pseudo_bytes(16));
@@ -103,13 +103,14 @@ class LoginType extends ObjectType
 
         $em->flush();
 
-        return array(
+        return [
             self::TOKEN_FIELD_NAME => $tokenString
-        );
+        ];
     }
 
     /** @noinspection PhpUnusedPrivateMethodInspection */
-    private function resolveToken($val) {
+    private function resolveToken($val)
+    {
         if (array_key_exists(self::TOKEN_FIELD_NAME, $val)
             && !array_key_exists(self::ERROR_FIELD_NAME, $val)) {
             return $val[self::TOKEN_FIELD_NAME];
@@ -119,7 +120,8 @@ class LoginType extends ObjectType
     }
 
     /** @noinspection PhpUnusedPrivateMethodInspection */
-    private function resolveError($val) {
+    private function resolveError($val)
+    {
         return array_key_exists(self::ERROR_FIELD_NAME, $val) ? $val[self::ERROR_FIELD_NAME] : null;
     }
 }

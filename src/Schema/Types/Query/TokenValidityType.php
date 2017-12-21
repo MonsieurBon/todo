@@ -1,17 +1,9 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabian
- * Date: 04.11.17
- * Time: 13:42
- */
 
 namespace App\Schema\Types\Query;
 
-
 use App\Schema\Types;
 use GraphQL\Type\Definition\ObjectType;
-use function React\Promise\resolve;
 
 class TokenValidityType extends ObjectType
 {
@@ -22,7 +14,7 @@ class TokenValidityType extends ObjectType
             'fields' => [
                 'token' => Types::string()
             ],
-            'resolveField' => function($val) {
+            'resolveField' => function ($val) {
                 return $val;
             }
         ];

@@ -24,12 +24,13 @@ class TaskType extends ObjectType
                     'tasklist' => Types::tasklist(),
                 ];
             },
-            'resolveField' => function($value, $args, $context, ResolveInfo $info) {
+            'resolveField' => function ($value, $args, $context, ResolveInfo $info) {
                 $method = 'resolve' . ucfirst($info->fieldName);
                 if (method_exists($this, $method)) {
                     return $this->{$method}($value, $args, $context, $info);
                 } else {
                     $getter = 'get' . ucfirst($info->fieldName);
+
                     return $value->{$getter}();
                 }
             }
@@ -38,7 +39,8 @@ class TaskType extends ObjectType
     }
 
     /** @noinspection PhpUnusedPrivateMethodInspection */
-    private function resolveTasklist(Task $value) {
+    private function resolveTasklist(Task $value)
+    {
         return $value->getTasklist();
     }
 }

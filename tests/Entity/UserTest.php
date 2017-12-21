@@ -2,7 +2,6 @@
 
 namespace App\Tests\Entity;
 
-
 use App\Entity\ApiToken;
 use App\Entity\User;
 use PHPUnit\Framework\TestCase;
@@ -25,7 +24,7 @@ class UserTest extends TestCase
         self::assertEquals('foo', $user->getUsername());
         self::assertEquals('a1b2c3d4e5', $user->getPassword());
         self::assertNull($user->getSalt());
-        self::assertEquals(array('ROLE_USER'), $user->getRoles());
+        self::assertEquals(['ROLE_USER'], $user->getRoles());
     }
 
     public function testGetterAndSetterForToken()
@@ -69,6 +68,6 @@ class UserTest extends TestCase
         self::assertEquals('foo', $user->getUsername());
         self::assertEquals('a1b2c3d4e5', $user->getPassword());
         self::assertNull($user->getSalt());
-        self::assertEquals(array('ROLE_USER'), $user->getRoles());
+        self::assertEquals(['ROLE_USER'], $user->getRoles());
     }
 }
