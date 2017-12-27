@@ -8,8 +8,10 @@ use App\Schema\Types\Mutation\LoginType;
 use App\Schema\Types\Mutation\MutationType;
 use App\Schema\Types\Mutation\Task\AddTaskType;
 use App\Schema\Types\Mutation\Task\DeleteTaskType;
+use App\Schema\Types\Mutation\Task\EditTaskType;
 use App\Schema\Types\Mutation\Tasklist\CreateTasklistType;
 use App\Schema\Types\Mutation\Tasklist\DeleteTasklistType;
+use App\Schema\Types\Mutation\Tasklist\EditTasklistType;
 use App\Schema\Types\Mutation\Tasklist\ShareTasklistType;
 use App\Schema\Types\Query\QueryType;
 use App\Schema\Types\Query\TokenValidityType;
@@ -35,6 +37,8 @@ class Types
     private static $deleteTask;
     private static $deleteTasklist;
     private static $destroyToken;
+    private static $editTask;
+    private static $editTasklist;
     private static $login;
     private static $mutation;
     private static $query;
@@ -72,6 +76,16 @@ class Types
     public static function destroyToken(RegistryInterface $doctrine, TokenStorageInterface $tokenStorage)
     {
         return self::$destroyToken ?: (self::$destroyToken = new DestroyTokenType($doctrine, $tokenStorage));
+    }
+
+    public static function editTask(AuthorizationCheckerInterface $authChecker, RegistryInterface $doctrine)
+    {
+        return self::$editTask ?: (self::$editTask = new EditTaskType($authChecker, $doctrine));
+    }
+
+    public static function editTasklist(AuthorizationCheckerInterface $authChecker, RegistryInterface $doctrine)
+    {
+        return self::$editTasklist ?: (self::$editTasklist = new EditTasklistType($authChecker, $doctrine));
     }
 
     public static function login(ContainerInterface $container)

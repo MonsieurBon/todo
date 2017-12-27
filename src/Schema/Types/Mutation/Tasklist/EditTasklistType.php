@@ -3,7 +3,6 @@
 namespace App\Schema\Types\Mutation\Tasklist;
 
 use App\Entity\Tasklist;
-use App\Entity\User;
 use App\Schema\Schema;
 use App\Schema\Types;
 use App\Security\TasklistVoter;
@@ -13,7 +12,7 @@ use GraphQL\Type\Definition\ObjectType;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
-class ShareTasklistType extends ObjectType
+class EditTasklistType extends ObjectType
 {
     /** @var AuthorizationCheckerInterface */
     private $authChecker;
@@ -26,18 +25,18 @@ class ShareTasklistType extends ObjectType
         $this->em = $doctrine->getManager();
 
         $config = [
-            'name' => 'ShareTasklist',
+            'name' => 'EditTasklist',
             'fields' => [
                 'tasklist' => [
                     'type' => Types::tasklist(),
                     'args' => [
                         Schema::TASKLIST_ID_FIELD_NAME => Types::nonNull(Types::id()),
-                        Schema::USER_ID_FIELD_NAME => Types::nonNull(Types::id())
+                        Schema::TASKLIST_NAME_FIELD_NAME => Types::nonNull(Types::string())
                     ],
-                    'resolve' => function ($vals, $args) {
-                        return $this->shareTasklist($args);
+                    'resolve' => function ($val, $args) {
+                        return $this->editTasklist($args);
                     }
-                ]
+                ],
             ]
         ];
         parent::__construct($config);
@@ -50,15 +49,13 @@ class ShareTasklistType extends ObjectType
      *
      * @throws Error
      */
-    private function shareTasklist($args)
+    private function editTasklist($args)
     {
         $tasklistid = $args[Schema::TASKLIST_ID_FIELD_NAME];
-        $userid = $args[Schema::USER_ID_FIELD_NAME];
+        $name = $args[Schema::TASKLIST_NAME_FIELD_NAME];
 
         /** @var Tasklist $tasklist */
         $tasklist = $this->em->getRepository(Tasklist::class)->find($tasklistid);
-        /** @var User $user */
-        $user = $this->em->getRepository(User::class)->find($userid);
 
         if ($tasklist === null) {
             throw new Error(
@@ -69,20 +66,11 @@ class ShareTasklistType extends ObjectType
             );
         }
 
-        if ($user === null) {
-            throw new Error(
-                sprintf(
-                    'User with id=%d not found!',
-                    $userid
-                )
-            );
-        }
-
         if ($this->authChecker->isGranted(TasklistVoter::OWNER, $tasklist)) {
-            $tasklist->addUser($user);
+            $tasklist->setName($name);
             $this->em->flush();
         } else {
-            throw new Error('Only the owner of a tasklist may share it with other users.');
+            throw new Error('Only the owner of a tasklist may change its name.');
         }
 
         return $tasklist;

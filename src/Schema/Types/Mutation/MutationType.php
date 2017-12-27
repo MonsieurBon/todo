@@ -34,6 +34,7 @@ class MutationType extends ObjectType
                 'createTasklist' => Types::createTasklist($doctrine, $tokenStorage),
                 'deleteTaskList' => Types::deleteTasklist($authChecker, $doctrine, $tokenStorage),
                 'shareTasklist' => Types::shareTasklist($authChecker, $doctrine),
+                'editTasklist' => Types::editTasklist($authChecker, $doctrine),
                 'addTask' => [
                     'type' => Types::addTask($authChecker, $doctrine),
                     'args' => [
@@ -43,6 +44,7 @@ class MutationType extends ObjectType
                         return $this->addTask($args);
                     }
                 ],
+                'editTask' => Types::editTask($authChecker, $doctrine),
                 'deleteTask' => Types::deleteTask($authChecker, $doctrine),
                 'destroyToken' => Types::destroyToken($doctrine, $tokenStorage)
             ],
