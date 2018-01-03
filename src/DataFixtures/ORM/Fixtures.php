@@ -10,6 +10,7 @@ namespace App\DataFixtures\ORM;
 
 use App\Entity\Task;
 use App\Entity\Tasklist;
+use App\Entity\TaskState;
 use App\Entity\TaskType;
 use App\Entity\User;
 use App\Schema\Types\DateType;
@@ -68,6 +69,7 @@ class Fixtures extends Fixture
         $task1->setType(TaskType::CRITICAL_NOW);
         $task1->setTitle('Buy wife flowers');
         $task1->setDescription('My wife loves flowers. It\'s critical to buy them for her.');
+        $task1->setState(TaskState::TODO);
         $task1->setStartDate(\DateTime::createFromFormat(DateType::PARSE_FORMAT, '2017-10-20'));
         $task1->setDueDate(\DateTime::createFromFormat(DateType::PARSE_FORMAT, '2017-12-12'));
         $tasklist1->addTask($task1);
@@ -77,6 +79,7 @@ class Fixtures extends Fixture
         $task2->setType(TaskType::OPPORTUNITY_NOW);
         $task2->setTitle('Have kids');
         $task2->setDescription('We would like to have a few children and should start in the near future.');
+        $task2->setState(TaskState::TODO);
         $task2->setStartDate(\DateTime::createFromFormat(DateType::PARSE_FORMAT, '2018-01-15'));
         $task2->setDueDate(\DateTime::createFromFormat(DateType::PARSE_FORMAT, '2022-08-26'));
         $tasklist1->addTask($task2);
@@ -85,6 +88,7 @@ class Fixtures extends Fixture
         $task3->setType(TaskType::OVER_THE_HORIZON);
         $task3->setTitle('Build a house');
         $task3->setDescription('At some point I would like to own my own house.');
+        $task3->setState(TaskState::TODO);
         $task3->setStartDate(\DateTime::createFromFormat(DateType::PARSE_FORMAT, '2020-01-01'));
         $task3->setDueDate(\DateTime::createFromFormat(DateType::PARSE_FORMAT, '2030-12-31'));
         $tasklist1->addTask($task3);
@@ -93,6 +97,7 @@ class Fixtures extends Fixture
         $task4->setType(TaskType::CRITICAL_NOW);
         $task4->setTitle('Boss task');
         $task4->setDescription('First I need to do what my boss asks of me.');
+        $task4->setState(TaskState::TODO);
         $task4->setStartDate(\DateTime::createFromFormat(DateType::PARSE_FORMAT, '2017-09-26'));
         $task4->setDueDate(\DateTime::createFromFormat(DateType::PARSE_FORMAT, '2017-09-29'));
         $tasklist2->addTask($task4);
@@ -101,6 +106,7 @@ class Fixtures extends Fixture
         $task5->setType(TaskType::OPPORTUNITY_NOW);
         $task5->setTitle('My own task');
         $task5->setDescription('This is what I think is important. Pssst, my boss does not know about this task!');
+        $task5->setState(TaskState::TODO);
         $task5->setStartDate(\DateTime::createFromFormat(DateType::PARSE_FORMAT, '2017-10-02'));
         $task5->setDueDate(\DateTime::createFromFormat(DateType::PARSE_FORMAT, '2017-10-06'));
         $tasklist2->addTask($task5);
@@ -109,6 +115,7 @@ class Fixtures extends Fixture
         $task6->setType(TaskType::CRITICAL_NOW);
         $task6->setTitle('Boss task');
         $task6->setDescription('First I need to do what my boss asks of me.');
+        $task6->setState(TaskState::TODO);
         $task6->setStartDate(\DateTime::createFromFormat(DateType::PARSE_FORMAT, '2017-09-26'));
         $task6->setDueDate(\DateTime::createFromFormat(DateType::PARSE_FORMAT, '2017-09-29'));
         $tasklist3->addTask($task6);
@@ -118,6 +125,7 @@ class Fixtures extends Fixture
         $task7->setType(TaskType::OPPORTUNITY_NOW);
         $task7->setTitle('My own task');
         $task7->setDescription('This is what I think is important. Pssst, my boss does not know about this task!');
+        $task7->setState(TaskState::TODO);
         $task7->setStartDate(\DateTime::createFromFormat(DateType::PARSE_FORMAT, '2017-10-02'));
         $task7->setDueDate(\DateTime::createFromFormat(DateType::PARSE_FORMAT, '2017-10-06'));
         $tasklist3->addTask($task7);
@@ -126,6 +134,7 @@ class Fixtures extends Fixture
         $task8->setType(TaskType::CRITICAL_NOW);
         $task8->setTitle('Boss task');
         $task8->setDescription('First I need to do what my boss asks of me.');
+        $task8->setState(TaskState::TODO);
         $task8->setStartDate(\DateTime::createFromFormat(DateType::PARSE_FORMAT, '2017-09-26'));
         $task8->setDueDate(\DateTime::createFromFormat(DateType::PARSE_FORMAT, '2017-09-29'));
         $tasklist4->addTask($task8);
@@ -134,6 +143,7 @@ class Fixtures extends Fixture
         $task9->setType(TaskType::OPPORTUNITY_NOW);
         $task9->setTitle('My own task');
         $task9->setDescription('This is what I think is important. Pssst, my boss does not know about this task!');
+        $task9->setState(TaskState::TODO);
         $task9->setStartDate(\DateTime::createFromFormat(DateType::PARSE_FORMAT, '2017-10-02'));
         $task9->setDueDate(\DateTime::createFromFormat(DateType::PARSE_FORMAT, '2017-10-06'));
         $tasklist4->addTask($task9);

@@ -52,6 +52,13 @@ class Task
     /**
      * @var string
      *
+     * @ORM\Column(name="state", type="string", length=255)
+     */
+    private $state;
+
+    /**
+     * @var string
+     *
      * @ORM\Column(name="type", type="string", length=255)
      */
     private $type;
@@ -63,6 +70,11 @@ class Task
      * @ORM\JoinColumn(name="tasklist_id", referencedColumnName="id", onDelete="CASCADE")
      */
     private $tasklist;
+
+    public function __construct()
+    {
+        $this->state = TaskState::TODO;
+    }
 
     /**
      * Get id
@@ -168,6 +180,34 @@ class Task
     public function getDueDate()
     {
         return $this->dueDate;
+    }
+
+    /**
+     * Set state
+     *
+     * @param string $state
+     *
+     * @return Task
+     */
+    public function setState($state)
+    {
+        if (!in_array($state, TaskState::values())) {
+            throw new \UnexpectedValueException('Invalid value for TaskState');
+        }
+
+        $this->state = $state;
+
+        return $this;
+    }
+
+    /**
+     * Get state
+     *
+     * @return string
+     */
+    public function getState()
+    {
+        return $this->state;
     }
 
     /**

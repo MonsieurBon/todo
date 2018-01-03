@@ -23,6 +23,7 @@ class Schema extends GraphQLSchema
     const TASKLIST_NAME_FIELD_NAME = 'name';
     const TITLE_FIELD_NAME = 'title';
     const TOKEN_FIELD_NAME = 'token';
+    const STATE_FIELD_NAME = 'state';
     const TYPE_FIELD_NAME = 'type';
     const USER_ID_FIELD_NAME = 'user_id';
 

@@ -33,6 +33,7 @@ class EditTaskType extends ObjectType
                         Schema::TITLE_FIELD_NAME => Types::nonNull(Types::string()),
                         Schema::DESCRIPTION_FIELD_NAME => Types::string(),
                         Schema::TYPE_FIELD_NAME => Types::nonNull(Types::taskTypeEnum()),
+                        Schema::STATE_FIELD_NAME => Types::nonNull(Types::taskStateEnum()),
                         Schema::STARTDATE_FIELD_NAME => Types::nonNull(Types::date()),
                         Schema::DUEDATE_FIELD_NAME => Types::date(),
                     ],
@@ -59,6 +60,7 @@ class EditTaskType extends ObjectType
                 $task->setDescription($args[Schema::DESCRIPTION_FIELD_NAME]);
             }
             $task->setType($args[Schema::TYPE_FIELD_NAME]);
+            $task->setState($args[Schema::STATE_FIELD_NAME]);
             $task->setStartDate($args[Schema::STARTDATE_FIELD_NAME]);
             if (array_key_exists(Schema::DUEDATE_FIELD_NAME, $args)) {
                 $task->setDueDate($args[Schema::DUEDATE_FIELD_NAME]);

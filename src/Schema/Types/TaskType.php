@@ -20,6 +20,7 @@ class TaskType extends ObjectType
                     'description' => Types::string(),
                     'startDate' => Types::date(),
                     'dueDate' => Types::date(),
+                    'state' => Types::taskStateEnum(),
                     'type' => Types::taskTypeEnum(),
                     'tasklist' => Types::tasklist(),
                 ];

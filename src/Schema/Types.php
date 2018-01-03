@@ -16,6 +16,7 @@ use App\Schema\Types\Mutation\Tasklist\ShareTasklistType;
 use App\Schema\Types\Query\QueryType;
 use App\Schema\Types\Query\TokenValidityType;
 use App\Schema\Types\TasklistType;
+use App\Schema\Types\TaskStateEnum;
 use App\Schema\Types\TaskType;
 use App\Schema\Types\TaskTypeEnum;
 use GraphQL\Type\Definition\BooleanType;
@@ -45,6 +46,7 @@ class Types
     private static $shareTasklist;
     private static $task;
     private static $tasklist;
+    private static $taskStateEnum;
     private static $taskTypeEnum;
     private static $tokenValidity;
 
@@ -116,6 +118,11 @@ class Types
     public static function tasklist()
     {
         return self::$tasklist ?: (self::$tasklist = new TasklistType());
+    }
+
+    public static function taskStateEnum()
+    {
+        return self::$taskStateEnum ?: (self::$taskStateEnum = new TaskStateEnum());
     }
 
     public static function taskTypeEnum()
