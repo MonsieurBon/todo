@@ -35,4 +35,7 @@ foreach ($phpFiles as $file) {
         }
     }
 }
+
+exec('yarn lint');
+
 exit(0);

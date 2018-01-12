@@ -11,7 +11,8 @@
     "test": "ng test",
     "test:coverage": "ng test --single-run --code-coverage",
     "lint": "ng lint",
-    "e2e": "ng e2e"
+    "e2e": "ng e2e",
+    "postinstall": "scripts/post_install.sh"
   },
   "private": true,
   "dependencies": {
