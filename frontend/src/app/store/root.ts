@@ -1,7 +1,7 @@
 import { combineReducers } from 'redux';
 import { IAppState } from './root.model';
-import { routerReducer } from '@angular-redux/router';
+import { fooReducer } from './foo.reducer';
 
 export const rootReducer = combineReducers<IAppState>({
-  routes: routerReducer
+  foo: fooReducer
 });

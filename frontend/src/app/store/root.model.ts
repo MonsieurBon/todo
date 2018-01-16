@@ -1,3 +1,3 @@
 export interface IAppState {
-  routes?: any;
+  foo?: boolean;
 }
