@@ -17,6 +17,7 @@ disabled:
 finder:
   exclude:
     - "config"
+    - "src/Migrations"
     - "var"
     - "vendor"
   not-path:

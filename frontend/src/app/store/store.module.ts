@@ -17,7 +17,7 @@ export class StoreModule {
   constructor(
     private ngRedux: NgRedux<IAppState>,
     private devTools: DevToolsExtension
-  ){
+  ) {
     const middleware = [];
 
     if (!environment.production) {

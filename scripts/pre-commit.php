@@ -36,6 +36,12 @@ foreach ($phpFiles as $file) {
     }
 }
 
-exec('yarn lint');
+$lint_output = [];
+exec('yarn lint', $lint_output, $return);
+
+if ($return !== 0) {
+    echo implode("\n", $lint_output), "\n";
+    exit(1);
+}
 
 exit(0);
