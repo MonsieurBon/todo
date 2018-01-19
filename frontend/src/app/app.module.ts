@@ -6,6 +6,9 @@ import { NgReduxModule } from '@angular-redux/store';
 import { StoreModule } from './store/store.module';
 import { AuthGuard } from './auth/auth-guard.service';
 import { appRouting } from './app.routes';
+import { GraphqlService } from './services/graphql.service';
+import { GraphqlClientFactory } from './services/graphql-client.factory';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 
 
 @NgModule({
@@ -20,8 +23,10 @@ import { appRouting } from './app.routes';
     StoreModule
   ],
   providers: [
-    AuthGuard
+    AuthGuard,
+    GraphqlClientFactory,
+    GraphqlService
   ],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
 })
 export class AppModule { }

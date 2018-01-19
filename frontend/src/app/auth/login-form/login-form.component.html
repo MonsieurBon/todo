@@ -1,3 +1,41 @@
-<p>
-  login-form works!
-</p>
+<div class="row">
+  <div class="col-xl-2 col-lg-1"></div>
+  <div class="col-xl-8 col-lg-10 mt-5">
+    <div class="jumbotron">
+      <form [formGroup]="form" (ngSubmit)="login()">
+        <legend>Login</legend>
+        <hr>
+        <div class="form-group row" *ngIf="error">
+          <div class="col-sm-3 col-md-2"></div>
+          <div class="col-sm-9 col-md-8 alert alert-danger">
+            {{error}}
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label for="username" class="col-sm-3 col-md-2 col-form-label">Username</label>
+          <div class="col-sm-9 col-md-8">
+            <input type="text" class="form-control" id="username" placeholder="Username"
+                   required formControlName="username">
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label for="password" class="col-sm-3 col-md-2 col-form-label">Password</label>
+          <div class="col-sm-9 col-md-8">
+            <input type="password" class="form-control" id="password" placeholder="Password"
+                   required formControlName="password">
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <div class="col-sm-3 col-md-2"></div>
+          <div class="col-sm-9 col-md-8">
+            <button type="submit" class="btn btn-primary" [disabled]="!form.valid">Login</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="col-xl-2 col-lg-1"></div>
+</div>

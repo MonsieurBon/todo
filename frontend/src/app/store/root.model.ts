@@ -1,3 +1,5 @@
+import { IAuthState } from '../auth/auth.model';
+
 export interface IAppState {
-  foo?: boolean;
+  auth?: IAuthState;
 }
