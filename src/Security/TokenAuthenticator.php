@@ -9,6 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\Security\Core\Authentication\Token\PreAuthenticatedToken;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
+use Symfony\Component\Security\Core\Exception\AuthenticationCredentialsNotFoundException;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Core\Exception\BadCredentialsException;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
@@ -62,13 +63,18 @@ class TokenAuthenticator implements SimplePreAuthenticatorInterface, Authenticat
         if (!$userProvider instanceof TokenUserProvider) {
             throw new \InvalidArgumentException(
                 sprintf(
-                    'The user provider must be an instance of ApiKeyUserProvider (%s was given).',
+                    'The user provider must be an instance of TokenUserProvider (%s was given).',
                     get_class($userProvider)
                 )
             );
         }
 
         $token = $preAuthToken->getCredentials();
+
+        if (!$token) {
+            throw new AuthenticationCredentialsNotFoundException();
+        }
+
         $user = $userProvider->getUserForToken($token);
 
         if (!$user) {
@@ -103,10 +109,17 @@ class TokenAuthenticator implements SimplePreAuthenticatorInterface, Authenticat
      */
     public function onAuthenticationFailure(Request $request, AuthenticationException $exception)
     {
-        $path['_forwarded'] = $request->attributes;
-        $path['_controller'] = 'App\Controller\ApiController::loginAction';
-        $subRequest = $request->duplicate(null, null, $path);
+        if ($exception instanceof AuthenticationCredentialsNotFoundException) {
+            $path['_forwarded'] = $request->attributes;
+            $path['_controller'] = 'App\Controller\ApiController::loginAction';
+            $subRequest = $request->duplicate(null, null, $path);
 
-        return $this->kernel->handle($subRequest, HttpKernelInterface::SUB_REQUEST);
+            return $this->kernel->handle($subRequest, HttpKernelInterface::SUB_REQUEST);
+        }
+
+        return new Response(
+            strtr($exception->getMessageKey(), $exception->getMessageData()),
+            401
+        );
     }
 }
