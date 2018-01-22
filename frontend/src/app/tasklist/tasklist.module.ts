@@ -1,13 +1,13 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TasklistComponent } from './tasklist/tasklist.component';
 import { tasklistRouting } from './tasklist.routes';
+import { TasklistPageComponent } from './tasklist-page/tasklist-page.component';
 
 @NgModule({
   imports: [
     CommonModule,
     tasklistRouting
   ],
-  declarations: [TasklistComponent]
+  declarations: [TasklistPageComponent]
 })
 export class TasklistModule { }

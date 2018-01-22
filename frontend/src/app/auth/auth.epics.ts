@@ -32,7 +32,7 @@ export class AuthEpics {
                   return loginFailedAction(result.createToken.error);
                 }
               }),
-              catchError(error => of(loginFailedAction(error))),
+              catchError(error => of(loginFailedAction('Could not talk to server. Check your network connection.'))),
               startWith(openLoadingModalAction())
             );
         })

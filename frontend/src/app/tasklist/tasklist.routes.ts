@@ -1,11 +1,11 @@
 import { RouterModule, Routes } from '@angular/router';
-import { TasklistComponent } from './tasklist/tasklist.component';
+import { TasklistPageComponent } from './tasklist-page/tasklist-page.component';
 import { ModuleWithProviders } from '@angular/core';
 
 const tasklistsRoutes: Routes = [
   {
     path: '',
-    component: TasklistComponent
+    component: TasklistPageComponent
   }
 ];
 

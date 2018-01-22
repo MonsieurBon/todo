@@ -38,6 +38,7 @@ export class GraphqlService {
     };
 
     const authClient = this.graphQlClientFactory.getAuthClient();
+
     return authClient.request<GraphQlLogin>(GraphqlService.loginMutation, variables);
   }
 
