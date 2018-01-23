@@ -7,7 +7,6 @@ import { environment } from '../../environments/environment';
 import { rootReducer } from './root.reducer';
 import { combineEpics, createEpicMiddleware } from 'redux-observable';
 import { AuthEpics } from '../auth/auth.epics';
-import { LayoutEpics } from '../layout/layout.epics';
 
 @NgModule({
   imports: [
@@ -15,12 +14,11 @@ import { LayoutEpics } from '../layout/layout.epics';
     NgReduxModule
   ],
   declarations: [],
-  providers: [AuthEpics, LayoutEpics]
+  providers: [AuthEpics]
 })
 export class StoreModule {
   constructor(
     private authEpics: AuthEpics,
-    private layoutEpics: LayoutEpics,
     private ngRedux: NgRedux<IAppState>,
     private devTools: DevToolsExtension
   ) {
@@ -28,10 +26,7 @@ export class StoreModule {
       createEpicMiddleware(
         combineEpics(
           this.authEpics.login,
-          this.authEpics.loginSuccess,
-          this.authEpics.loginFailed,
-          this.layoutEpics.openLoadingModal,
-          this.layoutEpics.closeLoadingModal
+          this.authEpics.loginSuccess
         )
       )
     ];

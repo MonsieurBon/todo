@@ -3,12 +3,11 @@ import { ActionsObservable } from 'redux-observable';
 import { AuthActionTypes, loginFailedAction, loginSuccessAction } from './auth.actions';
 import { Action, AnyAction } from 'redux';
 import { Observable } from 'rxjs/Observable';
-import { catchError, map, mergeMap, startWith } from 'rxjs/operators';
+import { catchError, map, mergeMap } from 'rxjs/operators';
 import { GraphqlService } from '../services/graphql.service';
 import { fromPromise } from 'rxjs/observable/fromPromise';
 import { of } from 'rxjs/observable/of';
-import { closeLoadingModalAction, openLoadingModalAction } from '../layout/layout.actions';
-import { GraphQlCheckToken, GraphQlLogin } from '../services/graphql.definition';
+import { GraphQlLogin } from '../services/graphql.definition';
 import { Router } from '@angular/router';
 import { empty } from 'rxjs/observable/empty';
 
@@ -32,8 +31,7 @@ export class AuthEpics {
                   return loginFailedAction(result.createToken.error);
                 }
               }),
-              catchError(error => of(loginFailedAction('Could not talk to server. Check your network connection.'))),
-              startWith(openLoadingModalAction())
+              catchError(error => of(loginFailedAction('Could not talk to server. Check your network connection.')))
             );
         })
       );
@@ -42,18 +40,11 @@ export class AuthEpics {
   loginSuccess = (action$: ActionsObservable<AnyAction>): Observable<Action> => {
     return action$.ofType(AuthActionTypes.LoginSuccess)
       .pipe(
-        map((action: AnyAction) => {
+        mergeMap((action: AnyAction) => {
           localStorage.setItem('token', action.payload);
           this.router.navigate(['']);
-          return closeLoadingModalAction();
+          return empty();
         })
-      );
-  }
-
-  loginFailed = (action$: ActionsObservable<Action>): Observable<Action> => {
-    return action$.ofType(AuthActionTypes.LoginFailed)
-      .pipe(
-        map(() => closeLoadingModalAction())
       );
   }
 }

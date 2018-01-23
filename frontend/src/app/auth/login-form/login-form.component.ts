@@ -12,6 +12,8 @@ export class LoginFormComponent {
 
   @Output() submitted = new EventEmitter<LoginCredentials>();
 
+  showLoading = false;
+
   form: FormGroup = new FormGroup({
     username: new FormControl(''),
     password: new FormControl('')
@@ -21,6 +23,8 @@ export class LoginFormComponent {
 
   login() {
     if (this.form.valid) {
+      this.form.disable();
+      this.showLoading = true;
       this.submitted.emit(this.form.value);
     }
   }
