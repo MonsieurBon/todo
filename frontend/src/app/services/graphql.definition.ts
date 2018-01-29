@@ -22,6 +22,7 @@ export interface GraphQLAllData {
 interface GraphQLTasklist {
   id: number;
   name: string;
+  slug: string;
   tasks: ITask[];
 }
 

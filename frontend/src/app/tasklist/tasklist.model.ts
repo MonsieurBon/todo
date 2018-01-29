@@ -6,6 +6,7 @@ export interface ITasklistState {
 export interface ITasklist {
   id: number;
   name: string;
+  slug: string;
   tasks?: ITask[][];
 }
 

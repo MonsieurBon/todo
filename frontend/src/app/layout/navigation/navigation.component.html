@@ -5,7 +5,9 @@
     </button>
     <div ngbDropdownMenu aria-labelledby="navigationToggler">
       <ul id="tasklists-menu-list" class="dropdown-list">
-        <li class="dropdown-item" *ngFor="let tasklist of tasklists">{{tasklist.name}}</li>
+        <li class="dropdown-item" *ngFor="let tasklist of tasklists">
+          <a [routerLink]="['/tasklist', tasklist.slug]">{{tasklist.name}}</a>
+        </li>
       </ul>
       <hr>
       <ul id="account-menu-list" class="dropdown-list">

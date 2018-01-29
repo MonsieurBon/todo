@@ -15,6 +15,7 @@ import { Router } from '@angular/router';
 export class TasklistEpics {
   constructor(
     private graphQl: GraphqlService,
+    private router: Router
   ) {}
 
   loadAllData = (action$: ActionsObservable<AnyAction>): Observable<AnyAction> => {
@@ -34,12 +35,12 @@ export class TasklistEpics {
                   return {...tasklist, tasks: taskmap};
                 });
 
+                let selectedTasklist;
                 if (action.payload) {
-
+                  selectedTasklist = tasklists.find(tasklist => tasklist.slug === action.payload);
+                } else {
+                  selectedTasklist = tasklists[0];
                 }
-
-                const selectedIndex = 0;
-                const selectedTasklist = tasklists[selectedIndex];
                 return loadAllDataSuccessAction(selectedTasklist, tasklists);
               }),
               catchError(error => of(loginFailedAction(error)))

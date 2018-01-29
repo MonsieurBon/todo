@@ -8,6 +8,7 @@ export class GraphqlService {
     tasklists {
       id
       name
+      slug
       tasks {
     	  id
         title
