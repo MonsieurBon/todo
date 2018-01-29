@@ -1,0 +1,21 @@
+<div class="row">
+  <div class="col">
+    <ngb-accordion #acc="ngbAccordion" activeIds="ngb-critical-now, ngb-opportunity-now, ngb-over-the-horizon">
+      <ngb-panel id="ngb-critical-now" title="Critical Now">
+        <ng-template ngbPanelContent>
+          <app-tasklist-section [tasks]="tasks && tasks['CRITICAL_NOW']"></app-tasklist-section>
+        </ng-template>
+      </ngb-panel>
+      <ngb-panel id="ngb-opportunity-now" title="Opportunity Now">
+        <ng-template ngbPanelContent>
+          <app-tasklist-section [tasks]="tasks && tasks['OPPORTUNITY_NOW']"></app-tasklist-section>
+        </ng-template>
+      </ngb-panel>
+      <ngb-panel id="ngb-over-the-horizon" title="Over The Horizon">
+        <ng-template ngbPanelContent>
+          <app-tasklist-section [tasks]="tasks && tasks['OVER_THE_HORIZON']"></app-tasklist-section>
+        </ng-template>
+      </ngb-panel>
+    </ngb-accordion>
+  </div>
+</div>

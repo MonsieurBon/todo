@@ -1,4 +1,13 @@
 <div class="container">
+  <div class="row">
+    <div class="col-6">
+      <h1>Todo - </h1>
+      <h2>{{tasklistname$ | async}}</h2>
+    </div>
+    <div class="col-6 pr-0">
+      <app-navigation-container></app-navigation-container>
+    </div>
+  </div>
   <router-outlet></router-outlet>
 </div>
 

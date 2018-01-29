@@ -1,0 +1,9 @@
+<ul class="list-group">
+  <li *ngFor="let task of tasks" class="list-group-item list-group-item-action flex-column align-items-start" [class.disabled]="task.state === 'DONE'">
+    <div class="d-flex w-100 justify-content-between">
+      <h5 class="mb-1">{{task.title}}</h5>
+      <small *ngIf="task.duedate" [class.text-danger]="task.duedate | inPast">Due: {{task.duedate.toLocaleDateString()}}</small>
+    </div>
+    <p>{{task.description}}</p>
+  </li>
+</ul>

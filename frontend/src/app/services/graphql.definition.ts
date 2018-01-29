@@ -1,3 +1,5 @@
+import { ITask, TaskState, TaskType } from '../tasklist/tasklist.model';
+
 export interface GraphQlLogin {
   createToken: GraphQlCreateToken;
 }
@@ -14,10 +16,21 @@ export interface GraphQlCheckToken {
 }
 
 export interface GraphQLAllData {
-  tasklists: GraphQLTasklists[];
+  tasklists: GraphQLTasklist[];
 }
 
-interface GraphQLTasklists {
+interface GraphQLTasklist {
   id: number;
   name: string;
+  tasks: ITask[];
+}
+
+interface GraphQLTask {
+  id: number;
+  title: string;
+  description: string;
+  startdate: string;
+  duedate: string;
+  state: TaskState;
+  type: TaskType;
 }

@@ -7,26 +7,35 @@ import { environment } from '../../environments/environment';
 import { rootReducer } from './root.reducer';
 import { combineEpics, createEpicMiddleware } from 'redux-observable';
 import { AuthEpics } from '../auth/auth.epics';
+import { TasklistEpics } from '../tasklist/tasklist.epics';
+import { NgReduxRouter, NgReduxRouterModule } from '@angular-redux/router';
+import { RouterEpics } from './router.epics';
 
 @NgModule({
   imports: [
     CommonModule,
-    NgReduxModule
+    NgReduxModule,
+    NgReduxRouterModule.forRoot()
   ],
   declarations: [],
-  providers: [AuthEpics]
+  providers: [AuthEpics, RouterEpics, TasklistEpics]
 })
 export class StoreModule {
   constructor(
     private authEpics: AuthEpics,
+    private routerEpics: RouterEpics,
+    private tasklistEpics: TasklistEpics,
     private ngRedux: NgRedux<IAppState>,
+    private ngReduxRouter: NgReduxRouter,
     private devTools: DevToolsExtension
   ) {
     const middleware = [
       createEpicMiddleware(
         combineEpics(
           this.authEpics.login,
-          this.authEpics.loginSuccess
+          this.authEpics.loginSuccess,
+          this.routerEpics.gotoTasklist,
+          this.tasklistEpics.loadAllData
         )
       )
     ];
@@ -41,5 +50,7 @@ export class StoreModule {
       middleware,
       this.devTools.isEnabled() ? [ this.devTools.enhancer() ] : []
     );
+
+    this.ngReduxRouter.initialize();
   }
 }

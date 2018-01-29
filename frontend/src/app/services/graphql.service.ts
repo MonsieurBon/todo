@@ -8,6 +8,15 @@ export class GraphqlService {
     tasklists {
       id
       name
+      tasks {
+    	  id
+        title
+        description
+        startdate
+        duedate
+        state
+        type
+      }
     }
   }`;
 
