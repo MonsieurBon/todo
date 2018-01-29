@@ -4,12 +4,18 @@ namespace App\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\ORM\Mapping\UniqueConstraint;
 use Gedmo\Mapping\Annotation as Gedmo;
 
 /**
  * Tasklist
  *
- * @ORM\Table(name="task_list")
+ * @ORM\Table(name="task_list",
+ *     uniqueConstraints={
+ *         @UniqueConstraint(name="name_unique_per_user",
+ *             columns={"owner_id", "name"})
+ *     }
+ * )
  * @ORM\Entity(repositoryClass="App\Repository\TasklistRepository")
  */
 class Tasklist
@@ -33,8 +39,8 @@ class Tasklist
     /**
      * @var string
      *
-     * @Gedmo\Slug(fields={"name"})
-     * @ORM\Column(length=128, unique=true)
+     * @Gedmo\Slug(fields={"name"}, unique=false)
+     * @ORM\Column(length=128, unique=false)
      */
     private $slug;
 
