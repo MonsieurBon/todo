@@ -17,6 +17,7 @@ class TasklistType extends ObjectType
                 return [
                     'id' => Types::id(),
                     'name' => Types::string(),
+                    'slug' => Types::string(),
                     'tasks' => Types::listOf(Types::task())
                 ];
             },
