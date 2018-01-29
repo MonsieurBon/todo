@@ -60,7 +60,7 @@ class GraphQLQueryTest extends GraphQLTestCase
     public function testQueryTasklistsWithTasks()
     {
         $tasklistId = $this->fixtures->getReference('tasklist1')->getId();
-        $query = '{"query":"query {\n tasklist(id: ' . $tasklistId . ') {\n name\n tasks {\n title\n description\n type\n startDate}\n }\n}","variables":null}';
+        $query = '{"query":"query {\n tasklist(id: ' . $tasklistId . ') {\n name\n tasks {\n title\n description\n type\n startdate}\n }\n}","variables":null}';
 
         $client = static::sendApiQuery($query, ValidToken::TOKEN);
         $response = $client->getResponse();
@@ -70,7 +70,7 @@ class GraphQLQueryTest extends GraphQLTestCase
         self::assertEquals(200, $response->getStatusCode());
         self::assertEquals('Home', $json->data->tasklist->name);
         self::assertCount(3, $json->data->tasklist->tasks);
-        self::assertEquals('2017-10-20', $json->data->tasklist->tasks[0]->startDate);
+        self::assertEquals('2017-10-20', $json->data->tasklist->tasks[0]->startdate);
     }
 
     public function testQueryTasklistWithNoAccess()
@@ -116,7 +116,7 @@ class GraphQLQueryTest extends GraphQLTestCase
     public function testAddTask()
     {
         $tasklistId = $this->fixtures->getReference('tasklist1')->getId();
-        $query = '{"query":"mutation {\n addTask(\n tasklist_id: ' . $tasklistId . '\n ) {task(\n title: \"My Title\"\n description: \"My description\"\n type: OPPORTUNITY_NOW\n startdate: \"2017-12-15\"\n duedate: \"2018-01-15\"\n ){\n id\n title\n description\n type\n startDate\n dueDate\n tasklist {\n id\n }\n }\n}\n}","variables":null}';
+        $query = '{"query":"mutation {\n addTask(\n tasklist_id: ' . $tasklistId . '\n ) {task(\n title: \"My Title\"\n description: \"My description\"\n type: OPPORTUNITY_NOW\n startdate: \"2017-12-15\"\n duedate: \"2018-01-15\"\n ){\n id\n title\n description\n type\n startdate\n duedate\n tasklist {\n id\n }\n }\n}\n}","variables":null}';
 
         $client = static::sendApiQuery($query, ValidToken::TOKEN);
         $response = $client->getResponse();
@@ -130,14 +130,14 @@ class GraphQLQueryTest extends GraphQLTestCase
         self::assertEquals('My Title', $task->title);
         self::assertEquals('My description', $task->description);
         self::assertEquals(TaskType::OPPORTUNITY_NOW, $task->type);
-        self::assertEquals('2017-12-15', $task->startDate);
-        self::assertEquals('2018-01-15', $task->dueDate);
+        self::assertEquals('2017-12-15', $task->startdate);
+        self::assertEquals('2018-01-15', $task->duedate);
         self::assertEquals($tasklistId, $task->tasklist->id);
     }
 
     public function testAddTaskToInvalidTasklist()
     {
-        $query = '{"query":"mutation {\n addTask(\n tasklist_id: -1\n ) {task(\n title: \"My Title\"\n description: \"My description\"\n type: OPPORTUNITY_NOW\n startdate: \"2017-12-15\"\n duedate: \"2018-01-15\"\n ){\n id\n title\n description\n type\n startDate\n dueDate\n tasklist {\n id\n }\n }\n}\n}","variables":null}';
+        $query = '{"query":"mutation {\n addTask(\n tasklist_id: -1\n ) {task(\n title: \"My Title\"\n description: \"My description\"\n type: OPPORTUNITY_NOW\n startdate: \"2017-12-15\"\n duedate: \"2018-01-15\"\n ){\n id\n title\n description\n type\n startdate\n duedate\n tasklist {\n id\n }\n }\n}\n}","variables":null}';
 
         $client = static::sendApiQuery($query, ValidToken::TOKEN);
         $response = $client->getResponse();

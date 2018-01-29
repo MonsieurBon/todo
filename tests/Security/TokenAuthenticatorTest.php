@@ -124,7 +124,7 @@ class TokenAuthenticatorTest extends KernelTestCase
 
     /**
      * @expectedException \InvalidArgumentException
-     * @expectedExceptionMessageRegExp /^The user provider must be an instance of ApiKeyUserProvider/
+     * @expectedExceptionMessageRegExp /^The user provider must be an instance of TokenUserProvider/
      */
     public function testAuthenticateTokenInvalidUserProvider()
     {
@@ -209,9 +209,9 @@ class TokenAuthenticatorTest extends KernelTestCase
         $response = $this->authenticator->onAuthenticationFailure($request, $exception);
 
         self::assertNotNull($response);
-        self::assertEquals(200, $response->getStatusCode());
+        self::assertEquals(401, $response->getStatusCode());
         self::assertEquals(
-            '{"data":{"hello":"Your GraphQL endpoint is ready! Please log in to see the full API."}}',
+            'An authentication exception occurred.',
             $response->getContent()
         );
     }

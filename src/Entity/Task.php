@@ -38,16 +38,16 @@ class Task
     /**
      * @var \DateTime
      *
-     * @ORM\Column(name="startDate", type="date")
+     * @ORM\Column(name="startdate", type="date")
      */
-    private $startDate;
+    private $startdate;
 
     /**
      * @var \DateTime
      *
-     * @ORM\Column(name="dueDate", type="date", nullable=true)
+     * @ORM\Column(name="duedate", type="date", nullable=true)
      */
-    private $dueDate;
+    private $duedate;
 
     /**
      * @var string
@@ -135,51 +135,51 @@ class Task
     }
 
     /**
-     * Set startDate
+     * Set startdate
      *
-     * @param \DateTime $startDate
+     * @param \DateTime $startdate
      *
      * @return Task
      */
-    public function setStartDate($startDate)
+    public function setStartDate($startdate)
     {
-        $this->startDate = $startDate;
+        $this->startdate = $startdate;
 
         return $this;
     }
 
     /**
-     * Get startDate
+     * Get startdate
      *
      * @return \DateTime
      */
     public function getStartDate()
     {
-        return $this->startDate;
+        return $this->startdate;
     }
 
     /**
-     * Set dueDate
+     * Set duedate
      *
-     * @param \DateTime $dueDate
+     * @param \DateTime $duedate
      *
      * @return Task
      */
-    public function setDueDate($dueDate)
+    public function setDueDate($duedate)
     {
-        $this->dueDate = $dueDate;
+        $this->duedate = $duedate;
 
         return $this;
     }
 
     /**
-     * Get dueDate
+     * Get duedate
      *
      * @return \DateTime
      */
     public function getDueDate()
     {
-        return $this->dueDate;
+        return $this->duedate;
     }
 
     /**
