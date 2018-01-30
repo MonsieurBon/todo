@@ -37,7 +37,7 @@ class QueryType extends ObjectType
                 'tasklist' => [
                     'type' => Types::tasklist(),
                     'args' => [
-                            'id' => Types::nonNull(Types::id())
+                            'slug' => Types::nonNull(Types::string())
                     ]
                 ]
             ],
@@ -60,10 +60,19 @@ class QueryType extends ObjectType
         return $this->doctrine->getRepository(Tasklist::class)->findAllWithAccess($user);
     }
 
+    /**
+     * @param $val
+     * @param $args
+     *
+     * @return Tasklist
+     *
+     * @throws Error
+     */
     private function tasklist($val, $args)
     {
-        $id = $args['id'];
-        $tasklist = $this->doctrine->getRepository(Tasklist::class)->find($id);
+        $slug = $args['slug'];
+        $user = $this->tokenStorage->getToken()->getUser();
+        $tasklist = $this->doctrine->getRepository(Tasklist::class)->findBySlug($user, $slug);
 
         if ($tasklist !== null && $this->authChecker->isGranted(TasklistVoter::ACCESS, $tasklist)) {
             return $tasklist;
@@ -71,8 +80,8 @@ class QueryType extends ObjectType
 
         throw new Error(
             sprintf(
-                'No tasklist with id=%d found',
-                $id
+                'No tasklist with slug=%s found',
+                $slug
             )
         );
     }

@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\Tasklist;
 use App\Entity\User;
 
 /**
@@ -28,5 +29,23 @@ class TasklistRepository extends \Doctrine\ORM\EntityRepository
             ->getQuery();
 
         return $query->getResult();
+    }
+
+    /**
+     * @param User $user
+     * @param      $slug
+     *
+     * @return Tasklist
+     */
+    public function findBySlug(User $user, $slug)
+    {
+        /** @var array $allWithAccess */
+        $allWithAccess = $this->findAllWithAccess($user);
+
+        foreach ($allWithAccess as $tasklist) {
+            if ($tasklist->getSlug() === $slug) {
+                return $tasklist;
+            }
+        }
     }
 }

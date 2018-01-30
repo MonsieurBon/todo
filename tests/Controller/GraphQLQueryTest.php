@@ -46,8 +46,8 @@ class GraphQLQueryTest extends GraphQLTestCase
 
     public function testQuerySpecificTasklist()
     {
-        $tasklistId = $this->fixtures->getReference('tasklist1')->getId();
-        $query = '{"query":"query {\n  tasklist(id: ' . $tasklistId . ') {\n    name\n  }\n}","variables":null}';
+        $tasklistSlug = $this->fixtures->getReference('tasklist1')->getSlug();
+        $query = '{"query":"query {\n  tasklist(slug: \"' . $tasklistSlug . '\") {\n    name\n  }\n}","variables":null}';
         $client = static::sendApiQuery($query, ValidToken::TOKEN);
         $response = $client->getResponse();
         $content = $response->getContent();
@@ -59,8 +59,8 @@ class GraphQLQueryTest extends GraphQLTestCase
 
     public function testQueryTasklistsWithTasks()
     {
-        $tasklistId = $this->fixtures->getReference('tasklist1')->getId();
-        $query = '{"query":"query {\n tasklist(id: ' . $tasklistId . ') {\n name\n tasks {\n title\n description\n type\n startdate}\n }\n}","variables":null}';
+        $tasklistSlug = $this->fixtures->getReference('tasklist1')->getSlug();
+        $query = '{"query":"query {\n tasklist(slug: \"' . $tasklistSlug . '\") {\n name\n tasks {\n title\n description\n type\n startdate}\n }\n}","variables":null}';
 
         $client = static::sendApiQuery($query, ValidToken::TOKEN);
         $response = $client->getResponse();
@@ -75,8 +75,8 @@ class GraphQLQueryTest extends GraphQLTestCase
 
     public function testQueryTasklistWithNoAccess()
     {
-        $tasklistId = $this->fixtures->getReference('tasklist3')->getId();
-        $query = '{"query":"query {\n tasklist(id: ' . $tasklistId . ') {\n name\n }\n}","variables":null}';
+        $tasklistSlug = $this->fixtures->getReference('tasklist3')->getSlug();
+        $query = '{"query":"query {\n tasklist(slug: \"' . $tasklistSlug . '\") {\n name\n }\n}","variables":null}';
 
         $client = static::sendApiQuery($query, ValidToken::TOKEN);
         $response = $client->getResponse();
@@ -85,7 +85,7 @@ class GraphQLQueryTest extends GraphQLTestCase
 
         self::assertEquals(200, $response->getStatusCode());
         self::assertCount(1, $json->errors);
-        self::assertEquals('No tasklist with id=' . $tasklistId . ' found', $json->errors[0]->message);
+        self::assertEquals('No tasklist with slug=' . $tasklistSlug . ' found', $json->errors[0]->message);
     }
 
     public function testInvalidQueryFails()
