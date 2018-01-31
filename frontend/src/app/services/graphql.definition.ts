@@ -15,18 +15,22 @@ export interface GraphQlCheckToken {
   };
 }
 
-export interface GraphQLAllData {
-  tasklists: GraphQLTasklist[];
+export interface GraphQlAllData {
+  tasklists: GraphQlTasklist[];
 }
 
-interface GraphQLTasklist {
+export interface GraphQlReloadTasklist {
+  tasklist: GraphQlTasklist;
+}
+
+interface GraphQlTasklist {
   id: number;
   name: string;
   slug: string;
   tasks: ITask[];
 }
 
-interface GraphQLTask {
+interface GraphQlTask {
   id: number;
   title: string;
   description: string;

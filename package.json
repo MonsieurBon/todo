@@ -1,10 +1,10 @@
 {
   "name": "todo",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "license": "MIT",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "ng serve -bh /",
     "build": "ng build",
     "build:prod": "ng build --prod -d assets/",
     "deploy": "scripts/copy_frontend.sh",

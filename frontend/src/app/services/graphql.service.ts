@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { GraphQLAllData, GraphQlCheckToken, GraphQlLogin } from './graphql.definition';
+import { GraphQlAllData, GraphQlCheckToken, GraphQlLogin, GraphQlReloadTasklist } from './graphql.definition';
 import { GraphqlClientFactory } from './graphql-client.factory';
 
 @Injectable()
@@ -11,6 +11,23 @@ export class GraphqlService {
       slug
       tasks {
     	  id
+        title
+        description
+        startdate
+        duedate
+        state
+        type
+      }
+    }
+  }`;
+
+  static reloadTasklistQuery = `query($slug: String!) {
+    tasklist(slug: $slug) {
+      id
+      name
+      slug
+      tasks {
+        id
         title
         description
         startdate
@@ -36,9 +53,18 @@ export class GraphqlService {
 
   constructor(private graphQlClientFactory: GraphqlClientFactory) {}
 
-  loadAllData(): Promise<GraphQLAllData> {
+  loadAllData(): Promise<GraphQlAllData> {
     const client = this.graphQlClientFactory.getClient();
-    return client.request<GraphQLAllData>(GraphqlService.loadDataQuery);
+    return client.request<GraphQlAllData>(GraphqlService.loadDataQuery);
+  }
+
+  reloadTasklist(slug: string): Promise<GraphQlReloadTasklist> {
+    const variables = {
+      slug: slug
+    };
+
+    const client = this.graphQlClientFactory.getClient();
+    return client.request<GraphQlReloadTasklist>(GraphqlService.reloadTasklistQuery, variables);
   }
 
   login(username: string, password: string): Promise<GraphQlLogin> {
