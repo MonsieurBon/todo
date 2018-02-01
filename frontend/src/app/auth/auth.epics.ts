@@ -37,12 +37,16 @@ export class AuthEpics {
       );
   }
 
-  loginSuccess = (action$: ActionsObservable<AnyAction>): Observable<Action> => {
+  loginSuccess = (action$: ActionsObservable<AnyAction>, state): Observable<Action> => {
     return action$.ofType(AuthActionTypes.LoginSuccess)
       .pipe(
         mergeMap((action: AnyAction) => {
           localStorage.setItem('token', action.payload);
-          this.router.navigate(['']);
+
+          const authState = state.getState().auth;
+          const requestedUrl = authState.requestedUrl ? authState.requestedUrl : '';
+
+          this.router.navigate([requestedUrl]);
           return empty();
         })
       );

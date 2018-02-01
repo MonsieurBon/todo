@@ -11,6 +11,7 @@ import { loginAction } from '../auth.actions';
 })
 export class LoginPageComponent {
   @select(['auth', 'error']) error$: Observable<string>;
+  @select(['auth', 'pending']) pending$: Observable<boolean>;
 
   constructor() { }
 

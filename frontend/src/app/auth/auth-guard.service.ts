@@ -9,7 +9,7 @@ import { of } from 'rxjs/observable/of';
 import { GraphqlService } from '../services/graphql.service';
 import { GraphQlCheckToken } from '../services/graphql.definition';
 import { fromPromise } from 'rxjs/observable/fromPromise';
-import { checkTokenSuccessAction } from './auth.actions';
+import { checkTokenSuccessAction, requestedUrlAction } from './auth.actions';
 
 @Injectable()
 export class AuthGuard implements CanActivate, OnDestroy {
@@ -28,6 +28,8 @@ export class AuthGuard implements CanActivate, OnDestroy {
   }
 
   canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
+    this.ngRedux.dispatch(requestedUrlAction(state.url));
+
     const token = localStorage.getItem('token');
     let obs;
 

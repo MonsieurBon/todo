@@ -10,6 +10,17 @@ import { FormControl, FormGroup } from '@angular/forms';
 export class LoginFormComponent {
   @Input() error = '';
 
+  @Input()
+  set disabled(disabled: boolean) {
+    if (disabled) {
+      this.form.disable();
+      this.showLoading = true;
+    } else {
+      this.form.enable();
+      this.showLoading = false;
+    }
+  }
+
   @Output() submitted = new EventEmitter<LoginCredentials>();
 
   showLoading = false;
@@ -23,8 +34,6 @@ export class LoginFormComponent {
 
   login() {
     if (this.form.valid) {
-      this.form.disable();
-      this.showLoading = true;
       this.submitted.emit(this.form.value);
     }
   }

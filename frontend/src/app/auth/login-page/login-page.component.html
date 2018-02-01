@@ -1,1 +1,1 @@
-<app-login-form [error]="error$ | async" (submitted)="login($event)"></app-login-form>
+<app-login-form [error]="error$ | async" [disabled]="pending$ | async" (submitted)="login($event)"></app-login-form>

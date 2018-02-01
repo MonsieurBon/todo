@@ -2,6 +2,7 @@ import { Action, AnyAction } from 'redux';
 import { LoginCredentials } from './auth.events';
 
 export enum AuthActionTypes {
+  RequestedUrl = '[Auth] Requested Url',
   Login = '[Auth] Login',
   LoginSuccess = '[Auth] Login Success',
   LoginFailed = '[Auth] Login Failed',
@@ -9,7 +10,9 @@ export enum AuthActionTypes {
   Logout = '[Auth] Logout',
 }
 
-export const loginAction = (payload: LoginCredentials): AnyAction => ({type: AuthActionTypes.Login, payload});
+export const requestedUrlAction = (url: string): AnyAction => ({type: AuthActionTypes.RequestedUrl, payload: url});
+
+export const loginAction = (credentials: LoginCredentials): AnyAction => ({type: AuthActionTypes.Login, payload: credentials});
 
 export const loginSuccessAction = (token: string): AnyAction => ({type: AuthActionTypes.LoginSuccess, payload: token});
 
