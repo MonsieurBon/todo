@@ -23,14 +23,14 @@ export interface GraphQlReloadTasklist {
   tasklist: GraphQlTasklist;
 }
 
-interface GraphQlTasklist {
+export interface GraphQlTasklist {
   id: number;
   name: string;
   slug: string;
   tasks: ITask[];
 }
 
-interface GraphQlTask {
+export interface GraphQlTask {
   id: number;
   title: string;
   description: string;
