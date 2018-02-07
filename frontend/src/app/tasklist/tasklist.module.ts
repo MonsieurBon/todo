@@ -6,6 +6,7 @@ import { TasklistComponent } from './components/tasklist/tasklist.component';
 import { TasklistSectionComponent } from './components/tasklist-section/tasklist-section.component';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { InPastPipe } from './pipes/in-past.pipe';
+import { TaskComponent } from './components/task/task.component';
 
 @NgModule({
   imports: [
@@ -13,6 +14,6 @@ import { InPastPipe } from './pipes/in-past.pipe';
     NgbModule.forRoot(),
     tasklistRouting
   ],
-  declarations: [TasklistPageComponent, TasklistComponent, TasklistSectionComponent, InPastPipe]
+  declarations: [TasklistPageComponent, TasklistComponent, TasklistSectionComponent, TaskComponent, InPastPipe]
 })
 export class TasklistModule { }

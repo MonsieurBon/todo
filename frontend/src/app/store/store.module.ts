@@ -10,6 +10,7 @@ import { AuthEpics } from '../auth/auth.epics';
 import { TasklistEpics } from '../tasklist/tasklist.epics';
 import { NgReduxRouter, NgReduxRouterModule } from '@angular-redux/router';
 import { RouterEpics } from './router.epics';
+import { TaskEpics } from '../tasklist/task.epics';
 
 @NgModule({
   imports: [
@@ -18,12 +19,13 @@ import { RouterEpics } from './router.epics';
     NgReduxRouterModule.forRoot()
   ],
   declarations: [],
-  providers: [AuthEpics, RouterEpics, TasklistEpics]
+  providers: [AuthEpics, RouterEpics, TaskEpics, TasklistEpics]
 })
 export class StoreModule {
   constructor(
     private authEpics: AuthEpics,
     private routerEpics: RouterEpics,
+    private taskEpics: TaskEpics,
     private tasklistEpics: TasklistEpics,
     private ngRedux: NgRedux<IAppState>,
     private ngReduxRouter: NgReduxRouter,
@@ -35,6 +37,7 @@ export class StoreModule {
           this.authEpics.login,
           this.authEpics.loginSuccess,
           this.routerEpics.gotoTasklist,
+          this.taskEpics.switchTaskState,
           this.tasklistEpics.loadAllData,
           this.tasklistEpics.reloadTasklist
         )

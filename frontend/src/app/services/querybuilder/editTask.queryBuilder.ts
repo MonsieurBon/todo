@@ -61,6 +61,7 @@ export class EditTaskQueryBuilder implements GraphqlQueryBuilder {
       }`,
       variables: {
         id: this.id,
+        title: this.title,
         description: this.description,
         type: this.type,
         state: this.state,

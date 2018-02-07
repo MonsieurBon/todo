@@ -9,9 +9,9 @@ export enum TasklistActionTypes {
   ReloadTasklistSuccess = '[Tasklist] Reload Tasklist Success'
 }
 
-export const switchTasklistAction = (tasklist: ITasklist): AnyAction => ({ type: TasklistActionTypes.SwitchTasklist, payload: tasklist});
+export const switchTasklistAction = (tasklist: ITasklist): AnyAction => ({type: TasklistActionTypes.SwitchTasklist, payload: tasklist});
 
-export const loadAllDataAction = (tasklist?: string): AnyAction => ({ type: TasklistActionTypes.LoadAllData, payload: tasklist });
+export const loadAllDataAction = (tasklist?: string): AnyAction => ({type: TasklistActionTypes.LoadAllData, payload: tasklist});
 
 export const loadAllDataSuccessAction = (selectedTasklist: ITasklist, tasklists: ITasklist[]): AnyAction => ({
   type: TasklistActionTypes.LoadAllDataSuccess,

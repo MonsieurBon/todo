@@ -12,6 +12,7 @@ import groupBy from 'lodash-es/groupBy';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ITask, ITasklist } from './tasklist.model';
 import { Location } from '@angular/common';
+import { GraphqlTransformer } from '../services/graphql.transformer';
 
 @Injectable()
 export class TasklistEpics {
@@ -75,9 +76,7 @@ export class TasklistEpics {
       return [];
     }
     const tasks = tasklist.tasks.map(task => {
-      const startdate = new Date(task.startdate);
-      const duedate = task.duedate ? new Date(task.duedate) : null;
-      return { ...task, startdate, duedate };
+      return GraphqlTransformer.mapTask(task);
     });
     const taskmap = groupBy(tasks, 'type');
     return taskmap;
