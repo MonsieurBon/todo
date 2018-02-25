@@ -95,9 +95,6 @@
             "ref": "258300d52be6ad59b32a888d5ddafbf9638540ff"
         }
     },
-    "gecko-packages/gecko-php-unit": {
-        "version": "v3.0"
-    },
     "gedmo/doctrine-extensions": {
         "version": "v2.4.33"
     },
@@ -285,7 +282,7 @@
         }
     },
     "symfony/security": {
-        "version": "v4.0.2"
+        "version": "v4.0.4"
     },
     "symfony/security-bundle": {
         "version": "3.3",
