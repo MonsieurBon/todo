@@ -1,8 +1,9 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { ITask, TaskState } from '../../tasklist.model';
 
 @Component({
-  selector: 'app-task',
+  selector: '[appTask]', // tslint:disable-line:component-selector
   templateUrl: './task.component.html',
   styleUrls: ['./task.component.css']
 })

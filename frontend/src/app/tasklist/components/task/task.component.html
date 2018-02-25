@@ -1,14 +1,13 @@
 <div class="d-flex w-100 justify-content-between">
   <h5 class="mb-1">{{task.title}}</h5>
-  <p *ngIf="task.duedate" [class.text-danger]="task.duedate | inPast">Due: {{task.duedate.toLocaleDateString()}}</p>
+  <p *ngIf="task.duedate" [class.text-danger]="task.duedate | inPast">Due: {{task.duedate | date:'dd.MM.y'}}</p>
 </div>
 <div class="d-flex w-100 justify-content-between">
-  <div>
-    <p>{{task.description}} But the text is actually quite long as we can see her. I love riding my motorcyle. This is why I ordered this camera yesterday.
-      I'll put even more text here to have more lines and to see how the button is reacting to the change of height here.</p>
+  <div class="pt-2 text-truncate">
+    {{task.description}}
   </div>
   <div class="ml-5">
-    <button type="button" class="btn btn-outline-success" [ngClass]="{'btn-outline-success': !isDone(), 'btn-outline-danger': isDone()}" (click)="switchTaskState()">
+    <button type="button" class="btn" [ngClass]="{'btn-outline-success': !isDone(), 'btn-outline-danger': isDone()}" (click)="switchTaskState()">
       <i class="material-icons" *ngIf="!isDone()">done</i>
       <i class="material-icons" *ngIf="isDone()">close</i>
     </button>
