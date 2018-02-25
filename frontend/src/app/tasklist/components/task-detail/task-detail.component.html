@@ -20,11 +20,11 @@
         </tr>
         <tr>
           <th scope="row">Startdate:</th>
-          <td><app-inline-edit [value]="task.startdate | date:'dd.MM.y'" (edited)="updateTaskStartdate($event)" type="date" [required]=true></app-inline-edit></td>
+          <td><app-inline-edit [value]="task.startdate" (edited)="updateTaskStartdate($event)" type="date" [required]=true></app-inline-edit></td>
         </tr>
         <tr>
           <th scope="row">Duedate:</th>
-          <td><app-inline-edit [value]="task.duedate | date:'dd.MM.y' | default:'No duedate'" (edited)="updateTaskDuedate($event)" type="date"></app-inline-edit></td>
+          <td><app-inline-edit [value]="task.duedate" [defaultValue]="'No duedate'" (edited)="updateTaskDuedate($event)" type="date"></app-inline-edit></td>
         </tr>
         <tr>
           <th scope="row">Description:</th>

@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core
 import { FormControl } from '@angular/forms';
 import { NgbDateParserFormatter, NgbDatepicker, NgbDateStruct } from '@ng-bootstrap/ng-bootstrap';
 import { DateParserFormatterService } from '../../services/date-parser-formatter.service';
+import { isNumber } from '../../../common/utility-functions';
 
 @Component({
   selector: 'app-inline-edit',
@@ -13,12 +14,13 @@ export class InlineEditComponent {
   @ViewChild('dp') datePicker: NgbDatepicker;
   @Input() type: string;
   @Input() required = false;
-  @Input() value: string;
+  @Input() value: any;
+  @Input() defaultValue: string;
   editing = false;
   model: NgbDateStruct;
 
   @Output()
-  edited = new EventEmitter<string|NgbDateStruct>();
+  edited = new EventEmitter<any>();
 
   field = new FormControl();
 
@@ -42,8 +44,10 @@ export class InlineEditComponent {
     }
 
     this.editing = false;
-
-    const newDate = this.dateFormatter.format(this.model);
+    let newDate = null;
+    if (this.model) {
+      newDate = new Date(this.model.year, this.model.month - 1, this.model.day);
+    }
 
     if (this.value !== newDate) {
       this.value = newDate;
@@ -53,8 +57,10 @@ export class InlineEditComponent {
 
   edit() {
     if (this.type === 'date') {
-      const [day, month, year] = this.value.split('.');
-      this.model = {year: Number(year), month: Number(month), day: Number(day)};
+      if (this.value) {
+        const date: Date = this.value;
+        this.model = { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() };
+      }
     } else {
       this.field.setValue(this.value);
     }

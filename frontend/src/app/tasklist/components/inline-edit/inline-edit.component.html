@@ -15,7 +15,8 @@
     </form>
     <input *ngSwitchDefault appAutofocus [required]="required" (blur)="onBlur($event)" [formControl]="field" [type]="type">
   </div>
-  <div *ngIf="!editing">
-    <div (click)="edit()" (focus)="edit()">{{value}}</div>
+  <div *ngIf="!editing" [ngSwitch]="type">
+    <div *ngSwitchCase="'date'" (click)="edit()" (focus)="edit()">{{value | date:'dd.MM.y' | default:defaultValue}}</div>
+    <div *ngSwitchDefault (click)="edit()" (focus)="edit()">{{value}}</div>
   </div>
 </div>
