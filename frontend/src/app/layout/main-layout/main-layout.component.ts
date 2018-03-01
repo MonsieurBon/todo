@@ -9,6 +9,4 @@ import { ITasklist } from '../../tasklist/tasklist.model';
 })
 export class MainLayoutComponent {
 
-  @select(['tasklist', 'selectedTasklist', 'name']) tasklistname$: string;
-
 }

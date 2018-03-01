@@ -5,8 +5,8 @@ import { AuthLayoutComponent } from './auth-layout/auth-layout.component';
 import { RouterModule } from '@angular/router';
 import { LoadingModalComponent } from './loading-modal/loading-modal.component';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { NavigationContainerComponent } from './navigation-container/navigation-container.component';
-import { NavigationComponent } from './navigation/navigation.component';
+import { NavbarComponent } from './navbar/navbar.component';
+import { NavbarContainerComponent } from './navbar-container/navbar-container.component';
 
 @NgModule({
   imports: [
@@ -14,7 +14,7 @@ import { NavigationComponent } from './navigation/navigation.component';
     RouterModule,
     NgbModule.forRoot()
   ],
-  declarations: [AuthLayoutComponent, MainLayoutComponent, LoadingModalComponent, NavigationContainerComponent, NavigationComponent],
+  declarations: [AuthLayoutComponent, MainLayoutComponent, LoadingModalComponent, NavbarComponent, NavbarContainerComponent],
   entryComponents: [LoadingModalComponent]
 })
 export class LayoutModule { }

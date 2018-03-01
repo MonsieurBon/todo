@@ -1,0 +1,25 @@
+<nav class="navbar navbar-expand-md sticky-top navbar-dark bg-dark">
+  <div class="navbar-brand align-items-center">
+    <img src="/assets/logo.svg" alt="Todo logo" height="42" width="42" class="d-inline-block align-top"/>
+    <h1 class="mb-0 ml-2 d-inline-block">{{title}}</h1>
+  </div>
+  <button class="navbar-toggler" type="button" (click)="isNavbarCollapsed = !isNavbarCollapsed" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse" [ngbCollapse]="isNavbarCollapsed" id="navbarNav">
+    <ul class="navbar-nav">
+      <li *ngFor="let tasklist of tasklists" class="nav-item" routerLinkActive="active">
+        <a [routerLink]="['/tasklist', tasklist.slug]" class="nav-link" (click)="isNavbarCollapsed = true">{{tasklist.name}}</a>
+      </li>
+    </ul>
+    <div class="divider"></div>
+    <ul class="navbar-nav">
+      <li class="nav-item">
+        <a class="nav-link" (click)="isNavbarCollapsed = true">Account</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" (click)="isNavbarCollapsed = true">Logout</a>
+      </li>
+    </ul>
+  </div>
+</nav>
