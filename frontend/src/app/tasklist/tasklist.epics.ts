@@ -7,7 +7,10 @@ import { catchError, map, mergeMap, withLatestFrom } from 'rxjs/operators';
 import { GraphqlService } from '../services/graphql.service';
 import { fromPromise } from 'rxjs/observable/fromPromise';
 import { of } from 'rxjs/observable/of';
-import { loadAllDataSuccessAction, reloadTasklistSuccessAction, TasklistActionTypes } from './tasklist.actions';
+import {
+  loadAllDataSuccessAction, reloadTasklistDataReceivedAction, reloadTasklistSuccessAction,
+  TasklistActionTypes
+} from './tasklist.actions';
 import groupBy from 'lodash-es/groupBy';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ITask, ITasklist } from './tasklist.model';
@@ -59,14 +62,21 @@ export class TasklistEpics {
         mergeMap((action: AnyAction) => {
           return fromPromise(this.graphQl.reloadTasklist(action.payload))
             .pipe(
-              map((result) => {
-                const taskmap = this.mapTasksByType(result.tasklist);
-                const tasklist = {...result.tasklist, tasks: taskmap};
-
-                return reloadTasklistSuccessAction(tasklist);
-              }),
+              map(result => reloadTasklistDataReceivedAction(result.tasklist)),
               catchError(error => of(loginFailedAction(error)))
             );
+        })
+      );
+  }
+
+  reloadTasklistDataReceived = (action$: ActionsObservable<AnyAction>): Observable<AnyAction> => {
+    return action$.ofType(TasklistActionTypes.ReloadTasklistDataReceived)
+      .pipe(
+        map((action: AnyAction) => {
+          const taskmap = this.mapTasksByType(action.payload);
+          const tasklist = {...action.payload, tasks: taskmap};
+
+          return reloadTasklistSuccessAction(tasklist);
         })
       );
   }

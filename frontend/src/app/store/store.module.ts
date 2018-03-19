@@ -37,9 +37,11 @@ export class StoreModule {
           this.authEpics.login,
           this.authEpics.loginSuccess,
           this.routerEpics.gotoTasklist,
-          this.taskEpics.switchTaskState,
+          this.taskEpics.editTask,
+          this.taskEpics.addTask,
           this.tasklistEpics.loadAllData,
-          this.tasklistEpics.reloadTasklist
+          this.tasklistEpics.reloadTasklist,
+          this.tasklistEpics.reloadTasklistDataReceived
         )
       )
     ];

@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import {
+  GraphQlAddTask,
   GraphQlAllData, GraphQlCheckToken, GraphQlEditTask, GraphQlLogin, GraphQlReloadTasklist,
   GraphQlTask
 } from './graphql.definition';
@@ -10,6 +11,7 @@ import { CreateTokenQueryBuilder } from './querybuilder/createToken.queryBuilder
 import { CheckTokenQueryBuilder } from './querybuilder/checkToken.queryBuilder';
 import { ITask } from '../tasklist/tasklist.model';
 import { EditTaskQueryBuilder } from './querybuilder/editTask.queryBuilder';
+import { AddTaskQueryBuilder } from './querybuilder/addTask.queryBuilder';
 
 @Injectable()
 export class GraphqlService {
@@ -45,6 +47,21 @@ export class GraphqlService {
       .getRequest();
 
     return client.request<GraphQlEditTask>(request.query, request.variables);
+  }
+
+  addTask(tasklist_id: number, task: ITask): Promise<GraphQlAddTask> {
+    const client = this.graphQlClientFactory.getClient();
+
+    const request = AddTaskQueryBuilder.create()
+      .setTasklistId(tasklist_id)
+      .setTitle(task.title)
+      .setDescription(task.description)
+      .setType(task.type)
+      .setStartdate(task.startdate)
+      .setDuedate(task.duedate)
+      .getRequest();
+
+    return client.request<GraphQlAddTask>(request.query, request.variables);
   }
 
   login(username: string, password: string): Promise<GraphQlLogin> {

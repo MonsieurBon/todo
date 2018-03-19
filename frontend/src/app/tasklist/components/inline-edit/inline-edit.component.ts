@@ -11,7 +11,6 @@ import { isNumber } from '../../../common/utility-functions';
   styleUrls: [ './inline-edit.component.css' ]
 })
 export class InlineEditComponent {
-  @ViewChild('dp') datePicker: NgbDatepicker;
   @Input() type: string;
   @Input() required = false;
   @Input() value: any;

@@ -8,7 +8,6 @@ import { AuthGuard } from './auth/auth-guard.service';
 import { appRouting } from './app.routes';
 import { GraphqlService } from './services/graphql.service';
 import { GraphqlClientFactory } from './services/graphql-client.factory';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 
 
 @NgModule({

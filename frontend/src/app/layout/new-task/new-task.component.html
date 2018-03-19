@@ -1,0 +1,47 @@
+<div class="container">
+  <div class="modal-header">
+    <h4 class="modal-title">New Task</h4>
+  </div>
+  <div class="modal-body">
+    <form [formGroup]="newTaskForm" (ngSubmit)="submitForm()" novalidate>
+      <div class="form-group row">
+        <label for="inputTitle" class="col-2 col-form-label">Title</label>
+        <div class="col-10">
+          <input type="text" class="form-control" id="inputTitle" placeholder="Title" formControlName="title">
+        </div>
+      </div>
+      <div class="form-group row">
+        <label for="startdatePicker" class="col-2 col-form-label">Startdate</label>
+        <div class="input-group col-10">
+          <input type="text" class="form-control" id="startdatePicker" placeholder="dd.mm.yyyy" formControlName="startdate" name="dpStartdate" ngbDatepicker #dStartdate="ngbDatepicker">
+          <div class="input-group-append">
+            <div class="input-group-text" style="cursor: pointer" (click)="dStartdate.toggle()">
+              <i class="material-icons">event</i>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="form-group row">
+        <label for="duedatePicker" class="col-2 col-form-label">Duedate</label>
+        <div class="input-group col-10">
+          <input type="text" class="form-control" id="duedatePicker" placeholder="dd.mm.yyyy" formControlName="duedate" name="dpDuedate" ngbDatepicker #dDuedate="ngbDatepicker">
+          <div class="input-group-append">
+            <div class="input-group-text" style="cursor: pointer" (click)="dDuedate.toggle()">
+              <i class="material-icons">event</i>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="form-group row">
+        <label for="textareaDescription" class="col-2 col-form-label">Description</label>
+        <div class="col-10">
+          <textarea class="form-control" id="textareaDescription" placeholder="Description" formControlName="description" rows="10"></textarea>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-outline-success" (click)="submitForm()">Save</button>
+    <button type="button" class="btn btn-outline-dark" (click)="activeModal.close()">Cancel</button>
+  </div>
+</div>

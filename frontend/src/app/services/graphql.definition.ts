@@ -29,6 +29,12 @@ export interface GraphQlEditTask {
   };
 }
 
+export interface GraphQlAddTask {
+  addTask: {
+    task: GraphQlTask;
+  };
+}
+
 export interface GraphQlTasklist {
   id: number;
   name: string;
@@ -44,4 +50,5 @@ export interface GraphQlTask {
   duedate: string;
   state: TaskState;
   type: TaskType;
+  tasklist?: GraphQlTasklist;
 }

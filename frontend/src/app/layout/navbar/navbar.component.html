@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-md sticky-top navbar-dark bg-dark">
+<nav class="navbar navbar-expand-lg sticky-top navbar-dark bg-dark">
   <div class="navbar-brand align-items-center">
     <img src="/assets/logo.svg" alt="Todo logo" height="42" width="42" class="d-inline-block align-top"/>
     <h1 class="mb-0 ml-2 d-inline-block">{{title}}</h1>
@@ -15,19 +15,19 @@
     <div class="divider"></div>
     <ul class="navbar-nav">
       <li class="nav-item">
-        <a class="nav-link" style="cursor: pointer">New Task</a>
+        <a class="nav-link" style="cursor: pointer" (click)="showNewTaskForm()">New Task</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link">New Tasklist</a>
+        <a class="nav-link" style="cursor: pointer" (click)="isNavbarCollapsed = true">New Tasklist</a>
       </li>
     </ul>
     <div class="divider"></div>
     <ul class="navbar-nav">
       <li class="nav-item">
-        <a class="nav-link" href="#" (click)="isNavbarCollapsed = true">Account</a>
+        <a class="nav-link" style="cursor: pointer" (click)="isNavbarCollapsed = true">Account</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" href="#" (click)="isNavbarCollapsed = true">Logout</a>
+        <a class="nav-link" style="cursor: pointer" (click)="isNavbarCollapsed = true">Logout</a>
       </li>
     </ul>
   </div>

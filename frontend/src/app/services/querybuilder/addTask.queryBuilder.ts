@@ -2,10 +2,10 @@ import { GraphqlQueryBuilder, GraphqlRequest } from './graphql.queryBuilder';
 import { IsDate, IsInt, IsNotEmpty, validateSync } from 'class-validator';
 import { TaskState, TaskType } from '../../tasklist/tasklist.model';
 
-export class EditTaskQueryBuilder implements GraphqlQueryBuilder {
+export class AddTaskQueryBuilder implements GraphqlQueryBuilder {
   @IsNotEmpty()
   @IsInt()
-  private id: number;
+  private tasklist_id: number;
 
   @IsNotEmpty()
   private title: string;
@@ -16,9 +16,6 @@ export class EditTaskQueryBuilder implements GraphqlQueryBuilder {
   private type: TaskType;
 
   @IsNotEmpty()
-  private state: TaskState;
-
-  @IsNotEmpty()
   @IsDate()
   private startdate: Date;
 
@@ -26,7 +23,7 @@ export class EditTaskQueryBuilder implements GraphqlQueryBuilder {
   private duedate: Date;
 
   static create() {
-    return new EditTaskQueryBuilder();
+    return new AddTaskQueryBuilder();
   }
 
   private constructor() {}
@@ -35,19 +32,16 @@ export class EditTaskQueryBuilder implements GraphqlQueryBuilder {
     validateSync(this);
 
     return {
-      query: `mutation($id: ID!,
+      query: `mutation($tasklist_id: ID!,
                        $title: String!,
                        $description: String,
                        $type: TaskTypeEnum!,
-                       $state: TaskStateEnum!,
                        $startdate: Date!,
                        $duedate: Date) {
-        editTask {
-          task(task_id: $id,
-               title: $title,
+        addTask(tasklist_id: $tasklist_id) {
+          task(title: $title,
                description: $description,
                type: $type,
-               state: $state,
                startdate: $startdate,
                duedate: $duedate) {
             id
@@ -75,11 +69,10 @@ export class EditTaskQueryBuilder implements GraphqlQueryBuilder {
         }
       }`,
       variables: {
-        id: this.id,
+        tasklist_id: this.tasklist_id,
         title: this.title,
         description: this.description,
         type: this.type,
-        state: this.state,
         startdate: this.formatDate(this.startdate),
         duedate: this.formatDate(this.duedate)
       }
@@ -98,8 +91,8 @@ export class EditTaskQueryBuilder implements GraphqlQueryBuilder {
     return `${year}-${month}-${day}`;
   }
 
-  public setId(id: number) {
-    this.id = id;
+  public setTasklistId(tasklist_id: number) {
+    this.tasklist_id = tasklist_id;
     return this;
   }
 
@@ -115,11 +108,6 @@ export class EditTaskQueryBuilder implements GraphqlQueryBuilder {
 
   public setType(type: TaskType) {
     this.type = type;
-    return this;
-  }
-
-  public setState(state: TaskState) {
-    this.state = state;
     return this;
   }
 

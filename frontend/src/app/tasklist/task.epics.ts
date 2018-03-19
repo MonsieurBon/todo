@@ -7,12 +7,15 @@ import { catchError, map, mergeMap, withLatestFrom } from 'rxjs/operators';
 import { GraphqlService } from '../services/graphql.service';
 import { fromPromise } from 'rxjs/observable/fromPromise';
 import { of } from 'rxjs/observable/of';
-import { loadAllDataSuccessAction, reloadTasklistSuccessAction, TasklistActionTypes } from './tasklist.actions';
+import {
+  loadAllDataSuccessAction, reloadTasklistDataReceivedAction, reloadTasklistSuccessAction,
+  TasklistActionTypes
+} from './tasklist.actions';
 import groupBy from 'lodash-es/groupBy';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ITask, ITasklist } from './tasklist.model';
 import { Location } from '@angular/common';
-import { TaskActionTypes, updateTaskActionSuccess } from './task.actions';
+import { TaskActionTypes } from './task.actions';
 import { GraphqlTransformer } from '../services/graphql.transformer';
 
 @Injectable()
@@ -21,16 +24,27 @@ export class TaskEpics {
     private graphQl: GraphqlService,
   ) {}
 
-  switchTaskState = (action$: ActionsObservable<AnyAction>): Observable<AnyAction> => {
+  editTask = (action$: ActionsObservable<AnyAction>): Observable<AnyAction> => {
     return action$.ofType(TaskActionTypes.UpdateTask)
       .pipe(
         mergeMap((action: AnyAction) => {
           return fromPromise(this.graphQl.editTask(action.payload))
             .pipe(
-              map((result) => {
-                const task = GraphqlTransformer.mapTask(result.editTask.task);
-                return updateTaskActionSuccess(task);
-              }),
+              map((result) => reloadTasklistDataReceivedAction(result.editTask.task.tasklist)),
+              catchError(error => of(loginFailedAction(error)))
+            );
+        })
+      );
+  }
+
+  addTask = (action$: ActionsObservable<AnyAction>, store): Observable<AnyAction> => {
+    return action$.ofType(TaskActionTypes.AddTask)
+      .pipe(
+        mergeMap((action: AnyAction) => {
+          const tasklist_id = store.getState().tasklist.selectedTasklist.id;
+          return fromPromise(this.graphQl.addTask(tasklist_id, action.payload))
+            .pipe(
+              map((result) => reloadTasklistDataReceivedAction(result.addTask.task.tasklist)),
               catchError(error => of(loginFailedAction(error)))
             );
         })

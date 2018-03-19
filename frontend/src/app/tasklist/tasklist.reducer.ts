@@ -1,4 +1,4 @@
-import { ITask, ITasklistState, TaskState } from './tasklist.model';
+import { ITasklistState } from './tasklist.model';
 import { AnyAction } from 'redux';
 import { TasklistActionTypes } from './tasklist.actions';
 import { TaskActionTypes } from './task.actions';
@@ -21,16 +21,32 @@ export function tasklistReducer(state: ITasklistState = {}, action: AnyAction): 
       state = {selectedTasklist: action.payload, tasklists: newTasklists};
       break;
     case TaskActionTypes.UpdateTask:
-    case TaskActionTypes.UpdateTaskSuccess:
-      const {id, type} = action.payload;
+      const {id} = action.payload;
+      let {type} = action.payload;
 
-      const subtasks = state.selectedTasklist.tasks[type].map(task => {
+      let subtasks = state.selectedTasklist.tasks[type].map(task => {
         if (task.id === id) {
           return action.payload;
         }
 
         return task;
       });
+
+      state = {
+        ...state,
+        selectedTasklist: {
+          ...state.selectedTasklist,
+          tasks: {
+            ...state.selectedTasklist.tasks,
+            [type]: subtasks
+          }
+        }
+      };
+      break;
+    case TaskActionTypes.AddTask:
+      type = action.payload.type;
+      subtasks = state.selectedTasklist.tasks[type].slice();
+      subtasks.splice(subtasks.length, 0, action.payload);
 
       state = {
         ...state,

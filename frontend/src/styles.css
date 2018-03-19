@@ -41,3 +41,7 @@
   animation-iteration-count: infinite;
   animation-timing-function: linear;
 }
+
+.mt-6 {
+  margin-top: 5rem;
+}

@@ -11,7 +11,7 @@ export interface ITasklist {
 }
 
 export interface ITask {
-  id: number;
+  id?: number;
   title: string;
   description?: string;
   startdate: Date;
