@@ -16,6 +16,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ITask, ITasklist } from './tasklist.model';
 import { Location } from '@angular/common';
 import { GraphqlTransformer } from '../services/graphql.transformer';
+import { GraphQlTasklist } from '../services/graphql.definition';
 
 @Injectable()
 export class TasklistEpics {
@@ -81,7 +82,7 @@ export class TasklistEpics {
       );
   }
 
-  private mapTasksByType(tasklist): ITask[][] {
+  private mapTasksByType(tasklist: GraphQlTasklist): ITask[][] {
     if (!tasklist.tasks || tasklist.tasks.length === 0) {
       return [];
     }

@@ -4,6 +4,7 @@ namespace App\Schema\Types;
 
 use App\Entity\Tasklist;
 use App\Schema\Types;
+use Doctrine\Common\Collections\Criteria;
 use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Type\Definition\ResolveInfo;
 
@@ -38,6 +39,11 @@ class TasklistType extends ObjectType
     /** @noinspection PhpUnusedPrivateMethodInspection */
     private function resolveTasks(Tasklist $value)
     {
-        return $value->getTasks();
+        $today = new \DateTime();
+        $criteria = Criteria::create()
+            ->where(Criteria::expr()->lte('startdate', $today))
+            ->orderBy(['startdate' => Criteria::DESC]);
+
+        return $value->getTasks()->matching($criteria);
     }
 }

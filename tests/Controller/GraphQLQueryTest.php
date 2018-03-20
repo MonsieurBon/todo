@@ -69,8 +69,8 @@ class GraphQLQueryTest extends GraphQLTestCase
 
         self::assertEquals(200, $response->getStatusCode());
         self::assertEquals('Home', $json->data->tasklist->name);
-        self::assertCount(3, $json->data->tasklist->tasks);
-        self::assertEquals('2017-10-20', $json->data->tasklist->tasks[0]->startdate);
+        self::assertCount(2, $json->data->tasklist->tasks);
+        self::assertEquals('2018-01-15', $json->data->tasklist->tasks[0]->startdate);
     }
 
     public function testQueryTasklistWithNoAccess()

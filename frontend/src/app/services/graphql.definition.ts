@@ -39,7 +39,7 @@ export interface GraphQlTasklist {
   id: number;
   name: string;
   slug: string;
-  tasks: ITask[];
+  tasks: GraphQlTask[];
 }
 
 export interface GraphQlTask {

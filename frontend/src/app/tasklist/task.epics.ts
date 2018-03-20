@@ -30,7 +30,14 @@ export class TaskEpics {
         mergeMap((action: AnyAction) => {
           return fromPromise(this.graphQl.editTask(action.payload))
             .pipe(
-              map((result) => reloadTasklistDataReceivedAction(result.editTask.task.tasklist)),
+              map((result) => {
+                const task = result.editTask.task;
+                const tasklist = result.editTask.task.tasklist;
+                if (!tasklist.tasks.some(sometask => sometask.id === task.id)) {
+                  tasklist.tasks.unshift(task);
+                }
+                return reloadTasklistDataReceivedAction(tasklist);
+              }),
               catchError(error => of(loginFailedAction(error)))
             );
         })
@@ -44,7 +51,14 @@ export class TaskEpics {
           const tasklist_id = store.getState().tasklist.selectedTasklist.id;
           return fromPromise(this.graphQl.addTask(tasklist_id, action.payload))
             .pipe(
-              map((result) => reloadTasklistDataReceivedAction(result.addTask.task.tasklist)),
+              map((result) => {
+                const task = result.addTask.task;
+                const tasklist = result.addTask.task.tasklist;
+                if (!tasklist.tasks.some(sometask => sometask.id === task.id)) {
+                  tasklist.tasks.unshift(task);
+                }
+                return reloadTasklistDataReceivedAction(tasklist);
+              }),
               catchError(error => of(loginFailedAction(error)))
             );
         })
