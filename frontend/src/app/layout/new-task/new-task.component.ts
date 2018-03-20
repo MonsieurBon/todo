@@ -23,9 +23,14 @@ export class NewTaskComponent {
   }
 
   createForm() {
+    const today = new Date();
     this.newTaskForm = this.fb.group({
       title: ['', Validators.required],
-      startdate: [ null, Validators.required ],
+      startdate: [ {
+        year: today.getFullYear(),
+        month: today.getMonth() + 1,
+        day: today.getDate()
+      }, Validators.required ],
       duedate: [ null, null ],
       description: '',
     }, {
