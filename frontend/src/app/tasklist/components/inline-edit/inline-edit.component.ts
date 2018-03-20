@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { NgbDateParserFormatter, NgbDatepicker, NgbDateStruct } from '@ng-bootstrap/ng-bootstrap';
-import { DateParserFormatterService } from '../../services/date-parser-formatter.service';
+import { DateParserFormatterService } from '../../../common/services/date-parser-formatter.service';
 import { isNumber } from '../../../common/utility-functions';
 
 @Component({

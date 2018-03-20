@@ -1,13 +1,15 @@
 import { Component } from '@angular/core';
 import { ITask, TaskState, TaskType } from '../../tasklist/tasklist.model';
 import { AbstractControl, FormBuilder, FormControl, FormGroup, ValidatorFn, Validators } from '@angular/forms';
-import { NgbActiveModal, NgbDateStruct } from '@ng-bootstrap/ng-bootstrap';
+import { NgbActiveModal, NgbDateParserFormatter, NgbDateStruct } from '@ng-bootstrap/ng-bootstrap';
 import { dispatch } from '@angular-redux/store';
 import { addTaskAction } from '../../tasklist/task.actions';
+import { DateParserFormatterService } from '../../common/services/date-parser-formatter.service';
 
 @Component({
   selector: 'app-new-task',
   templateUrl: './new-task.component.html',
+  providers: [{provide: NgbDateParserFormatter, useClass: DateParserFormatterService}],
   styleUrls: ['./new-task.component.css']
 })
 export class NewTaskComponent {
