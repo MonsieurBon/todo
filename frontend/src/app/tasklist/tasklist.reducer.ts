@@ -45,7 +45,10 @@ export function tasklistReducer(state: ITasklistState = {}, action: AnyAction): 
       break;
     case TaskActionTypes.AddTask:
       type = action.payload.type;
-      subtasks = state.selectedTasklist.tasks[type].slice();
+      subtasks = [];
+      if (state.selectedTasklist.tasks[type]) {
+        subtasks = state.selectedTasklist.tasks[ type ].slice();
+      }
       subtasks.splice(subtasks.length, 0, action.payload);
 
       state = {
