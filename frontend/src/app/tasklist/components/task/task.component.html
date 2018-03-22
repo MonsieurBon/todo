@@ -7,7 +7,8 @@
     {{task.description}}
   </div>
   <div class="ml-5">
-    <button type="button" class="btn" [ngClass]="{'btn-outline-success': !isDone(), 'btn-outline-danger': isDone()}" (click)="switchTaskState()">
+    <button type="button" class="btn" [ngClass]="{'btn-outline-success': !isDone(), 'btn-outline-danger': isDone()}"
+            (click)="switchTaskState();$event.stopPropagation()">
       <i class="material-icons" *ngIf="!isDone()">done</i>
       <i class="material-icons" *ngIf="isDone()">close</i>
     </button>

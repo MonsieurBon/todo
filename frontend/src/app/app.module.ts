@@ -8,6 +8,7 @@ import { AuthGuard } from './auth/auth-guard.service';
 import { appRouting } from './app.routes';
 import { GraphqlService } from './services/graphql.service';
 import { GraphqlClientFactory } from './services/graphql-client.factory';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 
 @NgModule({
@@ -17,6 +18,7 @@ import { GraphqlClientFactory } from './services/graphql-client.factory';
   imports: [
     appRouting,
     BrowserModule,
+    BrowserAnimationsModule,
     LayoutModule,
     NgReduxModule,
     StoreModule

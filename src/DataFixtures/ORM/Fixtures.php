@@ -148,6 +148,15 @@ class Fixtures extends Fixture
         $task9->setDueDate(\DateTime::createFromFormat(DateType::PARSE_FORMAT, '2017-10-06'));
         $tasklist4->addTask($task9);
 
+        $task10 = new Task();
+        $task10->setType(TaskType::OPPORTUNITY_NOW);
+        $task10->setTitle('Done task');
+        $task10->setDescription('This task is done!');
+        $task10->setState(TaskState::DONE);
+        $task10->setStartDate(\DateTime::createFromFormat(DateType::PARSE_FORMAT, '2018-10-02'));
+        $task10->setDueDate(\DateTime::createFromFormat(DateType::PARSE_FORMAT, '2018-10-06'));
+        $tasklist1->addTask($task10);
+
         $manager->persist($user1);
         $manager->persist($user2);
         $manager->persist($task1);
@@ -159,6 +168,7 @@ class Fixtures extends Fixture
         $manager->persist($task7);
         $manager->persist($task8);
         $manager->persist($task9);
+        $manager->persist($task10);
         $manager->persist($tasklist1);
         $manager->persist($tasklist2);
         $manager->persist($tasklist3);

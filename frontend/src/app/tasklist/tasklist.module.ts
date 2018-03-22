@@ -14,6 +14,8 @@ import { AutofocusDirective } from './directives/autofocus.directive';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ReplacePipe } from '../common/pipes/replace.pipe';
 import { CommonModule } from '../common/common.module';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { TasklistSectionListItemComponent } from './components/tasklist-section-list-item/tasklist-section-list-item.component';
 
 @NgModule({
   imports: [
@@ -33,7 +35,8 @@ import { CommonModule } from '../common/common.module';
     TaskDetailComponent,
     DefaultPipe,
     InlineEditComponent,
-    AutofocusDirective
+    AutofocusDirective,
+    TasklistSectionListItemComponent
   ],
   entryComponents: [ TaskDetailComponent ]
 })

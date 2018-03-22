@@ -3,6 +3,7 @@
 namespace App\Schema\Types;
 
 use App\Entity\Tasklist;
+use App\Entity\TaskState;
 use App\Schema\Types;
 use Doctrine\Common\Collections\Criteria;
 use GraphQL\Type\Definition\ObjectType;
@@ -41,7 +42,8 @@ class TasklistType extends ObjectType
     {
         $today = new \DateTime();
         $criteria = Criteria::create()
-            ->where(Criteria::expr()->lte('startdate', $today))
+            ->where(Criteria::expr()->eq('state', TaskState::TODO))
+            ->andWhere(Criteria::expr()->lte('startdate', $today))
             ->orderBy(['startdate' => Criteria::DESC]);
 
         return $value->getTasks()->matching($criteria);
