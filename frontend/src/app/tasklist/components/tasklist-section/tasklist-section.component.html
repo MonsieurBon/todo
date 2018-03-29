@@ -1,3 +1,13 @@
 <ul class="list-group">
-  <app-tasklist-section-list-item *ngFor="let task of tasks" [task]="task"></app-tasklist-section-list-item>
+  <li class="list-group-item list-group-item-action flex-column align-items-start"
+      *ngFor="let task of tasks"
+      [class.disabled]="task.state === 'DONE'"
+      (click)="showTaskDetails(task)"
+      [dndDraggable]="task"
+      [dndType]="task.type"
+      [dndDisableIf]="task.state === 'DONE'"
+      dndEffectAllowed="move"
+      [dndDragImageOffsetFunction]="dndDragImageOffset">
+    <div appTask [task]="task" class="w-100"></div>
+  </li>
 </ul>

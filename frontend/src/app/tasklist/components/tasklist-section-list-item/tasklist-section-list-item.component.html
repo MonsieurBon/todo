@@ -1,3 +1,0 @@
-<li class="list-group-item list-group-item-action flex-column align-items-start" [class.disabled]="task.state === 'DONE'" (click)="showTaskDetails(task)" [@hideAnimator]="hideAnimator" (@hideAnimator.done)="event && sendUpdateTaskAction()">
-  <div appTask [task]="task" (taskToSwitch)="switchTaskState($event)" class="w-100"></div>
-</li>

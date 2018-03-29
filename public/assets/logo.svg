@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect height="512" width="512" rx="126" ry="126" style="fill:#373a3c;stroke-width:0" />
+  <rect height="434" width="434" rx="100" ry="100" x="39" y="39" style="fill:none;stroke:white;stroke-width:26" />
+  <text x="256" y="405" font-size="410" text-anchor="middle" fill="white">T</text>
+  <style><![CDATA[
+    text{
+        font: bold 410px Verdana, Helvetica, Arial, sans-serif;
+    }
+  ]]></style>
+</svg>

@@ -13,4 +13,15 @@ import { animate, state, style, transition, trigger } from '@angular/animations'
 })
 export class TasklistSectionComponent {
   @Input() tasks: ITask[] = [];
+
+  constructor(private modalService: NgbModal) {}
+
+  showTaskDetails(task: ITask) {
+    const modalRef = this.modalService.open(TaskDetailComponent, { size: 'lg' });
+    modalRef.componentInstance.task = task;
+  }
+
+  dndDragImageOffset = (event: DragEvent, dragElement: Element) => {
+    return {x: dragElement.clientWidth - 50, y: 22};
+  }
 }

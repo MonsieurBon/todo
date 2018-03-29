@@ -33,4 +33,11 @@
       </tbody>
     </table>
   </div>
+  <div class="modal-footer">
+    <button type="button" class="btn" [ngClass]="{'btn-outline-success': !isDone(), 'btn-outline-danger': isDone()}"
+            (click)="switchTaskState();$event.stopPropagation()">
+      <i class="material-icons" *ngIf="!isDone()">done</i>
+      <i class="material-icons" *ngIf="isDone()">close</i>
+    </button>
+  </div>
 </div>

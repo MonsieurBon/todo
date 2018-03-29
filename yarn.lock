@@ -4263,6 +4263,10 @@ mkdirp@0.5.x, "mkdirp@>=0.5 0", mkdirp@^0.5.0, mkdirp@^0.5.1, mkdirp@~0.5.0:
   dependencies:
     minimist "0.0.8"
 
+mobile-drag-drop@^2.3.0-rc.1:
+  version "2.3.0-rc.1"
+  resolved "https://registry.yarnpkg.com/mobile-drag-drop/-/mobile-drag-drop-2.3.0-rc.1.tgz#61ec97a957b0c557e4dd78728248e4dedb5e1461"
+
 module-deps@^4.0.8:
   version "4.1.1"
   resolved "https://registry.yarnpkg.com/module-deps/-/module-deps-4.1.1.tgz#23215833f1da13fd606ccb8087b44852dcb821fd"
@@ -4347,6 +4351,10 @@ negotiator@0.6.1:
 netmask@~1.0.4:
   version "1.0.6"
   resolved "https://registry.yarnpkg.com/netmask/-/netmask-1.0.6.tgz#20297e89d86f6f6400f250d9f4f6b4c1945fcd35"
+
+ngx-drag-drop@^1.0.3:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/ngx-drag-drop/-/ngx-drag-drop-1.0.3.tgz#a7f51be09342f5b34a0cddb80562e71662e5a3ae"
 
 no-case@^2.2.0:
   version "2.3.2"

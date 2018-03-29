@@ -9,13 +9,7 @@ import { ITask, TaskState } from '../../tasklist.model';
 export class TaskComponent {
   @Input() task: ITask;
 
-  @Output() taskToSwitch = new EventEmitter<ITask>();
-
   isDone() {
     return this.task.state === TaskState.Done;
-  }
-
-  switchTaskState() {
-    this.taskToSwitch.emit(this.task);
   }
 }

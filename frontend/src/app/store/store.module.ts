@@ -39,6 +39,7 @@ export class StoreModule {
           this.routerEpics.gotoTasklist,
           this.taskEpics.editTask,
           this.taskEpics.addTask,
+          this.taskEpics.moveTask,
           this.tasklistEpics.loadAllData,
           this.tasklistEpics.reloadTasklist,
           this.tasklistEpics.reloadTasklistDataReceived

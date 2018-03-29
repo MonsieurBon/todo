@@ -1,16 +1,17 @@
 <div class="d-flex w-100 justify-content-between">
-  <h5 class="mb-1">{{task.title}}</h5>
-  <p *ngIf="task.duedate" [class.text-danger]="task.duedate | inPast">Due: {{task.duedate | date:'dd.MM.y'}}</p>
-</div>
-<div class="d-flex w-100 justify-content-between">
-  <div class="pt-2 text-truncate">
-    {{task.description}}
+  <div class="col-10 pl-0">
+    <h5>{{task.title}}</h5>
+    <p class="mb-0 pb-0">
+      <em>Start: {{task.startdate | date: 'dd.MM.y'}}</em>
+      <em *ngIf="task.duedate" [class.text-danger]="task.duedate | inPast">| Due: {{task.duedate | date:'dd.MM.y'}}</em>
+    </p>
+    <div class="d-none d-md-block text-truncate">
+      {{task.description}}
+    </div>
   </div>
-  <div class="ml-5">
-    <button type="button" class="btn" [ngClass]="{'btn-outline-success': !isDone(), 'btn-outline-danger': isDone()}"
-            (click)="switchTaskState();$event.stopPropagation()">
-      <i class="material-icons" *ngIf="!isDone()">done</i>
-      <i class="material-icons" *ngIf="isDone()">close</i>
+  <div class="d-flex align-items-center">
+    <button type="button" class="btn btn-outline-dark align-items-center" dndHandle *ngIf="!isDone()">
+      <i class="material-icons">drag_handle</i>
     </button>
   </div>
 </div>

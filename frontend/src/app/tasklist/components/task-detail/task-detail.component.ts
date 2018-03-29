@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { ITask } from '../../tasklist.model';
+import { ITask, TaskState } from '../../tasklist.model';
 import { NgbActiveModal, NgbDateStruct } from '@ng-bootstrap/ng-bootstrap';
 import { TitleCasePipe } from '@angular/common';
 import { updateTaskAction } from '../../task.actions';
@@ -14,6 +14,10 @@ export class TaskDetailComponent {
   @Input() task: ITask;
 
   constructor(public activeModal: NgbActiveModal) {}
+
+  isDone() {
+    return this.task.state === TaskState.Done;
+  }
 
   @dispatch()
   updateTaskDescription(description: string) {
@@ -42,5 +46,16 @@ export class TaskDetailComponent {
       this.task.duedate = null;
     }
     return updateTaskAction(this.task);
+  }
+
+  @dispatch()
+  updateTaskState(newState: TaskState) {
+    const task = { ...this.task, state: newState };
+    return updateTaskAction(task);
+  }
+
+  switchTaskState() {
+    this.updateTaskState(this.task.state === TaskState.Todo ? TaskState.Done : TaskState.Todo);
+    this.activeModal.close();
   }
 }

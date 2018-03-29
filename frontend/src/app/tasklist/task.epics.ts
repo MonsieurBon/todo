@@ -64,4 +64,24 @@ export class TaskEpics {
         })
       );
   }
+
+  moveTask = (action$: ActionsObservable<AnyAction>): Observable<AnyAction> => {
+    return action$.ofType(TaskActionTypes.MoveTask)
+      .pipe(
+        mergeMap((action: AnyAction) => {
+          return fromPromise(this.graphQl.editTask(action.payload.task))
+            .pipe(
+              map((result) => {
+                const task = result.editTask.task;
+                const tasklist = result.editTask.task.tasklist;
+                if (!tasklist.tasks.some(sometask => sometask.id === task.id)) {
+                  tasklist.tasks.unshift(task);
+                }
+                return reloadTasklistDataReceivedAction(tasklist);
+              }),
+              catchError(error => of(loginFailedAction(error)))
+            );
+        })
+      );
+  }
 }
