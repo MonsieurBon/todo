@@ -3,6 +3,7 @@
 namespace App\Schema\Types;
 
 use GraphQL\Error\Error;
+use GraphQL\Language\AST\Node;
 use GraphQL\Language\AST\StringValueNode;
 use GraphQL\Type\Definition\ScalarType;
 use GraphQL\Utils\Utils;
@@ -46,13 +47,16 @@ class DateType extends ScalarType
     /**
      * Parses an externally provided literal value (hardcoded in GraphQL query) to use as an input
      *
-     * @param \GraphQL\Language\AST\Node $valueNode
+     * In the case of an invalid node or value this method must throw an Exception
+     *
+     * @param Node       $valueNode
+     * @param array|null $variables
      *
      * @return mixed
      *
-     * @throws Error
+     * @throws \Exception
      */
-    public function parseLiteral($valueNode)
+    public function parseLiteral($valueNode, array $variables = null)
     {
         if (!$valueNode instanceof StringValueNode) {
             throw new Error('Query error: Can only parse strings got: ' . $valueNode->kind, [$valueNode]);

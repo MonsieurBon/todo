@@ -39,7 +39,7 @@ class DateTypeTest extends TestCase
 
     /**
      * @expectedException \UnexpectedValueException
-     * @expectedExceptionMessageRegExp /^Cannot represent value as date: "invalid date"$/
+     * @expectedExceptionMessageRegExp /^Cannot represent value as date: invalid date$/
      */
     public function testParseInvalidValue()
     {
