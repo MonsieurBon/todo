@@ -64,9 +64,3 @@ import 'zone.js/dist/zone';  // Included with Angular CLI.
 /***************************************************************************************************
  * APPLICATION IMPORTS
  */
-import {polyfill} from 'mobile-drag-drop';
-import {scrollBehaviourDragImageTranslateOverride} from 'mobile-drag-drop/scroll-behaviour';
-
-polyfill({
-  dragImageTranslateOverride: scrollBehaviourDragImageTranslateOverride
-});

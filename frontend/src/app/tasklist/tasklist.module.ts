@@ -12,16 +12,12 @@ import { DefaultPipe } from './pipes/default.pipe';
 import { InlineEditComponent } from './components/inline-edit/inline-edit.component';
 import { AutofocusDirective } from './directives/autofocus.directive';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { ReplacePipe } from '../common/pipes/replace.pipe';
 import { CommonModule } from '../common/common.module';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DndModule } from 'ngx-drag-drop';
 
 @NgModule({
   imports: [
     AngularCommonModule,
     CommonModule,
-    DndModule,
     FormsModule,
     NgbModule.forRoot(),
     ReactiveFormsModule,

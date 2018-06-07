@@ -1,14 +1,12 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot } from '@angular/router';
-import { Observable } from 'rxjs/Observable';
+import { from, Observable, of } from 'rxjs';
 import { IAppState } from '../store/root.model';
 import { NgRedux } from '@angular-redux/store';
 import { IAuthState } from './auth.model';
-import { catchError, filter, map } from 'rxjs/operators';
-import { of } from 'rxjs/observable/of';
+import { catchError, map } from 'rxjs/operators';
 import { GraphqlService } from '../services/graphql.service';
 import { GraphQlCheckToken } from '../services/graphql.definition';
-import { fromPromise } from 'rxjs/observable/fromPromise';
 import { checkTokenSuccessAction, requestedUrlAction } from './auth.actions';
 
 @Injectable()
@@ -38,7 +36,7 @@ export class AuthGuard implements CanActivate, OnDestroy {
     } else if (!token) {
       obs = of(false);
     } else {
-      obs = fromPromise(this.graphql.checkToken(token))
+      obs = from(this.graphql.checkToken(token))
         .pipe(
           map((result: GraphQlCheckToken) => {
             if (result.checkToken.token !== null) {

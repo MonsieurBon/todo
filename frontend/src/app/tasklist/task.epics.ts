@@ -1,22 +1,12 @@
 import { Injectable } from '@angular/core';
 import { ActionsObservable } from 'redux-observable';
 import { loginFailedAction } from '../auth/auth.actions';
-import { Action, AnyAction } from 'redux';
-import { Observable } from 'rxjs/Observable';
-import { catchError, map, mergeMap, withLatestFrom } from 'rxjs/operators';
+import { AnyAction } from 'redux';
+import { from, Observable, of } from 'rxjs';
+import { catchError, map, mergeMap } from 'rxjs/operators';
 import { GraphqlService } from '../services/graphql.service';
-import { fromPromise } from 'rxjs/observable/fromPromise';
-import { of } from 'rxjs/observable/of';
-import {
-  loadAllDataSuccessAction, reloadTasklistDataReceivedAction, reloadTasklistSuccessAction,
-  TasklistActionTypes
-} from './tasklist.actions';
-import groupBy from 'lodash-es/groupBy';
-import { ActivatedRoute, Router } from '@angular/router';
-import { ITask, ITasklist } from './tasklist.model';
-import { Location } from '@angular/common';
+import { reloadTasklistDataReceivedAction } from './tasklist.actions';
 import { TaskActionTypes } from './task.actions';
-import { GraphqlTransformer } from '../services/graphql.transformer';
 
 @Injectable()
 export class TaskEpics {
@@ -28,7 +18,7 @@ export class TaskEpics {
     return action$.ofType(TaskActionTypes.UpdateTask)
       .pipe(
         mergeMap((action: AnyAction) => {
-          return fromPromise(this.graphQl.editTask(action.payload))
+          return from(this.graphQl.editTask(action.payload))
             .pipe(
               map((result) => {
                 const task = result.editTask.task;
@@ -44,12 +34,12 @@ export class TaskEpics {
       );
   }
 
-  addTask = (action$: ActionsObservable<AnyAction>, store): Observable<AnyAction> => {
+  addTask = (action$: ActionsObservable<AnyAction>, state$): Observable<AnyAction> => {
     return action$.ofType(TaskActionTypes.AddTask)
       .pipe(
         mergeMap((action: AnyAction) => {
-          const tasklist_id = store.getState().tasklist.selectedTasklist.id;
-          return fromPromise(this.graphQl.addTask(tasklist_id, action.payload))
+          const tasklist_id = state$.value.tasklist.selectedTasklist.id;
+          return from(this.graphQl.addTask(tasklist_id, action.payload))
             .pipe(
               map((result) => {
                 const task = result.addTask.task;
@@ -69,7 +59,7 @@ export class TaskEpics {
     return action$.ofType(TaskActionTypes.MoveTask)
       .pipe(
         mergeMap((action: AnyAction) => {
-          return fromPromise(this.graphQl.editTask(action.payload.task))
+          return from(this.graphQl.editTask(action.payload.task))
             .pipe(
               map((result) => {
                 const task = result.editTask.task;

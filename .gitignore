@@ -14,6 +14,7 @@ yarn-error.log
 /frontend/e2e/*.js
 /frontend/e2e/*.map
 coverage.xml
+package-lock.json
 
 ###> symfony/framework-bundle ###
 .env

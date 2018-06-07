@@ -1,10 +1,7 @@
-import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
-import { ITask, TaskState } from '../../tasklist.model';
-import { dispatch } from '@angular-redux/store';
-import { updateTaskAction } from '../../task.actions';
+import { Component, Input } from '@angular/core';
+import { ITask } from '../../tasklist.model';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { TaskDetailComponent } from '../task-detail/task-detail.component';
-import { animate, state, style, transition, trigger } from '@angular/animations';
 
 @Component({
   selector: 'app-tasklist-section',
@@ -19,9 +16,5 @@ export class TasklistSectionComponent {
   showTaskDetails(task: ITask) {
     const modalRef = this.modalService.open(TaskDetailComponent, { size: 'lg' });
     modalRef.componentInstance.task = task;
-  }
-
-  dndDragImageOffset = (event: DragEvent, dragElement: Element) => {
-    return {x: dragElement.clientWidth - 50, y: 22};
   }
 }

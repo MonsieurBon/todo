@@ -1,18 +1,17 @@
 import { Injectable } from '@angular/core';
 import { ActionsObservable } from 'redux-observable';
 import { AnyAction } from 'redux';
-import { Observable } from 'rxjs/Observable';
+import { Observable ,  of } from 'rxjs';
 import { UPDATE_LOCATION } from '@angular-redux/router';
 import { filter, map, mergeMap } from 'rxjs/operators';
 import { loadAllDataAction, reloadTasklistAction, switchTasklistAction } from '../tasklist/tasklist.actions';
 import { Router } from '@angular/router';
-import { of } from 'rxjs/observable/of';
 
 @Injectable()
 export class RouterEpics {
   constructor(private router: Router) {}
 
-  gotoTasklist = (action$: ActionsObservable<AnyAction>, store): Observable<AnyAction> => {
+  gotoTasklist = (action$: ActionsObservable<AnyAction>, state$): Observable<AnyAction> => {
     return action$.ofType(UPDATE_LOCATION)
       .pipe(
         filter((action: AnyAction) => action.payload.startsWith('/tasklist')),
@@ -22,7 +21,7 @@ export class RouterEpics {
 
           if (segments.length > 1) {
             const tasklistSlug = segments[1].path;
-            const tasklists = store.getState().tasklist.tasklists;
+            const tasklists = state$.value.tasklist.tasklists;
             if (tasklists) {
               const newSelectedTasklist = tasklists.find(tasklist => tasklist.slug === tasklistSlug);
               if (newSelectedTasklist) {

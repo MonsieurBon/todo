@@ -3,21 +3,21 @@
     <ngb-accordion #acc="ngbAccordion" activeIds="ngb-critical-now, ngb-opportunity-now, ngb-over-the-horizon">
       <ngb-panel id="ngb-critical-now" title="Critical Now ({{tasks && tasks['CRITICAL_NOW'] ? (tasks['CRITICAL_NOW'] | filter:'state':'TODO').length : 0}})">
         <ng-template ngbPanelContent>
-          <div class="droppable-area" [dndDropzone]="['OPPORTUNITY_NOW', 'OVER_THE_HORIZON']" dndDragoverClass="dragover" (dndDrop)="dropped($event, 'CRITICAL_NOW')">
+          <div>
             <app-tasklist-section [tasks]="(tasks && tasks['CRITICAL_NOW']) | filter:'state':'TODO'"></app-tasklist-section>
           </div>
         </ng-template>
       </ngb-panel>
       <ngb-panel id="ngb-opportunity-now" title="Opportunity Now ({{tasks && tasks['OPPORTUNITY_NOW'] ? (tasks['OPPORTUNITY_NOW'] | filter:'state':'TODO').length : 0}})">
         <ng-template ngbPanelContent>
-          <div class="droppable-area" [dndDropzone]="['CRITICAL_NOW', 'OVER_THE_HORIZON']" dndDragoverClass="dragover" (dndDrop)="dropped($event, 'OPPORTUNITY_NOW')">
+          <div>
             <app-tasklist-section [tasks]="(tasks && tasks['OPPORTUNITY_NOW']) | filter:'state':'TODO'"></app-tasklist-section>
           </div>
         </ng-template>
       </ngb-panel>
       <ngb-panel id="ngb-over-the-horizon" title="Over The Horizon ({{tasks && tasks['OVER_THE_HORIZON'] ? (tasks['OVER_THE_HORIZON'] | filter:'state':'TODO').length : 0}})">
         <ng-template ngbPanelContent>
-          <div class="droppable-area" [dndDropzone]="['CRITICAL_NOW', 'OPPORTUNITY_NOW']" dndDragoverClass="dragover" (dndDrop)="dropped($event, 'OVER_THE_HORIZON')">
+          <div>
             <app-tasklist-section [tasks]="(tasks && tasks['OVER_THE_HORIZON']) | filter:'state':'TODO'"></app-tasklist-section>
           </div>
         </ng-template>

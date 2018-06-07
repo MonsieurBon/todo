@@ -3,10 +3,9 @@ import { NgbModal, NgbModalOptions, NgbModalRef } from '@ng-bootstrap/ng-bootstr
 import { LoadingModalComponent } from './loading-modal/loading-modal.component';
 import { ActionsObservable } from 'redux-observable';
 import { Action, AnyAction } from 'redux';
-import { Observable } from 'rxjs/Observable';
+import { Observable, empty, EMPTY } from 'rxjs';
 import { LayoutActionTypes } from './layout.actions';
 import { map, mergeMap } from 'rxjs/operators';
-import { empty } from 'rxjs/observable/empty';
 
 @Injectable()
 export class LayoutEpics {
@@ -28,7 +27,7 @@ export class LayoutEpics {
       .pipe(
         mergeMap(() => {
           this.modalRef = this.ngbModal.open(LoadingModalComponent, this.options);
-          return empty();
+          return EMPTY;
         })
       );
   }
@@ -41,7 +40,7 @@ export class LayoutEpics {
             this.modalRef.close();
             this.modalRef = null;
           }
-          return empty();
+          return EMPTY;
         })
       );
   }

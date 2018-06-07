@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { dispatch, select } from '@angular-redux/store';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { LoginCredentials } from '../auth.events';
 import { loginAction } from '../auth.actions';
 

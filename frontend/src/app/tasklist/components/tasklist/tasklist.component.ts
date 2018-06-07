@@ -1,8 +1,5 @@
-import { Component, Input, OnInit } from '@angular/core';
-import { ITask, TaskType } from '../../tasklist.model';
-import { dispatch } from '@angular-redux/store';
-import { moveTaskAction } from '../../task.actions';
-import { DndDropEvent } from 'ngx-drag-drop';
+import { Component, Input } from '@angular/core';
+import { ITask } from '../../tasklist.model';
 
 @Component({
   selector: 'app-tasklist',
@@ -11,14 +8,4 @@ import { DndDropEvent } from 'ngx-drag-drop';
 })
 export class TasklistComponent {
   @Input() tasks: ITask[][];
-
-  @dispatch()
-  dropped($event: DndDropEvent, newType: TaskType) {
-    const task: ITask = {
-      ...$event.data,
-      startdate: new Date($event.data.startdate),
-      duedate: $event.data.duedate ? new Date($event.data.duedate) : null
-    };
-    return moveTaskAction({ ...task, type: newType }, task.type);
-  }
 }

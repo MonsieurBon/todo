@@ -1,15 +1,12 @@
-import { Injectable } from '@angular/core';
-import { ActionsObservable } from 'redux-observable';
-import { AuthActionTypes, loginFailedAction, loginSuccessAction } from './auth.actions';
-import { Action, AnyAction } from 'redux';
-import { Observable } from 'rxjs/Observable';
-import { catchError, map, mergeMap } from 'rxjs/operators';
-import { GraphqlService } from '../services/graphql.service';
-import { fromPromise } from 'rxjs/observable/fromPromise';
-import { of } from 'rxjs/observable/of';
-import { GraphQlLogin } from '../services/graphql.definition';
-import { Router } from '@angular/router';
-import { empty } from 'rxjs/observable/empty';
+import {Injectable} from '@angular/core';
+import {ActionsObservable} from 'redux-observable';
+import {AuthActionTypes, loginFailedAction, loginSuccessAction} from './auth.actions';
+import {Action, AnyAction} from 'redux';
+import {EMPTY, from, Observable, of} from 'rxjs';
+import {catchError, map, mergeMap} from 'rxjs/operators';
+import {GraphqlService} from '../services/graphql.service';
+import {GraphQlLogin} from '../services/graphql.definition';
+import {Router} from '@angular/router';
 
 @Injectable()
 export class AuthEpics {
@@ -22,7 +19,7 @@ export class AuthEpics {
     return action$.ofType(AuthActionTypes.Login)
       .pipe(
         mergeMap((action: AnyAction) => {
-          return fromPromise(this.graphQl.login(action.payload.username, action.payload.password))
+          return from(this.graphQl.login(action.payload.username, action.payload.password))
             .pipe(
               map((result: GraphQlLogin) => {
                 if (result.createToken.token) {
@@ -37,17 +34,17 @@ export class AuthEpics {
       );
   }
 
-  loginSuccess = (action$: ActionsObservable<AnyAction>, state): Observable<Action> => {
+  loginSuccess = (action$: ActionsObservable<AnyAction>, state$): Observable<Action> => {
     return action$.ofType(AuthActionTypes.LoginSuccess)
       .pipe(
         mergeMap((action: AnyAction) => {
           localStorage.setItem('token', action.payload);
 
-          const authState = state.getState().auth;
+          const authState = state$.value.auth;
           const requestedUrl = authState.requestedUrl ? authState.requestedUrl : '';
 
           this.router.navigate([requestedUrl]);
-          return empty();
+          return EMPTY;
         })
       );
   }

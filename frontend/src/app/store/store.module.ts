@@ -31,20 +31,22 @@ export class StoreModule {
     private ngReduxRouter: NgReduxRouter,
     private devTools: DevToolsExtension
   ) {
+    const rootEpic = combineEpics(
+      this.authEpics.login,
+      this.authEpics.loginSuccess,
+      this.routerEpics.gotoTasklist,
+      this.taskEpics.editTask,
+      this.taskEpics.addTask,
+      this.taskEpics.moveTask,
+      this.tasklistEpics.loadAllData,
+      this.tasklistEpics.reloadTasklist,
+      this.tasklistEpics.reloadTasklistDataReceived
+    );
+
+    const epicMiddleware = createEpicMiddleware();
+
     const middleware = [
-      createEpicMiddleware(
-        combineEpics(
-          this.authEpics.login,
-          this.authEpics.loginSuccess,
-          this.routerEpics.gotoTasklist,
-          this.taskEpics.editTask,
-          this.taskEpics.addTask,
-          this.taskEpics.moveTask,
-          this.tasklistEpics.loadAllData,
-          this.tasklistEpics.reloadTasklist,
-          this.tasklistEpics.reloadTasklistDataReceived
-        )
-      )
+      epicMiddleware
     ];
 
     if (!environment.production) {
@@ -57,6 +59,8 @@ export class StoreModule {
       middleware,
       this.devTools.isEnabled() ? [ this.devTools.enhancer() ] : []
     );
+
+    epicMiddleware.run(rootEpic);
 
     this.ngReduxRouter.initialize();
   }

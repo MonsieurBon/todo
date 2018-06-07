@@ -2,11 +2,9 @@ import { Injectable } from '@angular/core';
 import { ActionsObservable } from 'redux-observable';
 import { loginFailedAction } from '../auth/auth.actions';
 import { Action, AnyAction } from 'redux';
-import { Observable } from 'rxjs/Observable';
+import { Observable ,  from ,  of } from 'rxjs';
 import { catchError, map, mergeMap, withLatestFrom } from 'rxjs/operators';
 import { GraphqlService } from '../services/graphql.service';
-import { fromPromise } from 'rxjs/observable/fromPromise';
-import { of } from 'rxjs/observable/of';
 import {
   loadAllDataSuccessAction, reloadTasklistDataReceivedAction, reloadTasklistSuccessAction,
   TasklistActionTypes
@@ -31,7 +29,7 @@ export class TasklistEpics {
     return action$.ofType(TasklistActionTypes.LoadAllData)
       .pipe(
         mergeMap((action: AnyAction) => {
-          return fromPromise(this.graphQl.loadAllData())
+          return from(this.graphQl.loadAllData())
             .pipe(
               map((result) => {
                 const tasklists = result.tasklists.map(tasklist => {
@@ -61,7 +59,7 @@ export class TasklistEpics {
     return action$.ofType(TasklistActionTypes.ReloadTasklist)
       .pipe(
         mergeMap((action: AnyAction) => {
-          return fromPromise(this.graphQl.reloadTasklist(action.payload))
+          return from(this.graphQl.reloadTasklist(action.payload))
             .pipe(
               map(result => reloadTasklistDataReceivedAction(result.tasklist)),
               catchError(error => of(loginFailedAction(error)))
