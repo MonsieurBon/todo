@@ -3,7 +3,7 @@
     <img src="/assets/logo.svg" alt="Todo logo" height="42" width="42" class="d-inline-block align-top"/>
     <h1 class="mb-0 ml-2 d-inline-block">{{title}}</h1>
   </div>
-  <button class="navbar-toggler" type="button" (click)="isNavbarCollapsed = !isNavbarCollapsed" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+  <button class="navbar-toggler" type="button" (click)="isNavbarCollapsed = !isNavbarCollapsed" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation" #navbarToggler>
     <span class="navbar-toggler-icon"></span>
   </button>
   <div class="collapse navbar-collapse" [ngbCollapse]="isNavbarCollapsed" id="navbarNav">
@@ -24,6 +24,12 @@
     <div class="divider"></div>
     <ul class="navbar-nav">
       <li class="nav-item">
+        <a class="nav-link" style="cursor: pointer" [ngbPopover]="filterPopContent" popoverTitle="Options" [placement]="filterPopoverPlacement()" appClosePopoverOnOutsideClick>Filter</a>
+      </li>
+    </ul>
+    <div class="divider"></div>
+    <ul class="navbar-nav">
+      <li class="nav-item">
         <a class="nav-link" style="cursor: pointer" (click)="isNavbarCollapsed = true">Account</a>
       </li>
       <li class="nav-item">
@@ -32,3 +38,5 @@
     </ul>
   </div>
 </nav>
+
+<ng-template #filterPopContent><app-filter-options-container></app-filter-options-container></ng-template>

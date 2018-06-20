@@ -1,24 +1,24 @@
 <div class="row">
   <div class="col">
     <ngb-accordion #acc="ngbAccordion" activeIds="ngb-critical-now, ngb-opportunity-now, ngb-over-the-horizon">
-      <ngb-panel id="ngb-critical-now" title="Critical Now ({{tasks && tasks['CRITICAL_NOW'] ? (tasks['CRITICAL_NOW'] | filter:'state':'TODO').length : 0}})">
+      <ngb-panel id="ngb-critical-now" title="Critical Now ({{tasks && tasks['CRITICAL_NOW'] ? (tasks['CRITICAL_NOW']).length : 0}})">
         <ng-template ngbPanelContent>
           <div>
-            <app-tasklist-section [tasks]="(tasks && tasks['CRITICAL_NOW']) | filter:'state':'TODO'"></app-tasklist-section>
+            <app-tasklist-section [tasks]="(tasks && tasks['CRITICAL_NOW'])"></app-tasklist-section>
           </div>
         </ng-template>
       </ngb-panel>
-      <ngb-panel id="ngb-opportunity-now" title="Opportunity Now ({{tasks && tasks['OPPORTUNITY_NOW'] ? (tasks['OPPORTUNITY_NOW'] | filter:'state':'TODO').length : 0}})">
+      <ngb-panel id="ngb-opportunity-now" title="Opportunity Now ({{tasks && tasks['OPPORTUNITY_NOW'] ? (tasks['OPPORTUNITY_NOW']).length : 0}})">
         <ng-template ngbPanelContent>
           <div>
-            <app-tasklist-section [tasks]="(tasks && tasks['OPPORTUNITY_NOW']) | filter:'state':'TODO'"></app-tasklist-section>
+            <app-tasklist-section [tasks]="(tasks && tasks['OPPORTUNITY_NOW'])"></app-tasklist-section>
           </div>
         </ng-template>
       </ngb-panel>
-      <ngb-panel id="ngb-over-the-horizon" title="Over The Horizon ({{tasks && tasks['OVER_THE_HORIZON'] ? (tasks['OVER_THE_HORIZON'] | filter:'state':'TODO').length : 0}})">
+      <ngb-panel id="ngb-over-the-horizon" title="Over The Horizon ({{tasks && tasks['OVER_THE_HORIZON'] ? (tasks['OVER_THE_HORIZON']).length : 0}})">
         <ng-template ngbPanelContent>
           <div>
-            <app-tasklist-section [tasks]="(tasks && tasks['OVER_THE_HORIZON']) | filter:'state':'TODO'"></app-tasklist-section>
+            <app-tasklist-section [tasks]="(tasks && tasks['OVER_THE_HORIZON'])"></app-tasklist-section>
           </div>
         </ng-template>
       </ngb-panel>

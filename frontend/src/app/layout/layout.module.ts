@@ -10,8 +10,9 @@ import { NavbarComponent } from './navbar/navbar.component';
 import { NavbarContainerComponent } from './navbar-container/navbar-container.component';
 import { NewTaskComponent } from './new-task/new-task.component';
 import { ReactiveFormsModule } from '@angular/forms';
-import { ReplacePipe } from '../common/pipes/replace.pipe';
 import { CommonModule } from '../common/common.module';
+import { FilterOptionsContainerComponent } from './filter-options-container/filter-options-container.component';
+import { FilterOptionsComponent } from './filter-options/filter-options.component';
 
 @NgModule({
   imports: [
@@ -28,7 +29,9 @@ import { CommonModule } from '../common/common.module';
     NewTaskButtonComponent,
     NewTaskComponent,
     NavbarComponent,
-    NavbarContainerComponent
+    NavbarContainerComponent,
+    FilterOptionsContainerComponent,
+    FilterOptionsComponent
   ],
   entryComponents: [LoadingModalComponent, NewTaskComponent]
 })

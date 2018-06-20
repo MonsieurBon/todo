@@ -26,6 +26,9 @@ class Schema extends GraphQLSchema
     const STATE_FIELD_NAME = 'state';
     const TYPE_FIELD_NAME = 'type';
     const USER_ID_FIELD_NAME = 'user_id';
+    const HELLO_FIELD_NAME = 'hello';
+    const TASKLISTS_FIELD_NAME = 'tasklists';
+    const FILTER_FIELD_NAME = 'filter';
 
     public function __construct(AuthorizationCheckerInterface $authChecker, RegistryInterface $doctrine, TokenStorageInterface $tokenStorage)
     {

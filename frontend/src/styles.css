@@ -48,3 +48,6 @@
 .mt-6 {
   margin-top: 5rem;
 }
+
+.material-icons.md-36 { font-size: 36px; }
+.material-icons.md-48 { font-size: 48px; }

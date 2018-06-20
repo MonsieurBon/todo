@@ -17,23 +17,30 @@ import { AddTaskQueryBuilder } from './querybuilder/addTask.queryBuilder';
 export class GraphqlService {
   constructor(private graphQlClientFactory: GraphqlClientFactory) {}
 
-  loadAllData(): Promise<GraphQlAllData> {
+  loadAllData(showDone: boolean, showFuture: boolean): Promise<GraphQlAllData> {
     const client = this.graphQlClientFactory.getClient();
-    const request = LoadDataQueryBuilder.create().getRequest();
-    return client.request<GraphQlAllData>(request.query);
+
+    const request = LoadDataQueryBuilder.create()
+      .setShowDone(showDone)
+      .setShowFuture(showFuture)
+      .getRequest();
+
+    return client.request<GraphQlAllData>(request.query, request.variables);
   }
 
-  reloadTasklist(slug: string): Promise<GraphQlReloadTasklist> {
+  reloadTasklist(slug: string, showDone: boolean, showFuture: boolean): Promise<GraphQlReloadTasklist> {
     const client = this.graphQlClientFactory.getClient();
 
     const request = ReloadTasklistQueryBuilder.create()
       .setSlug(slug)
+      .setShowDone(showDone)
+      .setShowFuture(showFuture)
       .getRequest();
 
     return client.request<GraphQlReloadTasklist>(request.query, request.variables);
   }
 
-  editTask(task: ITask): Promise<GraphQlEditTask> {
+  editTask(task: ITask, showDone: boolean, showFuture: boolean): Promise<GraphQlEditTask> {
     const client = this.graphQlClientFactory.getClient();
 
     const request = EditTaskQueryBuilder.create()
@@ -44,12 +51,14 @@ export class GraphqlService {
       .setState(task.state)
       .setStartdate(task.startdate)
       .setDuedate(task.duedate)
+      .setShowDone(showDone)
+      .setShowFuture(showFuture)
       .getRequest();
 
     return client.request<GraphQlEditTask>(request.query, request.variables);
   }
 
-  addTask(tasklist_id: number, task: ITask): Promise<GraphQlAddTask> {
+  addTask(tasklist_id: number, task: ITask, showDone: boolean, showFuture: boolean): Promise<GraphQlAddTask> {
     const client = this.graphQlClientFactory.getClient();
 
     const request = AddTaskQueryBuilder.create()
@@ -59,6 +68,8 @@ export class GraphqlService {
       .setType(task.type)
       .setStartdate(task.startdate)
       .setDuedate(task.duedate)
+      .setShowDone(showDone)
+      .setShowFuture(showFuture)
       .getRequest();
 
     return client.request<GraphQlAddTask>(request.query, request.variables);

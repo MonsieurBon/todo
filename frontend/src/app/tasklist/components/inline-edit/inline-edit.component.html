@@ -1,10 +1,10 @@
 <div>
   <div *ngIf="editing" [ngSwitch]="type">
-    <textarea *ngSwitchCase="'textarea'" appAutofocus [required]="required" (blur)="onBlur($event)" [formControl]="field" rows="10">{{value}}</textarea>
+    <textarea *ngSwitchCase="'textarea'" appAutofocus [required]="required" (blur)="changeValue($event)" [formControl]="field" rows="10">{{value | default:defaultValue}}</textarea>
     <form *ngSwitchCase="'date'" class="form-inline">
       <div class="form-group">
         <div class="input-group">
-          <input class="form-control" [required]="required" placeholder="dd.mm.yyyy" name="dp" [(ngModel)]="model" ngbDatepicker #d="ngbDatepicker" (focus)="d.open()">
+          <input class="form-control" [required]="required" placeholder="dd.mm.yyyy" name="dp" [(ngModel)]="model" ngbDatepicker #d="ngbDatepicker" (click)="d.open()">
           <div class="input-group-append">
             <button class="btn btn-outline-secondary" (click)="onSelectDate($event)" type="button">
               <i class="material-icons">done</i>
@@ -13,10 +13,21 @@
         </div>
       </div>
     </form>
-    <input *ngSwitchDefault appAutofocus [required]="required" (blur)="onBlur($event)" [formControl]="field" [type]="type">
+    <!--<select *ngSwitchCase="'select'" appAutofocus (change)="changeValue($event)" [formControl]="field">
+      <option *ngFor="let option of dropdownOptions" [selected]="option === value" [value]="option">{{option}}</option>
+    </select>-->
+    <input *ngSwitchDefault appAutofocus [required]="required" (blur)="changeValue($event)" [formControl]="field" [type]="type">
   </div>
   <div *ngIf="!editing" [ngSwitch]="type">
     <div *ngSwitchCase="'date'" (click)="edit()" (focus)="edit()">{{value | date:'dd.MM.y' | default:defaultValue}}</div>
-    <div *ngSwitchDefault (click)="edit()" (focus)="edit()">{{value}}</div>
+    <div *ngSwitchCase="'dropdown'" class="d-inline-block">
+      <div ngbDropdown #selectDrop="ngbDropdown" >
+        <span ngbDropdownAnchor (click)="$event.stopPropagation(); selectDrop.open();">{{value | default:defaultValue}}</span>
+        <div ngbDropdownMenu style="background-color: lightgray">
+          <button *ngFor="let option of filteredDropdownOptions" class="dropdown-item bg-light" (click)="selectOption(option)">{{option}}</button>
+        </div>
+      </div>
+    </div>
+    <div *ngSwitchDefault (click)="edit()" (focus)="edit()">{{value | default:defaultValue}}</div>
   </div>
 </div>

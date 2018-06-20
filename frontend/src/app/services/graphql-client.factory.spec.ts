@@ -1,6 +1,6 @@
 import { GraphqlClientFactory } from './graphql-client.factory';
 import { MockNgRedux } from '@angular-redux/store/lib/testing';
-import { Subject } from 'rxjs/Subject';
+import { Subject } from 'rxjs/index';
 
 describe('GraphqlClientFactoryService', () => {
   it('should return the same client initially', () => {

@@ -9,6 +9,7 @@ import { appRouting } from './app.routes';
 import { GraphqlService } from './services/graphql.service';
 import { GraphqlClientFactory } from './services/graphql-client.factory';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
 
 @NgModule({
@@ -20,6 +21,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
     BrowserModule,
     BrowserAnimationsModule,
     LayoutModule,
+    NgbModule.forRoot(),
     NgReduxModule,
     StoreModule
   ],

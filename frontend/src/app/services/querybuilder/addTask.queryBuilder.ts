@@ -22,6 +22,10 @@ export class AddTaskQueryBuilder implements GraphqlQueryBuilder {
   @IsDate()
   private duedate: Date;
 
+  private showDone = false;
+
+  private showFuture = false;
+
   static create() {
     return new AddTaskQueryBuilder();
   }
@@ -37,7 +41,9 @@ export class AddTaskQueryBuilder implements GraphqlQueryBuilder {
                        $description: String,
                        $type: TaskTypeEnum!,
                        $startdate: Date!,
-                       $duedate: Date) {
+                       $duedate: Date,
+                       $showDone: Boolean,
+                       $showFuture: Boolean) {
         addTask(tasklist_id: $tasklist_id) {
           task(title: $title,
                description: $description,
@@ -55,7 +61,7 @@ export class AddTaskQueryBuilder implements GraphqlQueryBuilder {
               id
               name
               slug
-              tasks {
+              tasks(showDone: $showDone, showFuture: $showFuture) {
                 id
                 title
                 description
@@ -74,7 +80,9 @@ export class AddTaskQueryBuilder implements GraphqlQueryBuilder {
         description: this.description,
         type: this.type,
         startdate: this.formatDate(this.startdate),
-        duedate: this.formatDate(this.duedate)
+        duedate: this.formatDate(this.duedate),
+        showDone: this.showDone,
+        showFuture: this.showFuture
       }
     };
   }
@@ -118,6 +126,16 @@ export class AddTaskQueryBuilder implements GraphqlQueryBuilder {
 
   public setDuedate(duedate: Date) {
     this.duedate = duedate;
+    return this;
+  }
+
+  public setShowDone(showDone: boolean) {
+    this.showDone = showDone;
+    return this;
+  }
+
+  public setShowFuture(showFuture: boolean) {
+    this.showFuture = showFuture;
     return this;
   }
 }

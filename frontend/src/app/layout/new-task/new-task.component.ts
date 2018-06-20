@@ -56,8 +56,8 @@ export class NewTaskComponent {
       title: formValue.title,
       description: formValue.description,
       startdate: startdate,
-      state: TaskState.Todo,
-      type: TaskType.Opportunity_Now
+      state: TaskState.TODO,
+      type: TaskType.OPPORTUNITY_NOW
     };
 
     if (formValue.duedate) {

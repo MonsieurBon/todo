@@ -15,6 +15,7 @@ import { ITask, ITasklist } from './tasklist.model';
 import { Location } from '@angular/common';
 import { GraphqlTransformer } from '../services/graphql.transformer';
 import { GraphQlTasklist } from '../services/graphql.definition';
+import { IFilterState } from '../filter/filter.model';
 
 @Injectable()
 export class TasklistEpics {
@@ -25,11 +26,12 @@ export class TasklistEpics {
     private router: Router
   ) {}
 
-  loadAllData = (action$: ActionsObservable<AnyAction>): Observable<AnyAction> => {
+  loadAllData = (action$: ActionsObservable<AnyAction>, state$): Observable<AnyAction> => {
     return action$.ofType(TasklistActionTypes.LoadAllData)
       .pipe(
         mergeMap((action: AnyAction) => {
-          return from(this.graphQl.loadAllData())
+          const {showDone, showFuture} = state$.value.filter;
+          return from(this.graphQl.loadAllData(showDone, showFuture))
             .pipe(
               map((result) => {
                 const tasklists = result.tasklists.map(tasklist => {
@@ -55,11 +57,12 @@ export class TasklistEpics {
       );
   }
 
-  reloadTasklist = (action$: ActionsObservable<AnyAction>): Observable<AnyAction> => {
+  reloadTasklist = (action$: ActionsObservable<AnyAction>, state$): Observable<AnyAction> => {
     return action$.ofType(TasklistActionTypes.ReloadTasklist)
       .pipe(
         mergeMap((action: AnyAction) => {
-          return from(this.graphQl.reloadTasklist(action.payload))
+          const {showDone, showFuture} = state$.value.filter;
+          return from(this.graphQl.reloadTasklist(action.payload, showDone, showFuture))
             .pipe(
               map(result => reloadTasklistDataReceivedAction(result.tasklist)),
               catchError(error => of(loginFailedAction(error)))

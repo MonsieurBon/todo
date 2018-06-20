@@ -21,12 +21,12 @@ export interface ITask {
 }
 
 export enum TaskState {
-  Todo = 'TODO',
-  Done = 'DONE'
+  TODO = 'TODO',
+  DONE = 'DONE'
 }
 
 export enum TaskType {
-  Critical_Now = 'CRITICAL_NOW',
-  Opportunity_Now = 'OPPORTUNITY_NOW',
-  Over_The_Horizon = 'OVER_THE_HORIZON'
+  CRITICAL_NOW = 'CRITICAL_NOW',
+  OPPORTUNITY_NOW = 'OPPORTUNITY_NOW',
+  OVER_THE_HORIZON = 'OVER_THE_HORIZON'
 }

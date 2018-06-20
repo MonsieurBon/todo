@@ -6,6 +6,11 @@
     margin-top: 0.5rem !important;
     margin-bottom: 0.5rem !important;
   }
+
+  .nav-link {
+    display: inline-block;
+    width: 100px;
+  }
 }
 
 @media (min-width: 992px) {

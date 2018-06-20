@@ -5,9 +5,9 @@ import { Pipe, PipeTransform } from '@angular/core';
 })
 export class FilterPipe implements PipeTransform {
 
-  transform<T>(value: Array<T>, property: string, filter: any): Array<T> {
+  transform<T>(value: Array<T>, property: string, filter: any, inverse = false): Array<T> {
     if (value && value.length > 0) {
-      return value.filter(element => element[ property ] === filter);
+      return value.filter(element => inverse ? element[ property ] !== filter : element[ property ] === filter);
     }
 
     return value;

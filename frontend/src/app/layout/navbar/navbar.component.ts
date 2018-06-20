@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, ElementRef, Input, ViewChild } from '@angular/core';
 import { ITasklist } from '../../tasklist/tasklist.model';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { NewTaskComponent } from '../new-task/new-task.component';
@@ -9,6 +9,7 @@ import { NewTaskComponent } from '../new-task/new-task.component';
   styleUrls: ['./navbar.component.css']
 })
 export class NavbarComponent {
+  @ViewChild('navbarToggler') navbarToggler: ElementRef;
   @Input() title: string;
   @Input() tasklists: ITasklist[] = [];
   isNavbarCollapsed = true;
@@ -18,5 +19,13 @@ export class NavbarComponent {
   showNewTaskForm() {
     this.isNavbarCollapsed = true;
     const modalRef = this.modalService.open(NewTaskComponent, { size: 'lg' });
+  }
+
+  filterPopoverPlacement() {
+    if (this.navbarToggler.nativeElement.offsetParent) {
+      return 'right';
+    } else {
+      return 'bottom';
+    }
   }
 }

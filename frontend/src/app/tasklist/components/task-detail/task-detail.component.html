@@ -3,20 +3,17 @@
     <h4 class="modal-title w-100">
       <app-inline-edit [value]="task.title" (edited)="updateTaskTitle($event)" type="text" [required]=true></app-inline-edit>
     </h4>
-    <button type="button" class="close" aria-label="Close" (click)="activeModal.dismiss()">
-      <span aria-hidden="true">&times;</span>
-    </button>
   </div>
   <div class="modal-body">
     <table class="table">
       <tbody>
         <tr>
-          <th scope="row">Type:</th>
-          <td>{{task.type | replace:'_':' ' | titlecase}}</td>
-        </tr>
-        <tr>
           <th scope="row">State:</th>
           <td>{{task.state | titlecase}}</td>
+        </tr>
+        <tr>
+          <th scope="row">Type:</th>
+          <td><app-inline-edit [value]="task.type | replace:'_':' ' | titlecase" (edited)="updateTaskType($event)" type="dropdown" [dropdownOptions]="typeOptions" [filter]="true"></app-inline-edit></td>
         </tr>
         <tr>
           <th scope="row">Startdate:</th>
@@ -24,20 +21,18 @@
         </tr>
         <tr>
           <th scope="row">Duedate:</th>
-          <td><app-inline-edit [value]="task.duedate" [defaultValue]="'No duedate'" (edited)="updateTaskDuedate($event)" type="date"></app-inline-edit></td>
+          <td><app-inline-edit [value]="task.duedate" defaultValue="No duedate" (edited)="updateTaskDuedate($event)" type="date"></app-inline-edit></td>
         </tr>
         <tr>
           <th scope="row">Description:</th>
-          <td><app-inline-edit [value]="task.description" (edited)="updateTaskDescription($event)" type="textarea"></app-inline-edit></td>
+          <td><app-inline-edit [value]="task.description" defaultValue="Add Description" (edited)="updateTaskDescription($event)" type="textarea"></app-inline-edit></td>
         </tr>
       </tbody>
     </table>
   </div>
   <div class="modal-footer">
-    <button type="button" class="btn" [ngClass]="{'btn-outline-success': !isDone(), 'btn-outline-danger': isDone()}"
-            (click)="switchTaskState();$event.stopPropagation()">
-      <i class="material-icons" *ngIf="!isDone()">done</i>
-      <i class="material-icons" *ngIf="isDone()">close</i>
+    <button type="button" class="btn" (click)="activeModal.dismiss()">
+      <i class="material-icons">close</i>
     </button>
   </div>
 </div>

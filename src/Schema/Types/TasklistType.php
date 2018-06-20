@@ -15,22 +15,32 @@ class TasklistType extends ObjectType
     {
         $config = [
             'name' => 'Tasklist',
-            'fields' => function () {
-                return [
-                    'id' => Types::id(),
-                    'name' => Types::string(),
-                    'slug' => Types::string(),
-                    'tasks' => Types::listOf(Types::task())
-                ];
-            },
-            'resolveField' => function ($value, $args, $context, ResolveInfo $info) {
+            'fields' => [
+                'id' => Types::id(),
+                'name' => Types::string(),
+                'slug' => Types::string(),
+                'tasks' => [
+                    'type' => Types::listOf(Types::task()),
+                    'args' => [
+                        'showDone' => [
+                            'type' => Types::boolean(),
+                            'defaultValue' => false
+                        ],
+                        'showFuture' => [
+                            'type' => Types::boolean(),
+                            'defaultValue' => false
+                        ]
+                    ]
+                ]
+            ],
+            'resolveField' => function ($tasklist, $args, $context, ResolveInfo $info) {
                 $method = 'resolve' . ucfirst($info->fieldName);
                 if (method_exists($this, $method)) {
-                    return $this->{$method}($value, $args, $context, $info);
+                    return $this->{$method}($tasklist, $args, $context, $info);
                 } else {
                     $getter = 'get' . ucfirst($info->fieldName);
 
-                    return $value->{$getter}();
+                    return $tasklist->{$getter}();
                 }
             }
         ];
@@ -38,14 +48,23 @@ class TasklistType extends ObjectType
     }
 
     /** @noinspection PhpUnusedPrivateMethodInspection */
-    private function resolveTasks(Tasklist $value)
+    private function resolveTasks(Tasklist $tasklist, $args)
     {
+        $showDone = $args['showDone'];
+        $showFuture = $args['showFuture'];
         $today = new \DateTime();
+
         $criteria = Criteria::create()
-            ->where(Criteria::expr()->eq('state', TaskState::TODO))
-            ->andWhere(Criteria::expr()->lte('startdate', $today))
             ->orderBy(['startdate' => Criteria::DESC]);
 
-        return $value->getTasks()->matching($criteria);
+        if (!$showDone) {
+            $criteria = $criteria->where(Criteria::expr()->eq('state', TaskState::TODO));
+        }
+
+        if (!$showFuture) {
+            $criteria = $criteria->andWhere(Criteria::expr()->lte('startdate', $today));
+        }
+
+        return $tasklist->getTasks()->matching($criteria);
     }
 }

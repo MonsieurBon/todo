@@ -20,7 +20,7 @@ describe('GraphqlService', () => {
 
 
   it('should query all data', () => {
-    graphQlService.loadAllData();
+    graphQlService.loadAllData(false, false);
 
     expect(spy.calls.count()).toBe(1);
     // expect(spy.calls.mostRecent().args[0]).toEqual(GraphqlService.loadDataQuery);

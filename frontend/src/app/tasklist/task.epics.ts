@@ -14,11 +14,12 @@ export class TaskEpics {
     private graphQl: GraphqlService,
   ) {}
 
-  editTask = (action$: ActionsObservable<AnyAction>): Observable<AnyAction> => {
+  editTask = (action$: ActionsObservable<AnyAction>, state$): Observable<AnyAction> => {
     return action$.ofType(TaskActionTypes.UpdateTask)
       .pipe(
         mergeMap((action: AnyAction) => {
-          return from(this.graphQl.editTask(action.payload))
+          const {showDone, showFuture} = state$.value.filter;
+          return from(this.graphQl.editTask(action.payload, showDone, showFuture))
             .pipe(
               map((result) => {
                 const task = result.editTask.task;
@@ -39,7 +40,8 @@ export class TaskEpics {
       .pipe(
         mergeMap((action: AnyAction) => {
           const tasklist_id = state$.value.tasklist.selectedTasklist.id;
-          return from(this.graphQl.addTask(tasklist_id, action.payload))
+          const {showDone, showFuture} = state$.value.filter;
+          return from(this.graphQl.addTask(tasklist_id, action.payload, showDone, showFuture))
             .pipe(
               map((result) => {
                 const task = result.addTask.task;
@@ -55,11 +57,12 @@ export class TaskEpics {
       );
   }
 
-  moveTask = (action$: ActionsObservable<AnyAction>): Observable<AnyAction> => {
+  moveTask = (action$: ActionsObservable<AnyAction>, state$): Observable<AnyAction> => {
     return action$.ofType(TaskActionTypes.MoveTask)
       .pipe(
         mergeMap((action: AnyAction) => {
-          return from(this.graphQl.editTask(action.payload.task))
+          const {showDone, showFuture} = state$.value.filter;
+          return from(this.graphQl.editTask(action.payload.task, showDone, showFuture))
             .pipe(
               map((result) => {
                 const task = result.editTask.task;

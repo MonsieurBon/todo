@@ -1,8 +1,7 @@
-import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { FormControl } from '@angular/forms';
-import { NgbDateParserFormatter, NgbDatepicker, NgbDateStruct } from '@ng-bootstrap/ng-bootstrap';
+import { NgbDateParserFormatter, NgbDateStruct } from '@ng-bootstrap/ng-bootstrap';
 import { DateParserFormatterService } from '../../../common/services/date-parser-formatter.service';
-import { isNumber } from '../../../common/utility-functions';
 
 @Component({
   selector: 'app-inline-edit',
@@ -10,11 +9,14 @@ import { isNumber } from '../../../common/utility-functions';
   providers: [{provide: NgbDateParserFormatter, useClass: DateParserFormatterService}],
   styleUrls: [ './inline-edit.component.css' ]
 })
-export class InlineEditComponent {
+export class InlineEditComponent implements OnChanges {
   @Input() type: string;
   @Input() required = false;
   @Input() value: any;
   @Input() defaultValue: string;
+  @Input() dropdownOptions: string[];
+  @Input() filter = false;
+  filteredDropdownOptions: string[];
   editing = false;
   model: NgbDateStruct;
 
@@ -25,7 +27,18 @@ export class InlineEditComponent {
 
   constructor(private dateFormatter: NgbDateParserFormatter) {}
 
-  onBlur($event: Event) {
+  ngOnChanges(changes: SimpleChanges): void {
+    const {filter, value, dropdownOptions} = changes;
+    if (dropdownOptions) {
+      if (filter && filter.currentValue && value) {
+        this.filteredDropdownOptions = dropdownOptions.currentValue.filter(o => o !== value.currentValue);
+      } else {
+        this.filteredDropdownOptions = dropdownOptions.currentValue;
+      }
+    }
+  }
+
+  changeValue($event: Event) {
     if (this.required && !this.field.value) {
       return;
     }
@@ -51,6 +64,23 @@ export class InlineEditComponent {
     if (this.value !== newDate) {
       this.value = newDate;
       this.edited.emit(this.model);
+    }
+  }
+
+  selectOption(option: string) {
+    this.editing = false;
+    if (this.value !== option) {
+      this.value = option;
+      this.filterOptions();
+      this.edited.emit(option);
+    }
+  }
+
+  private filterOptions() {
+    if (this.filter && this.value) {
+      this.filteredDropdownOptions = this.dropdownOptions.filter(o => o !== this.value);
+    } else {
+      this.filteredDropdownOptions = this.dropdownOptions;
     }
   }
 
