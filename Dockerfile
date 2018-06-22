@@ -1,6 +1,7 @@
 FROM ubuntu:18.04
 
 ENV APP_ENV=prod
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \

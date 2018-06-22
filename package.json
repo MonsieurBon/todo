@@ -6,7 +6,7 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
-    "build:prod": "ng build --prod",
+    "build:prod": "ng build --prod --deploy-url assets/",
     "deploy": "scripts/copy_frontend.sh",
     "test": "ng test",
     "test:coverage": "ng test --single-run --code-coverage",
