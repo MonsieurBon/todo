@@ -20,6 +20,20 @@ export function tasklistReducer(state: ITasklistState = {}, action: AnyAction): 
       });
       state = { selectedTasklist: action.payload, tasklists: newTasklists };
       break;
+    case TasklistActionTypes.CreateTasklistSuccess:
+      const newTasklist = action.payload;
+
+      let tasklists = [];
+      if (state.tasklists) {
+        tasklists = state.tasklists.slice();
+      }
+      tasklists.splice(tasklists.length, 0, newTasklist);
+
+      state = {
+        ...state,
+        tasklists: tasklists
+      };
+      break;
     case TaskActionTypes.UpdateTask:
       const { id } = action.payload;
       let { type } = action.payload;

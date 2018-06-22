@@ -2,6 +2,7 @@ import { Component, ElementRef, Input, ViewChild } from '@angular/core';
 import { ITasklist } from '../../tasklist/tasklist.model';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { NewTaskComponent } from '../new-task/new-task.component';
+import { NewTasklistComponent } from '../new-tasklist/new-tasklist.component';
 
 @Component({
   selector: 'app-navbar',
@@ -19,6 +20,11 @@ export class NavbarComponent {
   showNewTaskForm() {
     this.isNavbarCollapsed = true;
     const modalRef = this.modalService.open(NewTaskComponent, { size: 'lg' });
+  }
+
+  showNewTasklistForm() {
+    this.isNavbarCollapsed = true;
+    const modalRef = this.modalService.open(NewTasklistComponent, { size: 'lg' });
   }
 
   filterPopoverPlacement() {

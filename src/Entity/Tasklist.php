@@ -10,7 +10,7 @@ use Gedmo\Mapping\Annotation as Gedmo;
 /**
  * Tasklist
  *
- * @ORM\Table(name="task_list",
+ * @ORM\Table(name="tasklist",
  *     uniqueConstraints={
  *         @UniqueConstraint(name="name_unique_per_user",
  *             columns={"owner_id", "name"})

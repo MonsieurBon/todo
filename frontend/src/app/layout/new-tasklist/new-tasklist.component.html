@@ -1,0 +1,25 @@
+<div class="container">
+  <div class="modal-header">
+    <h4 class="modal-title">New Tasklist</h4>
+  </div>
+  <div class="modal-body">
+    <form [formGroup]="newTasklistForm" (ngSubmit)="submitForm()" novalidate>
+      <div class="form-group row">
+        <label for="inputName" class="col-2 col-form-label">Name</label>
+        <div class="col-10">
+          <input type="text" class="form-control" id="inputName" placeholder="Name" formControlName="name">
+        </div>
+      </div>
+      <div *ngIf="formSubmitted && name.invalid" class="form-group row">
+        <div class="col-2"></div>
+        <div class="col-10 alert-danger">
+          Name is required
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-outline-success" (click)="submitForm()">Save</button>
+    <button type="button" class="btn btn-outline-dark" (click)="activeModal.close()">Cancel</button>
+  </div>
+</div>

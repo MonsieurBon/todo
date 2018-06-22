@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import {
   GraphQlAddTask,
-  GraphQlAllData, GraphQlCheckToken, GraphQlEditTask, GraphQlLogin, GraphQlReloadTasklist,
+  GraphQlAllData, GraphQlCheckToken, GraphQlCreateTasklist, GraphQlEditTask, GraphQlLogin, GraphQlReloadTasklist,
   GraphQlTask
 } from './graphql.definition';
 import { GraphqlClientFactory } from './graphql-client.factory';
@@ -12,6 +12,7 @@ import { CheckTokenQueryBuilder } from './querybuilder/checkToken.queryBuilder';
 import { ITask } from '../tasklist/tasklist.model';
 import { EditTaskQueryBuilder } from './querybuilder/editTask.queryBuilder';
 import { AddTaskQueryBuilder } from './querybuilder/addTask.queryBuilder';
+import { CreateTasklistQueryBuilder } from './querybuilder/createTasklist.queryBuilder';
 
 @Injectable()
 export class GraphqlService {
@@ -38,6 +39,16 @@ export class GraphqlService {
       .getRequest();
 
     return client.request<GraphQlReloadTasklist>(request.query, request.variables);
+  }
+
+  createTasklist(name: string): Promise<GraphQlCreateTasklist> {
+    const client = this.graphQlClientFactory.getClient();
+
+    const request = CreateTasklistQueryBuilder.create()
+      .setName(name)
+      .getRequest();
+
+    return client.request<GraphQlCreateTasklist>(request.query, request.variables);
   }
 
   editTask(task: ITask, showDone: boolean, showFuture: boolean): Promise<GraphQlEditTask> {

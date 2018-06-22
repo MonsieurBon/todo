@@ -41,6 +41,8 @@ export class StoreModule {
       this.taskEpics.editTask,
       this.taskEpics.addTask,
       this.taskEpics.moveTask,
+      this.tasklistEpics.createTasklist,
+      this.tasklistEpics.navigateToCreatedTasklist,
       this.tasklistEpics.loadAllData,
       this.tasklistEpics.reloadTasklist,
       this.tasklistEpics.reloadTasklistDataReceived

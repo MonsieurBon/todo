@@ -13,6 +13,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '../common/common.module';
 import { FilterOptionsContainerComponent } from './filter-options-container/filter-options-container.component';
 import { FilterOptionsComponent } from './filter-options/filter-options.component';
+import { NewTasklistComponent } from './new-tasklist/new-tasklist.component';
 
 @NgModule({
   imports: [
@@ -31,8 +32,9 @@ import { FilterOptionsComponent } from './filter-options/filter-options.componen
     NavbarComponent,
     NavbarContainerComponent,
     FilterOptionsContainerComponent,
-    FilterOptionsComponent
+    FilterOptionsComponent,
+    NewTasklistComponent
   ],
-  entryComponents: [LoadingModalComponent, NewTaskComponent]
+  entryComponents: [LoadingModalComponent, NewTaskComponent, NewTasklistComponent]
 })
 export class LayoutModule { }

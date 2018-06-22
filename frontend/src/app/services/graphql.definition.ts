@@ -23,6 +23,12 @@ export interface GraphQlReloadTasklist {
   tasklist: GraphQlTasklist;
 }
 
+export interface GraphQlCreateTasklist {
+  createTasklist: {
+    tasklist: GraphQlTasklist;
+  };
+}
+
 export interface GraphQlEditTask {
   editTask: {
     task: GraphQlTask;

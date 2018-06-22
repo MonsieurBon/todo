@@ -6,7 +6,8 @@ import { Observable ,  from ,  of } from 'rxjs';
 import { catchError, map, mergeMap, withLatestFrom } from 'rxjs/operators';
 import { GraphqlService } from '../services/graphql.service';
 import {
-  loadAllDataSuccessAction, reloadTasklistDataReceivedAction, reloadTasklistSuccessAction,
+  createTasklistSuccess,
+  loadAllDataSuccessAction, reloadTasklistDataReceivedAction, reloadTasklistSuccessAction, switchTasklistAction,
   TasklistActionTypes
 } from './tasklist.actions';
 import groupBy from 'lodash-es/groupBy';
@@ -14,8 +15,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ITask, ITasklist } from './tasklist.model';
 import { Location } from '@angular/common';
 import { GraphqlTransformer } from '../services/graphql.transformer';
-import { GraphQlTasklist } from '../services/graphql.definition';
+import { GraphQlCreateTasklist, GraphQlTasklist } from '../services/graphql.definition';
 import { IFilterState } from '../filter/filter.model';
+import { EMPTY } from 'rxjs/internal/observable/empty';
 
 @Injectable()
 export class TasklistEpics {
@@ -79,6 +81,32 @@ export class TasklistEpics {
           const tasklist = {...action.payload, tasks: taskmap};
 
           return reloadTasklistSuccessAction(tasklist);
+        })
+      );
+  }
+
+  createTasklist = (action$: ActionsObservable<AnyAction>): Observable<AnyAction> => {
+    return action$.ofType(TasklistActionTypes.CreateTasklist)
+      .pipe(
+        mergeMap((action: AnyAction) => {
+          return from(this.graphQl.createTasklist(action.payload))
+            .pipe(
+              map((result: GraphQlCreateTasklist) => {
+                const {id, name, slug} = result.createTasklist.tasklist;
+                return createTasklistSuccess({id, name, slug});
+              }),
+              catchError(error => of(loginFailedAction(error)))
+            );
+        })
+      );
+  }
+
+  navigateToCreatedTasklist = (action$: ActionsObservable<AnyAction>): Observable<AnyAction> => {
+    return action$.ofType(TasklistActionTypes.CreateTasklistSuccess)
+      .pipe(
+        mergeMap((action: AnyAction) => {
+          this.router.navigate(['/tasklist/' + action.payload.slug]);
+          return EMPTY;
         })
       );
   }
