@@ -28,6 +28,7 @@ export class NewTaskComponent {
     const today = new Date();
     this.newTaskForm = this.fb.group({
       title: ['', Validators.required],
+      type: [TaskType.CRITICAL_NOW, Validators.required],
       startdate: [ {
         year: today.getFullYear(),
         month: today.getMonth() + 1,
@@ -38,6 +39,8 @@ export class NewTaskComponent {
     }, {
       validator: this.dueDateAfterStartdate()
     });
+
+    this.newTaskForm.controls['type'].setValue(TaskType.CRITICAL_NOW, {onlySelf: true});
   }
 
   submitForm() {
@@ -57,7 +60,7 @@ export class NewTaskComponent {
       description: formValue.description,
       startdate: startdate,
       state: TaskState.TODO,
-      type: TaskType.OPPORTUNITY_NOW
+      type: formValue.type
     };
 
     if (formValue.duedate) {

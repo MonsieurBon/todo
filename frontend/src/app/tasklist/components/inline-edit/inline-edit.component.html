@@ -23,7 +23,7 @@
     <div *ngSwitchCase="'dropdown'" class="d-inline-block">
       <div ngbDropdown #selectDrop="ngbDropdown" >
         <span ngbDropdownAnchor (click)="$event.stopPropagation(); selectDrop.open();">{{value | default:defaultValue}}</span>
-        <div ngbDropdownMenu style="background-color: lightgray">
+        <div ngbDropdownMenu>
           <button *ngFor="let option of filteredDropdownOptions" class="dropdown-item bg-light" (click)="selectOption(option)">{{option}}</button>
         </div>
       </div>
