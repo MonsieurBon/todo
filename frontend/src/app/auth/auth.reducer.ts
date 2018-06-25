@@ -26,6 +26,9 @@ export function authReducer(state: IAuthState = INITIAL_STATE, action: AnyAction
     case AuthActionTypes.CheckTokenSuccess:
       state = {...state, pending: false, token: action.payload, error: null};
       break;
+    case AuthActionTypes.LogoutSuccess:
+      state = INITIAL_STATE;
+      break;
   }
   return state;
 }

@@ -3,6 +3,8 @@ import { ITasklist } from '../../tasklist/tasklist.model';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { NewTaskComponent } from '../new-task/new-task.component';
 import { NewTasklistComponent } from '../new-tasklist/new-tasklist.component';
+import { dispatch } from '@angular-redux/store';
+import { logoutAction } from '../../auth/auth.actions';
 
 @Component({
   selector: 'app-navbar',
@@ -33,5 +35,11 @@ export class NavbarComponent {
     } else {
       return 'bottom';
     }
+  }
+
+  @dispatch()
+  logout() {
+    this.isNavbarCollapsed = true;
+    return logoutAction();
   }
 }

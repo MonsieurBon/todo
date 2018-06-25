@@ -8,6 +8,8 @@ export enum AuthActionTypes {
   LoginFailed = '[Auth] Login Failed',
   CheckTokenSuccess = '[Auth] Check Token Success',
   Logout = '[Auth] Logout',
+  LogoutSuccess = '[Auth] Logout Success',
+  LogoutFailed = '[Auth] Logout Failed'
 }
 
 export const requestedUrlAction = (url: string): AnyAction => ({type: AuthActionTypes.RequestedUrl, payload: url});
@@ -21,3 +23,7 @@ export const loginFailedAction = (error: string): AnyAction => ({type: AuthActio
 export const checkTokenSuccessAction = (token: string): AnyAction => ({type: AuthActionTypes.CheckTokenSuccess, payload: token});
 
 export const logoutAction = (): Action => ({type: AuthActionTypes.Logout});
+
+export const logoutSuccess = (): Action => ({type: AuthActionTypes.LogoutSuccess});
+
+export const logoutFailed = (error: string): AnyAction => ({type: AuthActionTypes.LogoutFailed, payload: error});

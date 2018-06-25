@@ -1,7 +1,13 @@
 import { Injectable } from '@angular/core';
 import {
   GraphQlAddTask,
-  GraphQlAllData, GraphQlCheckToken, GraphQlCreateTasklist, GraphQlEditTask, GraphQlLogin, GraphQlReloadTasklist,
+  GraphQlAllData,
+  GraphQlCheckToken,
+  GraphQlCreateTasklist,
+  GraphQlDestroyToken,
+  GraphQlEditTask,
+  GraphQlLogin,
+  GraphQlReloadTasklist,
   GraphQlTask
 } from './graphql.definition';
 import { GraphqlClientFactory } from './graphql-client.factory';
@@ -13,6 +19,7 @@ import { ITask } from '../tasklist/tasklist.model';
 import { EditTaskQueryBuilder } from './querybuilder/editTask.queryBuilder';
 import { AddTaskQueryBuilder } from './querybuilder/addTask.queryBuilder';
 import { CreateTasklistQueryBuilder } from './querybuilder/createTasklist.queryBuilder';
+import { DestroyTokenQueryBuilder } from './querybuilder/destroyToken.queryBuilder';
 
 @Injectable()
 export class GraphqlService {
@@ -105,5 +112,14 @@ export class GraphqlService {
       .getRequest();
 
     return authClient.request<GraphQlCheckToken>(request.query, request.variables);
+  }
+
+  destroyToken(): Promise<GraphQlDestroyToken> {
+    const client = this.graphQlClientFactory.getClient();
+
+    const request = DestroyTokenQueryBuilder.create()
+      .getRequest();
+
+    return client.request<GraphQlDestroyToken>(request.query);
   }
 }

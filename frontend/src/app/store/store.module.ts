@@ -36,6 +36,8 @@ export class StoreModule {
     const rootEpic = combineEpics(
       this.authEpics.login,
       this.authEpics.loginSuccess,
+      this.authEpics.logout,
+      this.authEpics.logoutSuccess,
       this.filterEpics.updateData,
       this.routerEpics.gotoTasklist,
       this.taskEpics.editTask,

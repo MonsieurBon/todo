@@ -2,6 +2,7 @@ import { ITasklistState } from './tasklist.model';
 import { AnyAction } from 'redux';
 import { TasklistActionTypes } from './tasklist.actions';
 import { TaskActionTypes } from './task.actions';
+import { AuthActionTypes } from '../auth/auth.actions';
 
 export function tasklistReducer(state: ITasklistState = {}, action: AnyAction): ITasklistState {
   switch (action.type) {
@@ -106,6 +107,8 @@ export function tasklistReducer(state: ITasklistState = {}, action: AnyAction): 
         }
       };
       break;
+    case AuthActionTypes.LogoutSuccess:
+      state = {};
   }
   return state;
 }

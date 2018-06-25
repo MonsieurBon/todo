@@ -41,6 +41,10 @@ export class TasklistEpics {
                   return {...tasklist, tasks: taskmap};
                 });
 
+                if (tasklists.length === 0) {
+                  return loadAllDataSuccessAction(null, []);
+                }
+
                 let selectedTasklist;
                 if (action.payload) {
                   selectedTasklist = tasklists.find(tasklist => tasklist.slug === action.payload);

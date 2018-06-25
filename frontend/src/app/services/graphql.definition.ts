@@ -15,6 +15,12 @@ export interface GraphQlCheckToken {
   };
 }
 
+export interface GraphQlDestroyToken {
+  destroyToken: {
+    success: boolean;
+  };
+}
+
 export interface GraphQlAllData {
   tasklists: GraphQlTasklist[];
 }
