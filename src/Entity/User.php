@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
 
@@ -58,11 +59,16 @@ class User implements UserInterface
     private $firstname;
 
     /**
-     * @var ApiToken
+     * @var ArrayCollection
      *
-     * @ORM\OneToOne(targetEntity="ApiToken", mappedBy="user")
+     * @ORM\OneToMany(targetEntity="ApiToken", mappedBy="user")
      */
-    private $token;
+    private $tokens;
+
+    public function __construct()
+    {
+        $this->tokens = new ArrayCollection();
+    }
 
     /**
      * Get id
@@ -228,32 +234,70 @@ class User implements UserInterface
     }
 
     /**
-     * @return ApiToken
+     * @return ArrayCollection
      */
-    public function getApiToken()
+    public function getApiTokens()
     {
-        return $this->token;
+        return $this->tokens;
+    }
+
+    /**
+     * @param string $token
+     *
+     * @return ApiToken|null
+     */
+    public function getApiToken($token)
+    {
+        /** @var ApiToken $apiToken */
+        foreach ($this->tokens as $apiToken) {
+            if ($apiToken->checkTokenString($token)) {
+                return $apiToken;
+            }
+        }
+
+        return null;
     }
 
     /**
      * @param ApiToken $token
      *
-     * @return $this
+     * @return User
      */
-    public function setApiToken($token)
+    public function addApiToken(ApiToken $token)
     {
-        if ($this->token !== $token) {
-            if ($this->token !== null) {
-                $tempToken = $this->token;
-                $this->token = null;
-                $tempToken->setUser(null);
-            }
+        if (!$this->tokens->contains($token)) {
+            $this->tokens->add($token);
+            $token->setUser($this);
+        }
 
-            $this->token = $token;
+        return $this;
+    }
 
-            if ($this->token !== null) {
-                $this->token->setUser($this);
-            }
+    /**
+     * @param ApiToken $token
+     *
+     * @return User
+     */
+    public function removeApiToken($token)
+    {
+        if ($this->tokens->contains($token)) {
+            $this->tokens->removeElement($token);
+            $token->setUser(null);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return User
+     */
+    public function removeAllTokens()
+    {
+        $tempTokens = $this->tokens;
+        $this->tokens = new ArrayCollection();
+
+        foreach ($tempTokens as $token) {
+            $token->setUser(null);
         }
 
         return $this;

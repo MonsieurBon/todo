@@ -90,17 +90,12 @@ class LoginType extends ObjectType
         $validUntil = (new \DateTime('now'))
             ->add(new \DateInterval('PT' . $this->sessionTimeout . 'M'));
 
-        $token = $user->getApiToken();
-
-        if ($token === null) {
-            $token = (new ApiToken())
-                ->setUser($user);
-            $em->persist($token);
-        }
-
-        $token->setValidUntil($validUntil)
+        $token = (new ApiToken())
+            ->setUser($user)
+            ->setValidUntil($validUntil)
             ->setToken($tokenString);
 
+        $em->persist($token);
         $em->flush();
 
         return [

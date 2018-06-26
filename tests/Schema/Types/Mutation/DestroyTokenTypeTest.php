@@ -14,11 +14,14 @@ use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 
 class DestroyTokenTypeTest extends TestCase
 {
+    const TOKEN = 'abc123';
+
     public function testDestroyToken()
     {
         $user = new User();
         $apiToken = new ApiToken();
-        $user->setApiToken($apiToken);
+        $apiToken->setToken(self::TOKEN);
+        $user->addApiToken($apiToken);
 
         /** @var EntityManager $em */
         $em = $this->createMock(EntityManager::class);
@@ -31,6 +34,7 @@ class DestroyTokenTypeTest extends TestCase
         /** @var TokenInterface $tokenInterface */
         $tokenInterface = $this->createMock(TokenInterface::class);
         $tokenInterface->method('getUser')->willReturn($user);
+        $tokenInterface->method('getCredentials')->willReturn(self::TOKEN);
 
         /** @var TokenStorage $tokenStorage */
         $tokenStorage = $this->createMock(TokenStorage::class);

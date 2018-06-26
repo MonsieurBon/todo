@@ -2,6 +2,7 @@
 
 namespace App\Security;
 
+use App\Entity\User;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -86,7 +87,7 @@ class TokenAuthenticator implements SimplePreAuthenticatorInterface, Authenticat
             ->add(new \DateInterval('PT' . $sessionTimeout . 'M'));
 
         /* @var User $user */
-        $user->getApiToken()->setValidUntil($validUntil);
+        $user->getApiToken($token)->setValidUntil($validUntil);
         $this->doctrine->getManager()->flush();
 
         return new PreAuthenticatedToken(

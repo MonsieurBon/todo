@@ -4,7 +4,6 @@ namespace App\Tests\Controller;
 
 use App\Entity\Task;
 use App\Entity\TaskType;
-use Doctrine\ORM\EntityManager;
 use App\Tests\DB\Fixtures\ValidToken;
 
 class GraphQLQueryTest extends GraphQLTestCase
@@ -145,30 +144,6 @@ class GraphQLQueryTest extends GraphQLTestCase
 
         self::assertEquals(200, $response->getStatusCode());
         self::assertContains('Tasklist with id=-1 not found!', $json->errors[0]->message);
-    }
-
-    public function testLoginInvalidatesExistingToken()
-    {
-        $query = '{"query":"mutation{\n  createToken(username: \"foo\", password: \"test\"){\n    error\n    token\n  }\n}","variables":null}';
-
-        $client = static::sendApiQuery($query);
-        $response = $client->getResponse();
-        $json = json_decode($response->getContent());
-
-        self::assertNotEquals(ValidToken::TOKEN, $json->data->createToken->token);
-
-        /** @var EntityManager $em */
-        $em = $this->getContainer()->get('doctrine')->getManager();
-
-        $query = $em->createQuery(
-            'SELECT t
-            FROM App:ApiToken t
-            WHERE t.token = SHA2(CONCAT_WS(\'\', t.salt, :token), 512)'
-        )->setParameter('token', ValidToken::TOKEN);
-
-        $result = $query->getResult();
-
-        self::assertCount(0, $result);
     }
 
     public function testCheckTokenValid()

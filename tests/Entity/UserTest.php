@@ -35,18 +35,18 @@ class UserTest extends TestCase
         $token1 = new ApiToken();
         $token2 = new ApiToken();
 
-        $user1->setApiToken($token1);
-        self::assertEquals($token1, $user1->getApiToken());
+        $user1->addApiToken($token1);
+        self::assertTrue($user1->getApiTokens()->contains($token1));
         self::assertEquals($user1, $token1->getUser());
 
-        $user2->setApiToken($token1);
-        self::assertNull($user1->getApiToken());
-        self::assertEquals($token1, $user2->getApiToken());
+        $user2->addApiToken($token1);
+        self::assertTrue($user1->getApiTokens()->isEmpty());
+        self::assertTrue($user2->getApiTokens()->contains($token1));
         self::assertEquals($user2, $token1->getUser());
 
-        $user2->setApiToken($token2);
-        self::assertNull($token1->getUser());
-        self::assertEquals($token2, $user2->getApiToken());
+        $user2->addApiToken($token2);
+        self::assertEquals($token1->getUser(), $token2->getUser());
+        self::assertTrue($user2->getApiTokens()->contains($token2));
         self::assertEquals($user2, $token2->getUser());
     }
 

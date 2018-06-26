@@ -39,8 +39,9 @@ class DestroyTokenType extends ObjectType
     {
         /** @var User $user */
         $user = $this->tokenStorage->getToken()->getUser();
+        $tokenString = $this->tokenStorage->getToken()->getCredentials();
 
-        $apiToken = $user->getApiToken();
+        $apiToken = $user->getApiToken($tokenString);
         $apiToken->setValidUntil(new \DateTime('-1 second'));
 
         $this->em->flush();

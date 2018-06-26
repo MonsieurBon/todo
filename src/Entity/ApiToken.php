@@ -45,8 +45,8 @@ class ApiToken
     /**
      * @var User
      *
-     * @ORM\OneToOne(targetEntity="User", inversedBy="token")
-     * @ORM\JoinColumn(name="user_id", referencedColumnName="id")
+     * @ORM\ManyToOne(targetEntity="User", inversedBy="tokens")
+     * @ORM\JoinColumn(name="user_id", referencedColumnName="id", onDelete="CASCADE")
      */
     private $user;
 
@@ -78,6 +78,18 @@ class ApiToken
         $this->token = hash('sha512', $this->salt . $token);
 
         return $this;
+    }
+
+    /**
+     * @param $token
+     *
+     * @return bool
+     */
+    public function checkTokenString($token)
+    {
+        $hash = hash('sha512', $this->salt . $token);
+
+        return $this->token === $hash;
     }
 
     /**
@@ -125,15 +137,13 @@ class ApiToken
     {
         if ($this->user !== $user) {
             if ($this->user !== null) {
-                $tempUser = $this->user;
-                $this->user = null;
-                $tempUser->setApiToken(null);
+                $this->user->removeApiToken($this);
             }
 
             $this->user = $user;
 
             if ($this->user !== null) {
-                $this->user->setApiToken($this);
+                $this->user->addApiToken($this);
             }
         }
 
