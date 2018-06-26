@@ -11,3 +11,4 @@ parameters:
     mailer_password: {{MAILER_PASS}}
     secret: {{SECRET}}
     app.session_timeout: {{SESSION_TIMEOUT}}
+    app.remember_me_timeout: {{REMEMBER_ME_TIMEOUT}}

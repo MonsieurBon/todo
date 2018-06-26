@@ -26,12 +26,14 @@ class LoginType extends ObjectType
      */
     private $encoder;
     private $sessionTimeout;
+    private $rememberMeTimeout;
 
     public function __construct(ContainerInterface $container)
     {
         $this->doctrine = $container->get('doctrine');
         $this->encoder = $container->get('security.password_encoder');
         $this->sessionTimeout = $container->getParameter('app.session_timeout');
+        $this->rememberMeTimeout = $container->getParameter('app.remember_me_timeout');
 
         $config = [
             'name' => 'Login',
@@ -51,7 +53,11 @@ class LoginType extends ObjectType
                     ]),
                     'args' => [
                         'username' => Types::nonNull(Types::string()),
-                        'password' => Types::nonNull(Types::string())
+                        'password' => Types::nonNull(Types::string()),
+                        'rememberMe' => [
+                            'type' => Types::boolean(),
+                            'defaultValue' => false
+                        ]
                     ]
                 ]
             ],
@@ -70,6 +76,7 @@ class LoginType extends ObjectType
 
         $username = $args['username'];
         $password = $args['password'];
+        $rememberMe = $args['rememberMe'];
 
         /** @var User $user */
         $user = $userRepo->findOneByUsername($username);
@@ -87,12 +94,18 @@ class LoginType extends ObjectType
         }
 
         $tokenString = bin2hex(openssl_random_pseudo_bytes(16));
-        $validUntil = (new \DateTime('now'))
-            ->add(new \DateInterval('PT' . $this->sessionTimeout . 'M'));
+        $validUntil = (new \DateTime('now'));
+
+        if ($rememberMe) {
+            $validUntil->add(new \DateInterval('PT' . $this->rememberMeTimeout . 'M'));
+        } else {
+            $validUntil->add(new \DateInterval('PT' . $this->sessionTimeout . 'M'));
+        }
 
         $token = (new ApiToken())
             ->setUser($user)
             ->setValidUntil($validUntil)
+            ->setRememberMe($rememberMe)
             ->setToken($tokenString);
 
         $em->persist($token);

@@ -19,7 +19,7 @@ export class AuthEpics {
     return action$.ofType(AuthActionTypes.Login)
       .pipe(
         mergeMap((action: AnyAction) => {
-          return from(this.graphQl.login(action.payload.username, action.payload.password))
+          return from(this.graphQl.login(action.payload.username, action.payload.password, action.payload.rememberMe))
             .pipe(
               map((result: GraphQlLogin) => {
                 if (result.createToken.token) {

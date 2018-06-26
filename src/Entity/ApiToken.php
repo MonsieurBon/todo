@@ -3,11 +3,17 @@
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\ORM\Mapping\UniqueConstraint;
 
 /**
  * ApiToken
  *
- * @ORM\Table(name="api_token")
+ * @ORM\Table(name="api_token",
+ *     uniqueConstraints={
+ *         @UniqueConstraint(name="salt_and_token_unique",
+ *             columns={"salt", "token"})
+ *     }
+ * )
  * @ORM\Entity(repositoryClass="App\Repository\ApiTokenRepository")
  */
 class ApiToken
@@ -49,6 +55,18 @@ class ApiToken
      * @ORM\JoinColumn(name="user_id", referencedColumnName="id", onDelete="CASCADE")
      */
     private $user;
+
+    /**
+     * @var bool
+     *
+     * @ORM\Column(name="rememberMe", type="boolean", options={"default": false})
+     */
+    private $rememberMe;
+
+    public function __construct()
+    {
+        $this->rememberMe = false;
+    }
 
     /**
      * Get id
@@ -158,5 +176,23 @@ class ApiToken
     public function getUser()
     {
         return $this->user;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isRememberMe(): bool
+    {
+        return $this->rememberMe;
+    }
+
+    /**
+     * @param bool $rememberMe
+     */
+    public function setRememberMe(bool $rememberMe): ApiToken
+    {
+        $this->rememberMe = $rememberMe;
+
+        return $this;
     }
 }

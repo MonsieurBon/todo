@@ -93,12 +93,13 @@ export class GraphqlService {
     return client.request<GraphQlAddTask>(request.query, request.variables);
   }
 
-  login(username: string, password: string): Promise<GraphQlLogin> {
+  login(username: string, password: string, rememberMe: boolean): Promise<GraphQlLogin> {
     const authClient = this.graphQlClientFactory.getAuthClient();
 
     const request = CreateTokenQueryBuilder.create()
       .setUsername(username)
       .setPassword(password)
+      .setRememberMe(rememberMe)
       .getRequest();
 
     return authClient.request<GraphQlLogin>(request.query, request.variables);

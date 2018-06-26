@@ -9,7 +9,7 @@
     "build:prod": "ng build --prod --deploy-url assets/",
     "deploy": "scripts/copy_frontend.sh",
     "test": "ng test",
-    "test:coverage": "ng test --single-run --code-coverage",
+    "test:coverage": "ng test --watch=false --code-coverage",
     "lint": "ng lint",
     "e2e": "ng e2e",
     "postinstall": "scripts/post_install.sh"

@@ -9,6 +9,7 @@ DB_USER=${DB_USER:-todo}
 DB_PASS=${DB_PASS:-}
 APP_SECRET=${APP_SECRET:-$GENERATED_SECRET}
 SESSION_TIMEOUT=${SESSION_TIMEOUT:-20}
+REMEMBER_ME_TIMEOUT=${REMEMBER_ME_TIMEOUT:-10080}
 
 ## Input validation
 # Check DB_PASS
@@ -23,6 +24,7 @@ fi
 export APP_SECRET="${APP_SECRET}"
 export DATABASE_URL="mysql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
 export SESSION_TIMEOUT="${SESSION_TIMEOUT}"
+export REMEMBER_ME_TIMEOUT="${REMEMBER_ME_TIMEOUT}"
 sed -i 's/{{DB_HOST}}/'"${DB_HOST}"'/' /etc/apache2/sites-available/000-default.conf
 sed -i 's/{{DB_PORT}}/'"${DB_PORT}"'/' /etc/apache2/sites-available/000-default.conf
 sed -i 's/{{DB_NAME}}/'"${DB_NAME}"'/' /etc/apache2/sites-available/000-default.conf
@@ -30,6 +32,7 @@ sed -i 's/{{DB_USER}}/'"${DB_USER}"'/' /etc/apache2/sites-available/000-default.
 sed -i 's/{{DB_PASS}}/'"${DB_PASS}"'/' /etc/apache2/sites-available/000-default.conf
 sed -i 's/{{APP_SECRET}}/'"${APP_SECRET}"'/' /etc/apache2/sites-available/000-default.conf
 sed -i 's/{{SESSION_TIMEOUT}}/'"${SESSION_TIMEOUT}"'/' /etc/apache2/sites-available/000-default.conf
+sed -i 's/{{REMEMBER_ME_TIMEOUT}}/'"${REMEMBER_ME_TIMEOUT}"'/' /etc/apache2/sites-available/000-default.conf
 
 a2enmod rewrite
 

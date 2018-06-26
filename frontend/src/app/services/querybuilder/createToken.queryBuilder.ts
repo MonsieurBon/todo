@@ -1,5 +1,5 @@
 import { GraphqlQueryBuilder, GraphqlRequest } from './graphql.queryBuilder';
-import { IsNotEmpty, validateSync } from 'class-validator';
+import { IsBoolean, IsNotEmpty, validateSync } from 'class-validator';
 
 export class CreateTokenQueryBuilder implements GraphqlQueryBuilder {
   @IsNotEmpty()
@@ -7,6 +7,9 @@ export class CreateTokenQueryBuilder implements GraphqlQueryBuilder {
 
   @IsNotEmpty()
   private password: string;
+
+  @IsBoolean()
+  private rememberMe = false;
 
   static create() {
     return new CreateTokenQueryBuilder();
@@ -18,15 +21,16 @@ export class CreateTokenQueryBuilder implements GraphqlQueryBuilder {
     validateSync(this);
 
     return {
-      query: `mutation login($username: String!, $password: String!) {
-        createToken(username: $username, password: $password) {
+      query: `mutation login($username: String!, $password: String!, $rememberMe: Boolean) {
+        createToken(username: $username, password: $password, rememberMe: $rememberMe) {
           token
           error
         }
       }`,
       variables: {
         username: this.username,
-        password: this.password
+        password: this.password,
+        rememberMe: this.rememberMe
       }
     };
   }
@@ -38,6 +42,11 @@ export class CreateTokenQueryBuilder implements GraphqlQueryBuilder {
 
   public setPassword(password: string) {
     this.password = password;
+    return this;
+  }
+
+  public setRememberMe(rememberMe: boolean) {
+    this.rememberMe = rememberMe;
     return this;
   }
 }

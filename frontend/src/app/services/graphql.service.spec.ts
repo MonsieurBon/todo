@@ -30,11 +30,11 @@ describe('GraphqlService', () => {
     const username = 'foo';
     const password = 'bar';
 
-    graphQlService.login(username, password);
+    graphQlService.login(username, password, false);
 
     expect(spy.calls.count()).toBe(1);
     // expect(spy.calls.mostRecent().args[0]).toEqual(GraphqlService.loginMutation);
-    expect(spy.calls.mostRecent().args[1]).toEqual({username: username, password: password});
+    expect(spy.calls.mostRecent().args[1]).toEqual({username: username, password: password, rememberMe: false});
   });
 
   it('should check token', () => {

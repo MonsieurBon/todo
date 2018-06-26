@@ -2,7 +2,6 @@
 
 namespace App\Security;
 
-use App\Entity\User;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -83,11 +82,17 @@ class TokenAuthenticator implements SimplePreAuthenticatorInterface, Authenticat
         }
 
         $sessionTimeout = $this->container->getParameter('app.session_timeout');
-        $validUntil = (new \DateTime('now'))
-            ->add(new \DateInterval('PT' . $sessionTimeout . 'M'));
+        $rememberMeTimeout = $this->container->getParameter('app.remember_me_timeout');
+        $validUntil = (new \DateTime('now'));
 
-        /* @var User $user */
-        $user->getApiToken($token)->setValidUntil($validUntil);
+        $apiToken = $user->getApiToken($token);
+        if ($apiToken->isRememberMe()) {
+            $validUntil->add(new \DateInterval('PT' . $rememberMeTimeout . 'M'));
+        } else {
+            $validUntil->add(new \DateInterval('PT' . $sessionTimeout . 'M'));
+        }
+
+        $apiToken->setValidUntil($validUntil);
         $this->doctrine->getManager()->flush();
 
         return new PreAuthenticatedToken(
