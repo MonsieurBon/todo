@@ -1,0 +1,33 @@
+{
+  "index": "/index.html",
+  "assetGroups": [{
+    "name": "app",
+    "installMode": "prefetch",
+    "resources": {
+      "files": [
+        "/favicon.ico",
+        "/index.html",
+        "/*.css",
+        "/*.js"
+      ]
+    }
+  }, {
+    "name": "assets",
+    "installMode": "lazy",
+    "updateMode": "prefetch",
+    "resources": {
+      "files": [
+        "/assets/**"
+      ]
+    }
+  }],
+  "external": {
+    "urls": [
+      {"url": "https://fonts.googleapis.com/icon?family=Material+Icons"},
+      {"url": "https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700"},
+      {"url": "https://fonts.gstatic.com/s/sourcesanspro/v11/6xK3dSBYKcSV-LCoeQqfX1RYOo3qOK7l.woff2"},
+      {"url": "https://fonts.gstatic.com/s/sourcesanspro/v11/6xKydSBYKcSV-LCoeQqfX1RYOo3ik4zwlxdu.woff2"},
+      {"url": "https://fonts.gstatic.com/s/materialicons/v38/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2"}
+    ]
+  }
+}

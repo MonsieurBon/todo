@@ -10,6 +10,8 @@ import { GraphqlService } from './services/graphql.service';
 import { GraphqlClientFactory } from './services/graphql-client.factory';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { ServiceWorkerModule } from '@angular/service-worker';
+import { environment } from '../environments/environment';
 
 
 @NgModule({
@@ -23,7 +25,8 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
     LayoutModule,
     NgbModule.forRoot(),
     NgReduxModule,
-    StoreModule
+    StoreModule,
+    ServiceWorkerModule.register('/ngsw-worker.js', { enabled: environment.production })
   ],
   providers: [
     AuthGuard,
