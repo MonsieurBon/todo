@@ -95,7 +95,8 @@ class TokenAuthenticator implements SimplePreAuthenticatorInterface, Authenticat
         $apiToken->setValidUntil($validUntil);
         $this->doctrine->getManager()->flush();
 
-        return new PreAuthenticatedToken(
+        return new ApiKeyAuthenticatedToken(
+            $apiToken,
             $user,
             $token,
             $providerKey,

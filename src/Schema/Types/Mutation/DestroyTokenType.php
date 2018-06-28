@@ -2,8 +2,8 @@
 
 namespace App\Schema\Types\Mutation;
 
-use App\Entity\User;
 use App\Schema\Types;
+use App\Security\ApiKeyAuthenticatedToken;
 use Doctrine\ORM\EntityManager;
 use GraphQL\Type\Definition\ObjectType;
 use Symfony\Bridge\Doctrine\RegistryInterface;
@@ -37,11 +37,10 @@ class DestroyTokenType extends ObjectType
 
     private function resolveSuccess()
     {
-        /** @var User $user */
-        $user = $this->tokenStorage->getToken()->getUser();
-        $tokenString = $this->tokenStorage->getToken()->getCredentials();
+        /** @var ApiKeyAuthenticatedToken $apiKeyAuthenticatedToken */
+        $apiKeyAuthenticatedToken = $this->tokenStorage->getToken();
 
-        $apiToken = $user->getApiToken($tokenString);
+        $apiToken = $apiKeyAuthenticatedToken->getApiToken();
         $apiToken->setValidUntil(new \DateTime('-1 second'));
 
         $this->em->flush();

@@ -3,14 +3,13 @@
 namespace App\Tests\Schema\Types\Mutation;
 
 use App\Entity\ApiToken;
-use App\Entity\User;
 use App\Schema\Types\Mutation\DestroyTokenType;
+use App\Security\ApiKeyAuthenticatedToken;
 use Doctrine\Bundle\DoctrineBundle\Registry;
 use Doctrine\ORM\EntityManager;
 use GraphQL\Type\Definition\ResolveInfo;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
-use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 
 class DestroyTokenTypeTest extends TestCase
 {
@@ -18,10 +17,8 @@ class DestroyTokenTypeTest extends TestCase
 
     public function testDestroyToken()
     {
-        $user = new User();
         $apiToken = new ApiToken();
         $apiToken->setToken(self::TOKEN);
-        $user->addApiToken($apiToken);
 
         /** @var EntityManager $em */
         $em = $this->createMock(EntityManager::class);
@@ -31,14 +28,13 @@ class DestroyTokenTypeTest extends TestCase
         $doctrine = $this->createMock(Registry::class);
         $doctrine->method('getManager')->willReturn($em);
 
-        /** @var TokenInterface $tokenInterface */
-        $tokenInterface = $this->createMock(TokenInterface::class);
-        $tokenInterface->method('getUser')->willReturn($user);
-        $tokenInterface->method('getCredentials')->willReturn(self::TOKEN);
+        /** @var ApiKeyAuthenticatedToken $apiKeyAuthenticatedToken */
+        $apiKeyAuthenticatedToken = $this->createMock(ApiKeyAuthenticatedToken::class);
+        $apiKeyAuthenticatedToken->method('getApiToken')->willReturn($apiToken);
 
         /** @var TokenStorage $tokenStorage */
         $tokenStorage = $this->createMock(TokenStorage::class);
-        $tokenStorage->method('getToken')->willReturn($tokenInterface);
+        $tokenStorage->method('getToken')->willReturn($apiKeyAuthenticatedToken);
 
         /** @var ResolveInfo $resolveInfo */
         $resolveInfo = $this->createMock(ResolveInfo::class);
