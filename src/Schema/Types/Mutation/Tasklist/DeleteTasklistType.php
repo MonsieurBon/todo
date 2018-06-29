@@ -35,7 +35,7 @@ class DeleteTasklistType extends ObjectType
                 'tasklist' => [
                     'type' => Types::tasklist(),
                     'args' => [
-                        Schema::TASKLIST_ID_FIELD_NAME => Types::nonNull(Types::id())
+                        Schema::TASKLIST_ID_FIELD_NAME => Types::nonNull(Types::int())
                     ],
                     'resolve' => function ($val, $args) {
                         return $this->deleteTasklist($args);

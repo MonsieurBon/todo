@@ -31,8 +31,8 @@ class ShareTasklistType extends ObjectType
                 'tasklist' => [
                     'type' => Types::tasklist(),
                     'args' => [
-                        Schema::TASKLIST_ID_FIELD_NAME => Types::nonNull(Types::id()),
-                        Schema::USER_ID_FIELD_NAME => Types::nonNull(Types::id())
+                        Schema::TASKLIST_ID_FIELD_NAME => Types::nonNull(Types::int()),
+                        Schema::USER_ID_FIELD_NAME => Types::nonNull(Types::int())
                     ],
                     'resolve' => function ($vals, $args) {
                         return $this->shareTasklist($args);

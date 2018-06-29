@@ -121,6 +121,20 @@ export class TasklistEpics {
     }
     const tasks = tasklist.tasks.map(task => {
       return GraphqlTransformer.mapTask(task);
+    }).sort((task1, task2) => {
+      if (task1.startdate < task2.startdate) {
+        return 1;
+      } else if (task1.startdate > task2.startdate) {
+        return -1;
+      } else {
+        if (task1.id < task2.id) {
+          return 1;
+        } else if (task1.id > task2.id) {
+          return -1;
+        } else {
+          return 0;
+        }
+      }
     });
     const taskmap = groupBy(tasks, 'type');
     return taskmap;

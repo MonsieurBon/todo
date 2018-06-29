@@ -30,7 +30,7 @@ class EditTasklistType extends ObjectType
                 'tasklist' => [
                     'type' => Types::tasklist(),
                     'args' => [
-                        Schema::TASKLIST_ID_FIELD_NAME => Types::nonNull(Types::id()),
+                        Schema::TASKLIST_ID_FIELD_NAME => Types::nonNull(Types::int()),
                         Schema::TASKLIST_NAME_FIELD_NAME => Types::nonNull(Types::string())
                     ],
                     'resolve' => function ($val, $args) {

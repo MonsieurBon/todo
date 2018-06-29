@@ -39,7 +39,7 @@ export class EditTaskQueryBuilder implements GraphqlQueryBuilder {
     validateSync(this);
 
     return {
-      query: `mutation($id: ID!,
+      query: `mutation($id: Int!,
                        $title: String!,
                        $description: String,
                        $type: TaskTypeEnum!,

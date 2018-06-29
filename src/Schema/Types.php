@@ -20,7 +20,7 @@ use App\Schema\Types\TaskStateEnum;
 use App\Schema\Types\TaskType;
 use App\Schema\Types\TaskTypeEnum;
 use GraphQL\Type\Definition\BooleanType;
-use GraphQL\Type\Definition\IDType;
+use GraphQL\Type\Definition\IntType;
 use GraphQL\Type\Definition\ListOfType;
 use GraphQL\Type\Definition\NonNull;
 use GraphQL\Type\Definition\StringType;
@@ -144,11 +144,11 @@ class Types
     }
 
     /**
-     * @return IDType
+     * @return IntType
      */
-    public static function id()
+    public static function int()
     {
-        return Type::id();
+        return Type::int();
     }
 
     /**

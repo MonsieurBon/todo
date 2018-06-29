@@ -16,7 +16,7 @@ class TasklistType extends ObjectType
         $config = [
             'name' => 'Tasklist',
             'fields' => [
-                'id' => Types::id(),
+                'id' => Types::int(),
                 'name' => Types::string(),
                 'slug' => Types::string(),
                 'tasks' => [
@@ -54,8 +54,7 @@ class TasklistType extends ObjectType
         $showFuture = $args['showFuture'];
         $today = new \DateTime();
 
-        $criteria = Criteria::create()
-            ->orderBy(['startdate' => Criteria::DESC]);
+        $criteria = Criteria::create();
 
         if (!$showDone) {
             $criteria = $criteria->where(Criteria::expr()->eq('state', TaskState::TODO));

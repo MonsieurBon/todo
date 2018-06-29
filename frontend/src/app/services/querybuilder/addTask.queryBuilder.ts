@@ -36,7 +36,7 @@ export class AddTaskQueryBuilder implements GraphqlQueryBuilder {
     validateSync(this);
 
     return {
-      query: `mutation($tasklist_id: ID!,
+      query: `mutation($tasklist_id: Int!,
                        $title: String!,
                        $description: String,
                        $type: TaskTypeEnum!,

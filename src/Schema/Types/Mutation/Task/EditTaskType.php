@@ -29,7 +29,7 @@ class EditTaskType extends ObjectType
                 'task' => [
                     'type' => Types::task(),
                     'args' => [
-                        Schema::TASK_ID_FIELD_NAME => Types::nonNull(Types::id()),
+                        Schema::TASK_ID_FIELD_NAME => Types::nonNull(Types::int()),
                         Schema::TITLE_FIELD_NAME => Types::nonNull(Types::string()),
                         Schema::DESCRIPTION_FIELD_NAME => Types::string(),
                         Schema::TYPE_FIELD_NAME => Types::nonNull(Types::taskTypeEnum()),

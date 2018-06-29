@@ -30,7 +30,7 @@ class DeleteTaskType extends ObjectType
                 'task' => [
                     'type' => Types::task(),
                     'args' => [
-                        Schema::TASK_ID_FIELD_NAME => Types::nonNull(Types::id())
+                        Schema::TASK_ID_FIELD_NAME => Types::nonNull(Types::int())
                     ],
                     'resolve' => function ($val, $args) {
                         return $this->deleteTask($args);

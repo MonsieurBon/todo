@@ -38,7 +38,7 @@ class MutationType extends ObjectType
                 'addTask' => [
                     'type' => Types::addTask($authChecker, $doctrine),
                     'args' => [
-                        Schema::TASKLIST_ID_FIELD_NAME => Types::nonNull(Types::id())
+                        Schema::TASKLIST_ID_FIELD_NAME => Types::nonNull(Types::int())
                     ],
                     'resolve' => function ($val, $args) {
                         return $this->addTask($args);

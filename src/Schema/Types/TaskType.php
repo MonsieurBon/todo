@@ -15,7 +15,7 @@ class TaskType extends ObjectType
             'name' => 'Task',
             'fields' => function () {
                 return [
-                    'id' => Types::id(),
+                    'id' => Types::int(),
                     'title' => Types::string(),
                     'description' => Types::string(),
                     'startdate' => Types::date(),
