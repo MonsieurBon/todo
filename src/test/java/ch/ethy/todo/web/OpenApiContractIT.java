@@ -3,21 +3,13 @@ package ch.ethy.todo.web;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
+import ch.ethy.todo.IntegrationTest;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.json.JsonMapper;
@@ -33,26 +25,9 @@ import tools.jackson.databind.json.JsonMapper;
  * <p>When the API changes on purpose, this test rewrites the file and fails once. Review the diff
  * and commit it — the failure is the review prompt, not a defect.
  */
-@SpringBootTest
-@AutoConfigureMockMvc
-@Testcontainers
-class OpenApiContractIT {
+class OpenApiContractIT extends IntegrationTest {
 
   private static final Path CONTRACT = Path.of("src/main/webapp/api/openapi.json");
-
-  @Container
-  @SuppressWarnings("resource")
-  static final MySQLContainer<?> MYSQL = new MySQLContainer<>("mysql:8.4").withDatabaseName("todo");
-
-  @DynamicPropertySource
-  static void properties(DynamicPropertyRegistry registry) {
-    registry.add("spring.datasource.url", MYSQL::getJdbcUrl);
-    registry.add("spring.datasource.username", MYSQL::getUsername);
-    registry.add("spring.datasource.password", MYSQL::getPassword);
-    registry.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
-  }
-
-  @MockitoBean private JwtDecoder jwtDecoder;
 
   @Autowired private MockMvc mvc;
 

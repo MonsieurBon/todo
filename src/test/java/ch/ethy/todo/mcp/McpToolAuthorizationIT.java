@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import ch.ethy.todo.IntegrationTest;
 import ch.ethy.todo.domain.TaskZone;
 import java.time.LocalDate;
 import java.util.List;
@@ -13,19 +14,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * The scope gate on every MCP tool.
@@ -38,23 +31,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * so a restricted client sees tools it cannot call and gets Access Denied on use. Fixing that
  * properly means a second endpoint with its own tool set; until then these tests are the boundary.
  */
-@SpringBootTest
-@Testcontainers
-class McpToolAuthorizationIT {
-
-  @Container
-  @SuppressWarnings("resource")
-  static final MySQLContainer<?> MYSQL = new MySQLContainer<>("mysql:8.4").withDatabaseName("todo");
-
-  @DynamicPropertySource
-  static void properties(DynamicPropertyRegistry registry) {
-    registry.add("spring.datasource.url", MYSQL::getJdbcUrl);
-    registry.add("spring.datasource.username", MYSQL::getUsername);
-    registry.add("spring.datasource.password", MYSQL::getPassword);
-    registry.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
-  }
-
-  @MockitoBean private JwtDecoder jwtDecoder;
+class McpToolAuthorizationIT extends IntegrationTest {
 
   @Autowired private TodoTools tools;
 

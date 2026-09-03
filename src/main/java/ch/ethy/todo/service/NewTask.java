@@ -10,8 +10,8 @@ import java.util.List;
  *
  * <p>A record rather than a growing parameter list: capture and create differ only in whether a
  * list was named, and every field added to one was previously added to both signatures by hand —
- * which is how {@code notes} and {@code dueDate} came to be accepted by the API and then dropped
- * on the floor.
+ * which is how {@code notes} and {@code dueDate} came to be accepted by the API and then dropped on
+ * the floor.
  *
  * @param clientRef the caller's own reference, which makes the create safe to replay; null for
  *     every caller without an offline queue

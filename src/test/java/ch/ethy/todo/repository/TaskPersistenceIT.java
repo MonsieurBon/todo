@@ -2,6 +2,7 @@ package ch.ethy.todo.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import ch.ethy.todo.IntegrationTest;
 import ch.ethy.todo.domain.Task;
 import ch.ethy.todo.domain.TaskList;
 import ch.ethy.todo.domain.TaskState;
@@ -17,8 +18,6 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Runs the real Flyway migration against a real MySQL and then lets Hibernate validate the entities
@@ -31,13 +30,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Testcontainers
 class TaskPersistenceIT {
 
-  @Container
-  @SuppressWarnings("resource")
-  static final MySQLContainer<?> MYSQL =
-      new MySQLContainer<>("mysql:8.4").withDatabaseName("todo").withReuse(false);
+  private static final MySQLContainer<?> MYSQL = IntegrationTest.MYSQL;
 
   @DynamicPropertySource
   static void datasource(DynamicPropertyRegistry registry) {

@@ -52,9 +52,9 @@ public class Task {
   /**
    * The client's own reference for this task, if it had one.
    *
-   * <p>Only the web app sets it, and only for captures it made offline: a queued create is
-   * replayed on reconnect, and a replay cannot tell a lost request from a lost response. Matching
-   * on this turns the second create into a lookup instead of a duplicate.
+   * <p>Only the web app sets it, and only for captures it made offline: a queued create is replayed
+   * on reconnect, and a replay cannot tell a lost request from a lost response. Matching on this
+   * turns the second create into a lookup instead of a duplicate.
    */
   @Column(name = "client_ref", length = 64, updatable = false)
   private String clientRef;
