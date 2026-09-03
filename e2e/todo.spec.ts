@@ -60,8 +60,13 @@ test('a new account starts with an empty board and the three zones', async () =>
 test('a captured task lands in the zone it was given', async () => {
   await capture(`Fix the tile ${run}`, { zone: 'Critical Now', labels: run });
   await expect(zoneSection('Critical Now').getByText(`Fix the tile ${run}`)).toBeVisible();
-  // Filed with no list named, so it goes to the inbox.
-  await expect(zoneSection('Critical Now').getByText('Inbox')).toBeVisible();
+
+  // Filed with no list named, so it went to the inbox. The row does not say so - with one list
+  // there is nothing to distinguish - so ask the filter instead.
+  await page.getByRole('button', { name: 'All lists' }).click();
+  await page.getByRole('menuitem', { name: 'Inbox' }).click();
+  await expect(zoneSection('Critical Now').getByText(`Fix the tile ${run}`)).toBeVisible();
+  await page.getByRole('button', { name: 'Clear filters' }).click();
 });
 
 test('the cap warns when a zone is over what the method says it holds', async () => {
