@@ -30,10 +30,18 @@ services:
       # Client Registration. It is EXPERIMENTAL in Keycloak - the Phase 0 spike
       # exists to find out whether it actually works here.
       KC_FEATURES: cimd
+      # Serves /health/ready on the management port. The image ships no curl or
+      # wget, so the probe below uses bash's /dev/tcp instead - and must invoke
+      # bash explicitly, since CMD-SHELL would run it under sh.
+      KC_HEALTH_ENABLED: "true"
     ports:
       - "8081:8081"
     healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8081 && echo -e 'GET /realms/master HTTP/1.1\\nHost: localhost\\nConnection: close\\n\\n' >&3 && cat <&3 | grep -q '200 OK'"]
+      test:
+        - CMD
+        - bash
+        - -c
+        - "exec 3<>/dev/tcp/localhost/9000 && printf 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && grep -q '200 OK' <&3"
       interval: 10s
       timeout: 5s
       retries: 30
