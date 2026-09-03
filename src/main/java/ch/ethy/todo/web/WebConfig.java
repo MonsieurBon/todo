@@ -21,12 +21,24 @@ import org.springframework.web.servlet.resource.PathResourceResolver;
 public class WebConfig implements WebMvcConfigurer {
 
   /**
-   * Prefixes that belong to the server and must 404 honestly rather than answer with an HTML page.
-   * A JSON client that receives index.html reports a parse error, which is a considerably worse
-   * way to learn a URL is wrong.
+   * Path roots that belong to the server and must 404 honestly rather than answer with an HTML
+   * page. A JSON client that receives index.html reports a parse error, which is a considerably
+   * worse way to learn a URL is wrong.
    */
   private static final List<String> SERVER_OWNED =
-      List.of("api/", "mcp", "actuator/", "v3/", "swagger-ui", ".well-known/");
+      List.of("api", "mcp", "actuator", "v3", "swagger-ui", ".well-known");
+
+  /**
+   * Matches the root itself as well as anything beneath it.
+   *
+   * <p>Both halves are load-bearing. Without the exact match, {@code /api} and {@code /actuator} —
+   * the bare roots, which people type — fall through to the web app and answer 200 with HTML.
+   * Without the trailing slash on the prefix, {@code /api-docs-elsewhere} would be captured by
+   * {@code api}.
+   */
+  private static boolean belongsToTheServer(String path) {
+    return SERVER_OWNED.stream().anyMatch(root -> path.equals(root) || path.startsWith(root + "/"));
+  }
 
   private static final ClassPathResource INDEX = new ClassPathResource("static/index.html");
 
@@ -44,7 +56,7 @@ public class WebConfig implements WebMvcConfigurer {
                 if (requested.exists() && requested.isReadable()) {
                   return requested;
                 }
-                if (SERVER_OWNED.stream().anyMatch(path::startsWith)) {
+                if (belongsToTheServer(path)) {
                   return null;
                 }
                 // Null rather than a resource that is not there: the handler asks a returned

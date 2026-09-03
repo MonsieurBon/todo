@@ -45,6 +45,32 @@ spring:
 server:
   port: ${SERVER_PORT:8080}
 
+# Health is the only endpoint exposed, and it is reachable unauthenticated (see
+# SecurityConfig) because a container healthcheck has no credentials. That makes
+# `show-details: never` a requirement rather than a preference: with details on, an
+# anonymous caller would learn the database vendor, the disk usage and which
+# components are failing.
+#
+# Note what health deliberately does NOT include: the identity provider. The app
+# starts without it, serves the web app without it, and recovers on its own when it
+# returns - so failing the healthcheck on an IdP blip would restart a container that
+# was working, and take the login page down with it.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+      # The links document at /actuator would otherwise be served to anyone who can reach
+      # the port - it only lists what is already exposed, but "one endpoint" should mean
+      # one endpoint. The healthcheck URL is in the README; nothing needs to discover it.
+      discovery:
+        enabled: false
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+
 logging:
   level:
     org.springframework.security: ${LOG_LEVEL_SECURITY:INFO}

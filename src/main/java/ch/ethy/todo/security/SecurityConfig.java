@@ -8,6 +8,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
@@ -34,6 +35,8 @@ public class SecurityConfig {
   @Bean
   SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     return http
+        // Wraps the bearer token filter so an unreachable IdP is a 503 rather than a 500.
+        .addFilterBefore(new IdpUnavailableFilter(), BearerTokenAuthenticationFilter.class)
         // No cookies, no sessions: every request carries its own bearer token, so there is
         // no ambient authority for CSRF to exploit.
         .csrf(AbstractHttpConfigurer::disable)

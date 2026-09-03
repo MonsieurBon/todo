@@ -52,12 +52,16 @@ class WebAppHostingIT extends IntegrationTest {
   }
 
   @Test
-  @DisplayName("a wrong API path is still a 404, not a page")
+  @DisplayName("a wrong server path is still a 404, not a page")
   void serverPathsDoNotFallThrough() throws Exception {
     // Answering these with HTML would turn every typo into a JSON parse error at the caller.
-    assertThat(mvc.perform(get("/api/nonexistent")).andReturn().getResponse().getStatus())
-        .isNotEqualTo(200);
-    assertThat(mvc.perform(get("/actuator/nope")).andReturn().getResponse().getStatus())
-        .isNotEqualTo(200);
+    // The bare roots matter as much as the paths beneath them: those are what a person types.
+    for (String path :
+        new String[] {"/api", "/api/nonexistent", "/actuator", "/actuator/nope", "/v3", "/mcp"}) {
+      var response = mvc.perform(get(path)).andReturn().getResponse();
+      assertThat(response.getContentAsString())
+          .as("GET %s must not be answered with the web app", path)
+          .doesNotContain("<app-root>");
+    }
   }
 }

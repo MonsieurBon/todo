@@ -41,6 +41,10 @@ public abstract class IntegrationTest {
     registry.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
   }
 
-  /** No IdP in tests: every test authenticates directly, so nothing ever decodes a real token. */
-  @MockitoBean private JwtDecoder jwtDecoder;
+  /**
+   * No IdP in tests: every test authenticates directly, so nothing ever decodes a real token.
+   * Protected so a test that is specifically about decoding — an unreachable IdP, say — can stub
+   * it.
+   */
+  @MockitoBean protected JwtDecoder jwtDecoder;
 }
