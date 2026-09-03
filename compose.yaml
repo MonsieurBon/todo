@@ -34,14 +34,19 @@ services:
       # wget, so the probe below uses bash's /dev/tcp instead - and must invoke
       # bash explicitly, since CMD-SHELL would run it under sh.
       KC_HEALTH_ENABLED: "true"
-      # Substituted into keycloak/realm-todo.json at import time, so one realm
-      # file serves dev and every other environment.
-      TODO_CANONICAL_URI: http://localhost:8090
     ports:
       - "8081:8081"
     volumes:
-      # Declarative realm config. The same file is what the Keycloak Operator's
-      # KeycloakRealmImport CR consumes, so dev and Kubernetes share one source.
+      # Declarative realm config, in Keycloak's own RealmRepresentation format -
+      # which is what --import-realm takes here, and what the Keycloak Operator's
+      # KeycloakRealmImport takes elsewhere. Nothing about it is specific to either.
+      #
+      # NOTE: the audience mapper and todo-web's redirect URIs inside it are
+      # LITERAL http://localhost:8090. Keycloak does not substitute ${env.VAR}
+      # during realm import, so an environment variable here would do nothing at
+      # all - the placeholder would be stored verbatim as the expected audience and
+      # every token would be rejected. Another environment has to rewrite the file
+      # before importing it.
       - ./keycloak:/opt/keycloak/data/import:ro
     healthcheck:
       test:
