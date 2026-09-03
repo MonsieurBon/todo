@@ -202,4 +202,55 @@ class OfflineCaptureIT {
     assertThat(yours.get("title").asString()).isEqualTo("Your errand");
     assertThat(titlesOnBoard(you)).containsExactly("Your errand");
   }
+
+  @Test
+  @DisplayName("a captured task keeps its notes and due date")
+  void captureKeepsEveryField() throws Exception {
+    String me = someone();
+    Map<String, Object> payload = new HashMap<>();
+    payload.put("title", "Read this");
+    payload.put("notes", "https://example.com/an-article");
+    payload.put("dueDate", "2030-01-31");
+    payload.put("labels", List.of("reading"));
+
+    JsonNode created =
+        perform(
+            post("/api/tasks/capture")
+                .with(as(me, CAPTURE))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(payload)));
+
+    // The share target files a link as a task; dropping the link would leave a task about nothing.
+    assertThat(created.get("notes").asString()).isEqualTo("https://example.com/an-article");
+    assertThat(created.get("dueDate").asString()).isEqualTo("2030-01-31");
+  }
+
+  @Test
+  @DisplayName("a task created in a list keeps its notes and due date too")
+  void listCreateKeepsEveryField() throws Exception {
+    String me = someone();
+    Long list =
+        perform(
+                post("/api/tasklists")
+                    .with(as(me, ADMIN))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(json.writeValueAsString(Map.of("name", "Reading"))))
+            .get("id")
+            .asLong();
+    Map<String, Object> payload = new HashMap<>();
+    payload.put("title", "Read that");
+    payload.put("zone", "OPPORTUNITY_NOW");
+    payload.put("notes", "page 40 onwards");
+    payload.put("dueDate", "2030-02-28");
+
+    JsonNode created =
+        perform(
+            post("/api/tasklists/" + list + "/tasks")
+                .with(as(me, WRITE))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(payload)));
+
+    assertThat(created.get("notes").asString()).isEqualTo("page 40 onwards");
+    assertThat(created.get("dueDate").asString()).isEqualTo("2030-02-28");
+  }
 }

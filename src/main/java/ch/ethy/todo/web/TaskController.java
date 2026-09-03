@@ -3,6 +3,7 @@ package ch.ethy.todo.web;
 import ch.ethy.todo.domain.TaskZone;
 import ch.ethy.todo.service.BoardFilter;
 import ch.ethy.todo.service.CurrentUserService;
+import ch.ethy.todo.service.NewTask;
 import ch.ethy.todo.service.TaskService;
 import ch.ethy.todo.web.dto.Requests;
 import ch.ethy.todo.web.dto.Responses;
@@ -86,10 +87,13 @@ public class TaskController {
     return Responses.TaskView.of(
         tasks.capture(
             currentUser.current(),
-            request.title(),
-            request.zoneOrDefault(),
-            request.labels(),
-            request.clientRef()));
+            new NewTask(
+                request.title(),
+                request.zoneOrDefault(),
+                request.notes(),
+                request.dueDate(),
+                request.labels(),
+                request.clientRef())));
   }
 
   @PostMapping("/tasklists/{listId}/tasks")
@@ -101,10 +105,13 @@ public class TaskController {
         tasks.addTo(
             listId,
             currentUser.current(),
-            request.title(),
-            request.zone(),
-            request.labels(),
-            request.clientRef()));
+            new NewTask(
+                request.title(),
+                request.zone(),
+                request.notes(),
+                request.dueDate(),
+                request.labels(),
+                request.clientRef())));
   }
 
   @GetMapping("/tasklists/{listId}/tasks")

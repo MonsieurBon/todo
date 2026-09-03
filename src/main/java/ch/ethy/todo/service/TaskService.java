@@ -81,36 +81,17 @@ public class TaskService {
     return task;
   }
 
-  public Task addTo(
-      Long listId, User user, String title, TaskZone zone, java.util.Collection<String> labels) {
-    return addTo(listId, user, title, zone, labels, null);
-  }
-
-  public Task addTo(
-      Long listId,
-      User user,
-      String title,
-      TaskZone zone,
-      java.util.Collection<String> labels,
-      String clientRef) {
-    return createIn(lists.accessible(listId, user), title, zone, labels, clientRef);
+  /** Creates a task in a named list. */
+  public Task addTo(Long listId, User user, NewTask draft) {
+    return createIn(lists.accessible(listId, user), draft);
   }
 
   /**
    * Files a task without naming a list. This is the capture path: it needs no read scope, so it
    * works both for a client that cannot discover a list and for a quick capture from the web app.
    */
-  public Task capture(User user, String title, TaskZone zone, java.util.Collection<String> labels) {
-    return capture(user, title, zone, labels, null);
-  }
-
-  public Task capture(
-      User user,
-      String title,
-      TaskZone zone,
-      java.util.Collection<String> labels,
-      String clientRef) {
-    return createIn(lists.inboxOf(user), title, zone, labels, clientRef);
+  public Task capture(User user, NewTask draft) {
+    return createIn(lists.inboxOf(user), draft);
   }
 
   /**
@@ -121,23 +102,19 @@ public class TaskService {
    * the replay into a lookup, so a create is safe to repeat. Everything else passes {@code null}
    * and always creates.
    */
-  private Task createIn(
-      TaskList list,
-      String title,
-      TaskZone zone,
-      java.util.Collection<String> labels,
-      String clientRef) {
+  private Task createIn(TaskList list, NewTask draft) {
+    String clientRef = draft.clientRef();
     if (clientRef != null && !clientRef.isBlank()) {
       var existing = tasks.findByTaskListAndClientRef(list, clientRef.trim());
       if (existing.isPresent()) {
         return existing.get();
       }
     }
-    Task task = new Task(title, zone);
+    Task task = new Task(draft.title(), draft.zone());
     task.clientRef(clientRef);
-    if (labels != null) {
-      task.labels(labels);
-    }
+    task.notes(draft.notes());
+    task.dueDate(draft.dueDate());
+    task.labels(draft.labels());
     list.add(task);
     return tasks.save(task);
   }

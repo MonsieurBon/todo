@@ -40,7 +40,9 @@ public final class Requests {
    */
   public record CaptureTask(
       @NotBlank @Size(max = 255) String title,
+      @Size(max = 10_000) String notes,
       TaskZone zone,
+      LocalDate dueDate,
       List<String> labels,
       @Size(max = 64) String clientRef) {
     public TaskZone zoneOrDefault() {

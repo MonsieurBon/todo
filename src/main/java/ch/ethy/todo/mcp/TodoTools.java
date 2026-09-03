@@ -3,6 +3,7 @@ package ch.ethy.todo.mcp;
 import ch.ethy.todo.domain.TaskZone;
 import ch.ethy.todo.service.BoardFilter;
 import ch.ethy.todo.service.CurrentUserService;
+import ch.ethy.todo.service.NewTask;
 import ch.ethy.todo.service.TaskListService;
 import ch.ethy.todo.service.TaskService;
 import ch.ethy.todo.web.dto.Responses;
@@ -82,10 +83,9 @@ public class TodoTools {
           Long listId) {
     var me = currentUser.current();
     TaskZone target = zone == null ? TaskZone.OPPORTUNITY_NOW : zone;
+    var draft = NewTask.of(title, target, labels);
     return Responses.TaskView.of(
-        listId == null
-            ? tasks.capture(me, title, target, labels)
-            : tasks.addTo(listId, me, title, target, labels));
+        listId == null ? tasks.capture(me, draft) : tasks.addTo(listId, me, draft));
   }
 
   // --------------------------------------------------------------------- read
