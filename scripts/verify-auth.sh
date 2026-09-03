@@ -96,15 +96,20 @@ print('$claim' in c)
 done
 
 head "3. the resource server enforces the boundary"
-code=$(curl -sS -o /dev/null -w '%{http_code}' "$APP/api/spike/whoami")
+code=$(curl -sS -o /dev/null -w '%{http_code}' "$APP/api/tasklists")
 [ "$code" = "401" ] && ok "unauthenticated -> 401" || bad "unauthenticated -> $code, expected 401"
 
-code=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $CODE_TOKEN" "$APP/api/spike/needs-write")
-[ "$code" = "200" ] && ok "todo:write token -> 200" || bad "todo:write token -> $code, expected 200"
+code=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $CODE_TOKEN" "$APP/api/tasklists")
+[ "$code" = "200" ] && ok "read token lists tasklists -> 200" || bad "read token -> $code, expected 200"
 
-code=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $APP_TOKEN" "$APP/api/spike/needs-write")
-body=$(curl -sS -H "Authorization: Bearer $APP_TOKEN" "$APP/api/spike/needs-write")
-[ "$code" = "403" ] && ok "capture-only token -> 403" || bad "capture-only token -> $code, expected 403"
+# The capture-only client must be able to file a task and do nothing else.
+code=$(curl -sS -o /dev/null -w '%{http_code}' -X POST -H "Authorization: Bearer $APP_TOKEN" \
+  -H 'Content-Type: application/json' -d '{"title":"captured by verify-auth"}' "$APP/api/tasks/capture")
+[ "$code" = "201" ] && ok "capture-only token can capture -> 201" || bad "capture -> $code, expected 201"
+
+code=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $APP_TOKEN" "$APP/api/tasklists")
+body=$(curl -sS -H "Authorization: Bearer $APP_TOKEN" "$APP/api/tasklists")
+[ "$code" = "403" ] && ok "capture-only token cannot read -> 403" || bad "capture read -> $code, expected 403"
 [ -z "$body" ] && ok "denied response carries no data" || bad "DENIED RESPONSE LEAKED A BODY: $body"
 
 head "4. a token for a different audience is rejected"
@@ -112,7 +117,7 @@ curl -sS -X POST -H "Authorization: Bearer $ADM" -H "Content-Type: application/j
   "$KC/admin/realms/$REALM/clients" \
   -d '{"clientId":"verify-impostor","enabled":true,"publicClient":true,"directAccessGrantsEnabled":true,"standardFlowEnabled":true}' >/dev/null 2>&1 || true
 IMP=$(token verify-impostor "" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("access_token",""))')
-code=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $IMP" "$APP/api/spike/whoami")
+code=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $IMP" "$APP/api/tasklists")
 [ "$code" = "401" ] && ok "wrong-audience token -> 401" || bad "wrong-audience token -> $code, expected 401"
 code=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $IMP" "$APP/mcp")
 [ "$code" = "401" ] && ok "wrong-audience token -> 401 on /mcp" || bad "wrong-audience token -> $code on /mcp"
