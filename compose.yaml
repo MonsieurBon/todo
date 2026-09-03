@@ -1,0 +1,43 @@
+# Local development stack: MySQL + Keycloak.
+# The app itself runs from the IDE or `./mvnw spring-boot:run`, not from here.
+services:
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: todo
+      MYSQL_USER: todo
+      MYSQL_PASSWORD: todo
+    ports:
+      # 3306 on the host belongs to the existing mysql-recipe container,
+      # so the dev database for this project lives on 3307.
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - db-data:/var/lib/mysql
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.3
+    command: ["start-dev", "--http-port=8081"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      # CIMD is what the current MCP spec prefers over the now-deprecated Dynamic
+      # Client Registration. It is EXPERIMENTAL in Keycloak - the Phase 0 spike
+      # exists to find out whether it actually works here.
+      KC_FEATURES: cimd
+    ports:
+      - "8081:8081"
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8081 && echo -e 'GET /realms/master HTTP/1.1\\nHost: localhost\\nConnection: close\\n\\n' >&3 && cat <&3 | grep -q '200 OK'"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+volumes:
+  db-data:
