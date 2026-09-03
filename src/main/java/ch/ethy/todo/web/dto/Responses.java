@@ -37,7 +37,11 @@ public final class Responses {
       TaskState state,
       LocalDate deferUntil,
       LocalDate dueDate,
-      Instant lastReviewedAt) {
+      Instant lastReviewedAt,
+      // The board spans lists, so a task has to say where it came from.
+      Long listId,
+      String listName,
+      List<String> labels) {
 
     public static TaskView of(Task task) {
       return new TaskView(
@@ -48,7 +52,10 @@ public final class Responses {
           task.state(),
           task.deferUntil(),
           task.dueDate(),
-          task.lastReviewedAt());
+          task.lastReviewedAt(),
+          task.taskList() == null ? null : task.taskList().id(),
+          task.taskList() == null ? null : task.taskList().name(),
+          List.copyOf(task.labels()));
     }
   }
 
@@ -71,6 +78,12 @@ public final class Responses {
   }
 
   public record TaskListDetail(TaskListSummary list, List<ZoneLoad> zones, List<TaskView> tasks) {}
+
+  /**
+   * The default view: everything visible, in three zones, with the caps counted across the whole
+   * filtered set rather than per list.
+   */
+  public record BoardView(List<ZoneLoad> zones, List<TaskView> tasks) {}
 
   public record ApiError(String error, String message, Map<String, String> fields) {}
 }

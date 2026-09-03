@@ -2,6 +2,7 @@ package ch.ethy.todo.web;
 
 import ch.ethy.todo.domain.TaskList;
 import ch.ethy.todo.domain.User;
+import ch.ethy.todo.service.BoardFilter;
 import ch.ethy.todo.service.CurrentUserService;
 import ch.ethy.todo.service.TaskListService;
 import ch.ethy.todo.service.TaskService;
@@ -50,7 +51,9 @@ public class TaskListController {
     TaskList list = lists.accessible(id, me);
     return new Responses.TaskListDetail(
         Responses.TaskListSummary.of(list, me),
-        Responses.ZoneLoad.of(tasks.openCountsByZone(list)),
+        // Counted through the same board query, scoped to this list. These numbers are
+        // informational: the caps that matter are the ones on the board, across every list.
+        Responses.ZoneLoad.of(tasks.zoneLoads(me, BoardFilter.forList(id))),
         tasks.visibleIn(id, me).stream().map(Responses.TaskView::of).toList());
   }
 

@@ -1,6 +1,8 @@
 package ch.ethy.todo.domain;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -14,6 +16,9 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -60,6 +65,22 @@ public class Task {
 
   @Column(name = "due_date")
   private LocalDate dueDate;
+
+  /**
+   * Topics this task belongs to.
+   *
+   * <p>Labels are the topic axis; lists are the sharing axis. Keeping them separate is what lets
+   * the zone caps stay meaningful: a cap counted per topic-shaped list would be enforced once per
+   * list, so "Critical Now at most five" would silently permit five per project.
+   *
+   * <p>Stored as plain strings rather than an entity on purpose. A label owned by a user raises a
+   * question with no clean answer on a shared list — whose labels apply, and does the other person
+   * see yours? Strings have no owner, so everyone who can see the task sees its labels.
+   */
+  @ElementCollection(fetch = FetchType.LAZY)
+  @CollectionTable(name = "task_label", joinColumns = @JoinColumn(name = "task_id"))
+  @Column(name = "label", nullable = false, length = 64)
+  private Set<String> labels = new LinkedHashSet<>();
 
   /** Manual ordering within a zone. Lower sorts first. */
   @Column(name = "sort_order", nullable = false)
@@ -210,6 +231,42 @@ public class Task {
    */
   public boolean isVisibleOn(LocalDate today) {
     return deferUntil == null || !deferUntil.isAfter(today);
+  }
+
+  /** The topics on this task, in the order they were added. */
+  public Set<String> labels() {
+    return java.util.Collections.unmodifiableSet(labels);
+  }
+
+  /**
+   * Adds a topic. Normalised through {@link Slug}, so "Project A", "project a" and "project-a" are
+   * one label and filters stay URL-safe.
+   */
+  public void addLabel(String label) {
+    labels.add(normalise(label));
+  }
+
+  public void removeLabel(String label) {
+    labels.remove(normalise(label));
+  }
+
+  public boolean hasLabel(String label) {
+    return labels.contains(normalise(label));
+  }
+
+  /** Replaces every topic on this task. */
+  public void labels(Collection<String> replacements) {
+    Set<String> next = new LinkedHashSet<>();
+    replacements.forEach(label -> next.add(normalise(label)));
+    labels.clear();
+    labels.addAll(next);
+  }
+
+  private static String normalise(String label) {
+    if (label == null || label.isBlank()) {
+      throw new IllegalArgumentException("A label needs a name");
+    }
+    return Slug.of(label);
   }
 
   /** Records that this task was considered during a review sweep. */

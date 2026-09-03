@@ -2,7 +2,6 @@ package ch.ethy.todo.service;
 
 import ch.ethy.todo.domain.Task;
 import ch.ethy.todo.domain.TaskList;
-import ch.ethy.todo.domain.TaskState;
 import ch.ethy.todo.domain.TaskZone;
 import ch.ethy.todo.domain.User;
 import ch.ethy.todo.repository.TaskRepository;
@@ -39,19 +38,56 @@ public class TaskService {
     return tasks.findVisibleIn(lists.accessible(listId, user), LocalDate.now(clock));
   }
 
-  /** How full each zone is, and whether that is over what the method says it should hold. */
+  /** Every task the user can see, narrowed by the filter. The default view of the app. */
   @Transactional(readOnly = true)
-  public Map<TaskZone, Long> openCountsByZone(TaskList list) {
-    return java.util.Arrays.stream(TaskZone.values())
-        .collect(
-            Collectors.toMap(
-                zone -> zone,
-                zone -> tasks.countByTaskListAndZoneAndState(list, zone, TaskState.TODO)));
+  public List<Task> board(User user, BoardFilter filter) {
+    return tasks.findOnBoard(
+        user,
+        LocalDate.now(clock),
+        filter.listId(),
+        filter.label(),
+        filter.zone(),
+        filter.includeDone());
   }
 
-  public Task addTo(Long listId, User user, String title, TaskZone zone) {
+  /**
+   * How full each zone is across the filtered view, and whether that is over what the method says
+   * it should hold.
+   *
+   * <p>Counted across everything visible rather than per list. A cap counted per list would be
+   * enforced once per list, so five topic-shaped lists would permit twenty-five Critical Now tasks
+   * with every list reporting itself healthy — which removes the only thing the cap is for.
+   */
+  @Transactional(readOnly = true)
+  public Map<TaskZone, Long> zoneLoads(User user, BoardFilter filter) {
+    Map<TaskZone, Long> counts =
+        tasks
+            .countOpenByZoneOnBoard(user, LocalDate.now(clock), filter.listId(), filter.label())
+            .stream()
+            .collect(Collectors.toMap(row -> (TaskZone) row[0], row -> (Long) row[1]));
+    return java.util.Arrays.stream(TaskZone.values())
+        .collect(Collectors.toMap(zone -> zone, zone -> counts.getOrDefault(zone, 0L)));
+  }
+
+  /** Every topic in use across the tasks this user can see. */
+  @Transactional(readOnly = true)
+  public List<String> labelsVisibleTo(User user) {
+    return tasks.findLabelsVisibleTo(user);
+  }
+
+  public Task setLabels(Long id, User user, java.util.Collection<String> labels) {
+    Task task = accessible(id, user);
+    task.labels(labels);
+    return task;
+  }
+
+  public Task addTo(
+      Long listId, User user, String title, TaskZone zone, java.util.Collection<String> labels) {
     TaskList list = lists.accessible(listId, user);
     Task task = new Task(title, zone);
+    if (labels != null) {
+      task.labels(labels);
+    }
     list.add(task);
     return tasks.save(task);
   }
@@ -60,9 +96,12 @@ public class TaskService {
    * Files a task without naming a list. This is the capture-only path: such a client has no read
    * scope, so it cannot discover a list to choose.
    */
-  public Task capture(User user, String title, TaskZone zone) {
+  public Task capture(User user, String title, TaskZone zone, java.util.Collection<String> labels) {
     TaskList inbox = lists.inboxOf(user);
     Task task = new Task(title, zone);
+    if (labels != null) {
+      task.labels(labels);
+    }
     inbox.add(task);
     return tasks.save(task);
   }

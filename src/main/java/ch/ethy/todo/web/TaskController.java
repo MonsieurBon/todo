@@ -1,5 +1,7 @@
 package ch.ethy.todo.web;
 
+import ch.ethy.todo.domain.TaskZone;
+import ch.ethy.todo.service.BoardFilter;
 import ch.ethy.todo.service.CurrentUserService;
 import ch.ethy.todo.service.TaskService;
 import ch.ethy.todo.web.dto.Requests;
@@ -13,8 +15,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -31,6 +35,32 @@ public class TaskController {
   }
 
   /**
+   * The board: every task the user can see, in three zones, with the caps counted across the whole
+   * filtered set. This is the app's default view — lists and labels are filters on top of it, not
+   * things you navigate between.
+   */
+  @GetMapping("/board")
+  @PreAuthorize("hasAuthority('SCOPE_todo:read')")
+  public Responses.BoardView board(
+      @RequestParam(required = false) Long list,
+      @RequestParam(required = false) String label,
+      @RequestParam(required = false) TaskZone zone,
+      @RequestParam(defaultValue = "false") boolean includeDone) {
+    var me = currentUser.current();
+    var filter = new BoardFilter(list, label, zone, includeDone);
+    return new Responses.BoardView(
+        Responses.ZoneLoad.of(tasks.zoneLoads(me, filter)),
+        tasks.board(me, filter).stream().map(Responses.TaskView::of).toList());
+  }
+
+  /** Every topic in use, for autocomplete and the filter menu. */
+  @GetMapping("/labels")
+  @PreAuthorize("hasAuthority('SCOPE_todo:read')")
+  public List<String> labels() {
+    return tasks.labelsVisibleTo(currentUser.current());
+  }
+
+  /**
    * Files a task without naming a list. This is what a capture-only client calls: it has no read
    * scope, so it cannot discover a list id to post to.
    */
@@ -39,7 +69,8 @@ public class TaskController {
   @PreAuthorize("hasAnyAuthority('SCOPE_todo:capture', 'SCOPE_todo:write')")
   public Responses.TaskView capture(@Valid @RequestBody Requests.CaptureTask request) {
     return Responses.TaskView.of(
-        tasks.capture(currentUser.current(), request.title(), request.zoneOrDefault()));
+        tasks.capture(
+            currentUser.current(), request.title(), request.zoneOrDefault(), request.labels()));
   }
 
   @PostMapping("/tasklists/{listId}/tasks")
@@ -48,7 +79,8 @@ public class TaskController {
   public Responses.TaskView add(
       @PathVariable Long listId, @Valid @RequestBody Requests.CreateTask request) {
     return Responses.TaskView.of(
-        tasks.addTo(listId, currentUser.current(), request.title(), request.zone()));
+        tasks.addTo(
+            listId, currentUser.current(), request.title(), request.zone(), request.labels()));
   }
 
   @GetMapping("/tasklists/{listId}/tasks")
@@ -121,6 +153,13 @@ public class TaskController {
   @PreAuthorize("hasAuthority('SCOPE_todo:write')")
   public Responses.TaskView reviewed(@PathVariable Long id) {
     return Responses.TaskView.of(tasks.markReviewed(id, currentUser.current()));
+  }
+
+  @PutMapping("/tasks/{id}/labels")
+  @PreAuthorize("hasAuthority('SCOPE_todo:write')")
+  public Responses.TaskView setLabels(
+      @PathVariable Long id, @Valid @RequestBody Requests.SetLabels request) {
+    return Responses.TaskView.of(tasks.setLabels(id, currentUser.current(), request.labels()));
   }
 
   @DeleteMapping("/tasks/{id}")
