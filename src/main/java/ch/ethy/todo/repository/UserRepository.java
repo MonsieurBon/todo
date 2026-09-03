@@ -8,4 +8,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
   /** Looks a user up by the IdP subject claim, which is the only identity this app trusts. */
   Optional<User> findByExternalId(String externalId);
+
+  Optional<User> findByEmail(String email);
 }

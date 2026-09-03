@@ -25,6 +25,16 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
       """)
   List<Task> findVisibleIn(@Param("list") TaskList list, @Param("today") LocalDate today);
 
+  /** Loads a task only if this user may see the list it belongs to. Same reasoning as above. */
+  @Query(
+      """
+      select t from Task t
+      left join t.taskList.members m
+      where t.id = :id and (t.taskList.owner = :user or m = :user)
+      """)
+  java.util.Optional<Task> findAccessible(
+      @Param("id") Long id, @Param("user") ch.ethy.todo.domain.User user);
+
   long countByTaskListAndZoneAndState(
       TaskList list, ch.ethy.todo.domain.TaskZone zone, ch.ethy.todo.domain.TaskState state);
 }

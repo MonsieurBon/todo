@@ -44,7 +44,9 @@ public class TaskList {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  // Eager: rendering any list needs to know whether the viewer owns it, and with
+  // open-in-view disabled a lazy owner cannot be resolved during DTO assembly.
+  @ManyToOne(fetch = FetchType.EAGER, optional = false)
   @JoinColumn(name = "owner_id", nullable = false)
   private User owner;
 
