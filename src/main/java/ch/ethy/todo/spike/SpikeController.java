@@ -19,7 +19,7 @@ public class SpikeController {
   @GetMapping("/whoami")
   public Map<String, Object> whoami(@AuthenticationPrincipal Jwt jwt) {
     return Map.of(
-        "subject", jwt.getSubject(),
+        "subject", String.valueOf(jwt.getSubject()),
         "audience", jwt.getAudience(),
         "scope", String.valueOf(jwt.getClaimAsString("scope")));
   }
