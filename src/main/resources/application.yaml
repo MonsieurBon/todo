@@ -1,0 +1,67 @@
+# Runtime configuration is env-var driven; this file is the source of truth for
+# every knob and its default. See README.md for the full list.
+spring:
+  application:
+    name: todo
+
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:todo}?useSSL=false&allowPublicKeyRetrieval=true
+    username: ${DB_USER:todo}
+    password: ${DB_PASSWORD:todo}
+
+  jpa:
+    hibernate:
+      # Flyway owns the schema. Hibernate only verifies it matches the entities.
+      ddl-auto: validate
+    open-in-view: false
+
+  flyway:
+    enabled: true
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # This app never issues tokens. It validates tokens minted by the IdP.
+          issuer-uri: ${OIDC_ISSUER_URI:http://localhost:8081/realms/todo}
+          # Audience validation is the security boundary the MCP spec requires:
+          # a token minted for anything else MUST be rejected.
+          audiences: ${TODO_CANONICAL_URI:http://localhost:8080}
+
+  ai:
+    mcp:
+      server:
+        protocol: STREAMABLE
+        name: todo
+        version: 1.0.0
+
+server:
+  port: ${SERVER_PORT:8080}
+
+logging:
+  level:
+    org.springframework.security: ${LOG_LEVEL_SECURITY:INFO}
+
+---
+# Local development against the compose stack.
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    # compose.yaml publishes the dev database on 3307; 3306 is taken by mysql-recipe.
+    url: jdbc:mysql://localhost:3307/todo?useSSL=false&allowPublicKeyRetrieval=true
+  jpa:
+    show-sql: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Must match the port below: the canonical URI IS the expected audience.
+          audiences: http://localhost:8090
+server:
+  # 8080 belongs to the recipes app on this machine.
+  port: 8090
+logging:
+  level:
+    org.springframework.security: DEBUG

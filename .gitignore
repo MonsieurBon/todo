@@ -1,33 +1,54 @@
-.idea
-/frontend/dist
-/frontend/tmp
-/frontend/out-tsc
+# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
+# Spring
+/HELP.md
+/target/
+
+# Compiled output
+/dist
+/tmp
+/out-tsc
+/bazel-out
+
+# Node
+/node
 /node_modules
-/.sass-cache
+npm-debug.log
+yarn-error.log
+
+# IDEs and editors
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/*
+
+# Miscellaneous
+/.angular/cache
+.sass-cache/
 /connect.lock
 /coverage
 /libpeerconnection.log
-npm-debug.log
 testem.log
-/typings 
-yarn-error.log
-/frontend/e2e/*.js
-/frontend/e2e/*.map
-coverage.xml
-package-lock.json
+/typings
+__screenshots__/
 
-###> symfony/framework-bundle ###
+# System files
+.DS_Store
+Thumbs.db
+
+# Playwright MCP artifacts
+/.playwright-mcp/
+
+# Local env overrides
 .env
-/public/bundles/
-/var/
-/vendor/
-###< symfony/framework-bundle ###
-
-###> symfony/web-server-bundle ###
-.web-server-pid
-###< symfony/web-server-bundle ###
-
-###> friendsofphp/php-cs-fixer ###
-.php_cs
-.php_cs.cache
-###< friendsofphp/php-cs-fixer ###
