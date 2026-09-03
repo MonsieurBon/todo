@@ -34,6 +34,13 @@ spring:
         protocol: STREAMABLE
         name: todo
         version: 1.0.0
+        instructions: >
+          A One Minute To-Do List. Tasks live in one of three urgency zones —
+          CRITICAL_NOW (today, about five items), OPPORTUNITY_NOW (soon, about twenty)
+          and OVER_THE_HORIZON (not now, unlimited). Lists are sharing boundaries, not
+          topics; use labels for topics. Read get_board before promoting anything into
+          CRITICAL_NOW, and respect the caps: they are the only thing that keeps the
+          list honest.
 
 server:
   port: ${SERVER_PORT:8080}
