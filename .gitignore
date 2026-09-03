@@ -52,3 +52,7 @@ Thumbs.db
 
 # Local env overrides
 .env
+
+# Generated from src/main/webapp/api/openapi.json by `npm run api:types`, which the
+# build runs before ng build. Committing it would let it drift from the contract.
+/src/main/webapp/api/schema.d.ts

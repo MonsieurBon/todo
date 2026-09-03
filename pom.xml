@@ -18,6 +18,8 @@
     <java.version>25</java.version>
     <spring-ai.version>2.0.1</spring-ai.version>
     <springdoc.version>3.1.0</springdoc.version>
+    <frontend-maven-plugin.version>2.0.2</frontend-maven-plugin.version>
+    <node.version>v24.16.0</node.version>
     <google-java-format.version>1.31.0</google-java-format.version>
     <spotless.version>3.10.1</spotless.version>
     <!-- Empty default so other plugins (e.g. jacoco) can append to argLine
@@ -157,9 +159,75 @@
           <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar}</argLine>
         </configuration>
       </plugin>
-      <!-- frontend-maven-plugin is added in Phase 3 together with the Angular app,
-           mirroring ../recipes: npm ci + build wired into the Maven lifecycle and
-           lint/format/test into the test phase, output to target/classes/static. -->
+      <!-- The Angular app is part of the jar: `ng build` writes straight into
+           target/classes/static, so one `mvn package` produces one deployable. Lint,
+           format and the frontend tests run in the test phase alongside the Java ones. -->
+      <plugin>
+        <groupId>com.github.eirslett</groupId>
+        <artifactId>frontend-maven-plugin</artifactId>
+        <version>${frontend-maven-plugin.version}</version>
+        <configuration>
+          <nodeVersion>${node.version}</nodeVersion>
+        </configuration>
+        <executions>
+          <execution>
+            <id>install node and npm</id>
+            <goals>
+              <goal>install-node-and-npm</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>npm ci</id>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+            <configuration>
+              <arguments>ci</arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <!-- Also regenerates the TypeScript types from src/main/webapp/api/openapi.json,
+                 which OpenApiContractIT keeps equal to the document the server serves. -->
+            <id>npm run build</id>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+            <configuration>
+              <arguments>run build</arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>lint</id>
+            <phase>test</phase>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+            <configuration>
+              <arguments>run lint:check</arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>format</id>
+            <phase>test</phase>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+            <configuration>
+              <arguments>run format:check</arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>frontend tests</id>
+            <phase>test</phase>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+            <configuration>
+              <arguments>run test:ci</arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>com.diffplug.spotless</groupId>
         <artifactId>spotless-maven-plugin</artifactId>

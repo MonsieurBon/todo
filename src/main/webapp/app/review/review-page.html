@@ -1,0 +1,75 @@
+<div class="page review">
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  } @else if (current(); as task) {
+    <mat-progress-bar mode="determinate" [value]="progress()" />
+    <p class="muted counter">{{ position() }} of {{ total() }}</p>
+
+    @if (!online()) {
+      <p class="offline row">
+        <mat-icon svgIcon="offline" />
+        <span
+          >A sweep is a series of decisions about where things belong, and those need a connection.
+          Come back when there is one.</span
+        >
+      </p>
+    }
+
+    <article class="card">
+      <h1>{{ task.title }}</h1>
+      <p class="muted zone">{{ zoneName(task.zone) }}</p>
+      @if (task.notes) {
+        <p class="notes">{{ task.notes }}</p>
+      }
+      <div class="row meta">
+        @if (task.listName) {
+          <span class="chip">{{ task.listName }}</span>
+        }
+        @for (label of task.labels; track label) {
+          <span class="chip topic">{{ label }}</span>
+        }
+        @if (task.dueDate) {
+          <span class="chip due">due {{ task.dueDate }}</span>
+        }
+      </div>
+    </article>
+
+    <div class="decisions">
+      <button matButton="filled" type="button" [disabled]="!online()" (click)="complete()">
+        <mat-icon svgIcon="check" />
+        Done
+      </button>
+      @if (promoteTo(); as zone) {
+        <button matButton="tonal" type="button" [disabled]="!online()" (click)="move(zone)">
+          <mat-icon svgIcon="up" />
+          {{ zoneName(zone) }}
+        </button>
+      }
+      @if (demoteTo(); as zone) {
+        <button matButton="tonal" type="button" [disabled]="!online()" (click)="move(zone)">
+          <mat-icon svgIcon="down" />
+          {{ zoneName(zone) }}
+        </button>
+      }
+      <button matButton="outlined" type="button" [disabled]="!online()" (click)="defer(7)">
+        <mat-icon svgIcon="later" />
+        Not for a week
+      </button>
+      <button matButton="outlined" type="button" [disabled]="!online()" (click)="keep()">
+        Leave it
+      </button>
+      <button matButton type="button" [disabled]="!online()" (click)="remove()">
+        <mat-icon svgIcon="trash" />
+        Delete
+      </button>
+    </div>
+  } @else {
+    <div class="empty">
+      <p>Nothing is due for review.</p>
+      <p class="muted">
+        Opportunity Now is swept daily and Over the Horizon weekly. Critical Now is never swept — it
+        is worked, not reviewed.
+      </p>
+    </div>
+  }
+</div>

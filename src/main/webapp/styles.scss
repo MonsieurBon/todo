@@ -1,0 +1,83 @@
+@use '@angular/material' as mat;
+
+html {
+  height: 100%;
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$azure-palette,
+        tertiary: mat.$orange-palette,
+      ),
+      // No web fonts: the app has to render the same with no connection, and a font that
+      // arrives late is worse than one that never left the device.
+      typography: (
+          plain-family: (
+            system-ui,
+            -apple-system,
+            'Segoe UI',
+            Roboto,
+            sans-serif,
+          ),
+          brand-family: (
+            system-ui,
+            -apple-system,
+            'Segoe UI',
+            Roboto,
+            sans-serif,
+          ),
+        ),
+      density: 0,
+    )
+  );
+}
+
+body {
+  // Follow the device. A to-do list gets opened at night.
+  color-scheme: light dark;
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+  // Respect the notch and the gesture bar when installed to the home screen.
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+  box-sizing: border-box;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.page {
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: 0.5rem 0.75rem 6rem;
+}
+
+.muted {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.grow {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

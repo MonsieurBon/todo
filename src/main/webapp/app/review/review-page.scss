@@ -1,0 +1,73 @@
+.counter {
+  margin: 0.5rem 0 0;
+  font: var(--mat-sys-label-medium);
+}
+
+.offline {
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+  font: var(--mat-sys-body-small);
+  align-items: flex-start;
+}
+
+.card {
+  margin: 0.75rem 0 1.25rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: var(--mat-sys-surface-container);
+
+  h1 {
+    margin: 0;
+    font: var(--mat-sys-headline-small);
+  }
+}
+
+.zone {
+  margin: 0.35rem 0 0;
+  font: var(--mat-sys-label-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.notes {
+  margin: 0.75rem 0 0;
+  white-space: pre-wrap;
+  font: var(--mat-sys-body-medium);
+}
+
+.meta {
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.75rem;
+
+  &:empty {
+    display: none;
+  }
+}
+
+.chip {
+  font: var(--mat-sys-label-small);
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--mat-sys-surface-container-highest);
+  color: var(--mat-sys-on-surface-variant);
+
+  &.topic {
+    background: var(--mat-sys-secondary-container);
+    color: var(--mat-sys-on-secondary-container);
+  }
+
+  &.due {
+    background: var(--mat-sys-tertiary-container);
+    color: var(--mat-sys-on-tertiary-container);
+  }
+}
+
+// One decision per row on a phone: these are deliberate choices, not a toolbar to swipe past.
+.decisions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.5rem;
+}

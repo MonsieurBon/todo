@@ -1,0 +1,88 @@
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<div class="page">
+  <div class="filters row">
+    <button matButton type="button" [matMenuTriggerFor]="listMenu">
+      <mat-icon svgIcon="lists" />
+      {{ filteredList()?.name ?? 'All lists' }}
+    </button>
+    <mat-menu #listMenu="matMenu">
+      <button mat-menu-item type="button" (click)="byList(null)">All lists</button>
+      @for (list of lists(); track list.id) {
+        <button mat-menu-item type="button" (click)="byList(list.id)">{{ list.name }}</button>
+      }
+    </mat-menu>
+
+    <button matButton type="button" [matMenuTriggerFor]="labelMenu">
+      <mat-icon svgIcon="label" />
+      {{ filter().label ?? 'All topics' }}
+    </button>
+    <mat-menu #labelMenu="matMenu">
+      <button mat-menu-item type="button" (click)="byLabel(null)">All topics</button>
+      @for (label of labels(); track label) {
+        <button mat-menu-item type="button" (click)="byLabel(label)">{{ label }}</button>
+      }
+      @if (labels().length === 0) {
+        <div class="hint muted">No topics yet. Add one when you capture a task.</div>
+      }
+    </mat-menu>
+
+    @if (filter().list || filter().label || filter().zone) {
+      <button matIconButton type="button" aria-label="Clear filters" (click)="clear()">
+        <mat-icon svgIcon="close" />
+      </button>
+    }
+  </div>
+
+  @for (section of zones(); track section.zone) {
+    <section class="zone" [class.over]="section.overSoftCap">
+      <header class="row">
+        <h2 class="grow">{{ zoneName(section.zone) }}</h2>
+        <span class="load" [class.over]="section.overSoftCap">
+          {{ section.open }}
+          @if (section.softCap !== null) {
+            <span> / {{ section.softCap }}</span>
+          }
+        </span>
+        @if (section.zone === 'OVER_THE_HORIZON') {
+          <button
+            matIconButton
+            type="button"
+            [attr.aria-label]="horizonOpen() ? 'Collapse' : 'Expand'"
+            (click)="toggleHorizon()"
+          >
+            <mat-icon [svgIcon]="horizonOpen() ? 'up' : 'down'" />
+          </button>
+        }
+      </header>
+
+      @if (section.overSoftCap) {
+        <p class="warning">
+          Over the {{ section.softCap }} this zone is meant to hold. Nothing is blocked — but
+          something here belongs further down.
+        </p>
+      }
+
+      @if (!collapsed(section)) {
+        @for (task of section.tasks; track task.id ?? task.pendingId) {
+          <app-task-row [task]="task" />
+        } @empty {
+          <p class="muted meaning">{{ zoneMeaning(section.zone) }}</p>
+        }
+      }
+    </section>
+  }
+
+  @if (empty() && !loading()) {
+    <div class="empty">
+      <p>Nothing here yet.</p>
+      <p class="muted">Capture the first thing you keep meaning to do.</p>
+    </div>
+  }
+</div>
+
+<a matFab class="fab" routerLink="/capture" aria-label="Capture a task">
+  <mat-icon svgIcon="add" />
+</a>

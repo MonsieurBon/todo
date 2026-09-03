@@ -728,13 +728,16 @@
       "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": false,
       "attributes": {
-        "pkce.code.challenge.method": "S256"
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "+"
       },
       "redirectUris": [
-        "http://localhost:8090/*"
+        "http://localhost:8090/*",
+        "http://localhost:4200/*"
       ],
       "webOrigins": [
-        "http://localhost:8090"
+        "http://localhost:8090",
+        "http://localhost:4200"
       ],
       "defaultClientScopes": [
         "basic",
@@ -745,6 +748,7 @@
         "todo-audience"
       ],
       "optionalClientScopes": [
+        "offline_access",
         "todo:read",
         "todo:write",
         "todo:admin"
@@ -814,5 +818,8 @@
         "todo:capture"
       ]
     }
-  ]
+  ],
+  "ssoSessionIdleTimeout": 2592000,
+  "ssoSessionMaxLifespan": 2592000,
+  "offlineSessionIdleTimeout": 2592000
 }
