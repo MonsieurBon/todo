@@ -187,4 +187,15 @@ public class TaskService {
   public List<Task> reviewQueue(Long listId, User user) {
     return visibleIn(listId, user).stream().filter(t -> t.isReviewDue(clock.instant())).toList();
   }
+
+  /**
+   * The same sweep across everything the user can see, narrowed by the board's own filters.
+   *
+   * <p>The per-list sweep above predates the board. Now that urgency is counted across every list,
+   * reviewing one list at a time would leave the caps meaning one thing and the sweep another.
+   */
+  @Transactional(readOnly = true)
+  public List<Task> reviewQueue(User user, BoardFilter filter) {
+    return board(user, filter).stream().filter(t -> t.isReviewDue(clock.instant())).toList();
+  }
 }

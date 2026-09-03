@@ -39,14 +39,14 @@ public class TaskListController {
 
   @GetMapping
   @PreAuthorize("hasAuthority('SCOPE_todo:read')")
-  public List<Responses.TaskListSummary> all() {
+  public List<Responses.TaskListSummary> allLists() {
     User me = currentUser.current();
     return lists.visibleTo(me).stream().map(l -> Responses.TaskListSummary.of(l, me)).toList();
   }
 
   @GetMapping("/{id}")
   @PreAuthorize("hasAuthority('SCOPE_todo:read')")
-  public Responses.TaskListDetail one(@PathVariable Long id) {
+  public Responses.TaskListDetail oneList(@PathVariable Long id) {
     User me = currentUser.current();
     TaskList list = lists.accessible(id, me);
     return new Responses.TaskListDetail(
@@ -59,7 +59,7 @@ public class TaskListController {
 
   @GetMapping("/by-slug/{slug}")
   @PreAuthorize("hasAuthority('SCOPE_todo:read')")
-  public Responses.TaskListSummary bySlug(@PathVariable String slug) {
+  public Responses.TaskListSummary listBySlug(@PathVariable String slug) {
     User me = currentUser.current();
     return Responses.TaskListSummary.of(lists.bySlug(slug, me), me);
   }
@@ -67,14 +67,14 @@ public class TaskListController {
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   @PreAuthorize("hasAuthority('SCOPE_todo:admin')")
-  public Responses.TaskListSummary create(@Valid @RequestBody Requests.CreateTaskList request) {
+  public Responses.TaskListSummary createList(@Valid @RequestBody Requests.CreateTaskList request) {
     User me = currentUser.current();
     return Responses.TaskListSummary.of(lists.create(me, request.name()), me);
   }
 
   @PatchMapping("/{id}")
   @PreAuthorize("hasAuthority('SCOPE_todo:admin')")
-  public Responses.TaskListSummary rename(
+  public Responses.TaskListSummary renameList(
       @PathVariable Long id, @Valid @RequestBody Requests.RenameTaskList request) {
     User me = currentUser.current();
     return Responses.TaskListSummary.of(lists.rename(id, me, request.name()), me);
@@ -83,13 +83,13 @@ public class TaskListController {
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @PreAuthorize("hasAuthority('SCOPE_todo:admin')")
-  public void delete(@PathVariable Long id) {
+  public void deleteList(@PathVariable Long id) {
     lists.delete(id, currentUser.current());
   }
 
   @PostMapping("/{id}/shares")
   @PreAuthorize("hasAuthority('SCOPE_todo:admin')")
-  public Responses.TaskListSummary share(
+  public Responses.TaskListSummary shareList(
       @PathVariable Long id, @Valid @RequestBody Requests.Share request) {
     User me = currentUser.current();
     return Responses.TaskListSummary.of(lists.share(id, me, request.email()), me);
@@ -97,7 +97,7 @@ public class TaskListController {
 
   @DeleteMapping("/{id}/shares")
   @PreAuthorize("hasAuthority('SCOPE_todo:admin')")
-  public Responses.TaskListSummary unshare(
+  public Responses.TaskListSummary unshareList(
       @PathVariable Long id, @Valid @RequestBody Requests.Share request) {
     User me = currentUser.current();
     return Responses.TaskListSummary.of(lists.unshare(id, me, request.email()), me);

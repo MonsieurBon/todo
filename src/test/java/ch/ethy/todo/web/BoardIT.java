@@ -303,4 +303,50 @@ class BoardIT {
     assertThat(zoneCount(board, "CRITICAL_NOW")).isEqualTo(1);
     assertThat(zoneCount(board, "OVER_THE_HORIZON")).isZero();
   }
+
+  private List<String> titles(JsonNode tasks) {
+    List<String> titles = new java.util.ArrayList<>();
+    tasks.forEach(t -> titles.add(t.get("title").asString()));
+    return titles;
+  }
+
+  @Test
+  @DisplayName("the review sweep spans every list, and never offers Critical Now")
+  void reviewSpansLists() throws Exception {
+    String me = someone();
+    Long personal = createList(me, "Personal");
+    Long family = createList(me, "Family");
+    addTask(me, personal, "Soon, personal", "OPPORTUNITY_NOW", List.of());
+    addTask(me, family, "Someday, family", "OVER_THE_HORIZON", List.of());
+    addTask(me, personal, "Today", "CRITICAL_NOW", List.of());
+
+    assertThat(titles(perform(get("/api/review").with(as(me, READ)))))
+        .as("Critical Now is worked continuously, so it is never swept")
+        .containsExactlyInAnyOrder("Soon, personal", "Someday, family");
+  }
+
+  @Test
+  @DisplayName("the sweep takes the board's filters, so you can review one topic")
+  void reviewTakesTheBoardsFilters() throws Exception {
+    String me = someone();
+    Long list = createList(me, "Everything");
+    addTask(me, list, "Roof", "OPPORTUNITY_NOW", List.of("house"));
+    addTask(me, list, "Taxes", "OPPORTUNITY_NOW", List.of("admin"));
+
+    assertThat(titles(perform(get("/api/review").param("label", "house").with(as(me, READ)))))
+        .containsExactly("Roof");
+  }
+
+  @Test
+  @DisplayName("the sweep never offers another person's task")
+  void reviewIsScopedToTheViewer() throws Exception {
+    String alice = someone();
+    String bob = someone();
+    Long hers = createList(alice, "Alice's");
+    addTask(alice, hers, "Alice's private task", "OPPORTUNITY_NOW", List.of("house"));
+
+    assertThat(perform(get("/api/review").with(as(bob, READ)))).isEmpty();
+    assertThat(perform(get("/api/review?list=" + hers).with(as(bob, READ)))).isEmpty();
+    assertThat(perform(get("/api/review").param("label", "house").with(as(bob, READ)))).isEmpty();
+  }
 }
