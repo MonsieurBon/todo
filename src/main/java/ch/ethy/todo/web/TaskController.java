@@ -70,7 +70,11 @@ public class TaskController {
   public Responses.TaskView capture(@Valid @RequestBody Requests.CaptureTask request) {
     return Responses.TaskView.of(
         tasks.capture(
-            currentUser.current(), request.title(), request.zoneOrDefault(), request.labels()));
+            currentUser.current(),
+            request.title(),
+            request.zoneOrDefault(),
+            request.labels(),
+            request.clientRef()));
   }
 
   @PostMapping("/tasklists/{listId}/tasks")
@@ -80,7 +84,12 @@ public class TaskController {
       @PathVariable Long listId, @Valid @RequestBody Requests.CreateTask request) {
     return Responses.TaskView.of(
         tasks.addTo(
-            listId, currentUser.current(), request.title(), request.zone(), request.labels()));
+            listId,
+            currentUser.current(),
+            request.title(),
+            request.zone(),
+            request.labels(),
+            request.clientRef()));
   }
 
   @GetMapping("/tasklists/{listId}/tasks")

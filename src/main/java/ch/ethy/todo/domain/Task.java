@@ -14,6 +14,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Collection;
@@ -33,7 +34,11 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Table(
     name = "task",
-    indexes = @Index(name = "idx_task_list_zone_state", columnList = "task_list_id, zone, state"))
+    indexes = @Index(name = "idx_task_list_zone_state", columnList = "task_list_id, zone, state"),
+    uniqueConstraints =
+        @UniqueConstraint(
+            name = "uq_task_list_client_ref",
+            columnNames = {"task_list_id", "client_ref"}))
 public class Task {
 
   @Id
@@ -43,6 +48,16 @@ public class Task {
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "task_list_id", nullable = false)
   private TaskList taskList;
+
+  /**
+   * The client's own reference for this task, if it had one.
+   *
+   * <p>Only the web app sets it, and only for captures it made offline: a queued create is
+   * replayed on reconnect, and a replay cannot tell a lost request from a lost response. Matching
+   * on this turns the second create into a lookup instead of a duplicate.
+   */
+  @Column(name = "client_ref", length = 64, updatable = false)
+  private String clientRef;
 
   @Column(nullable = false)
   private String title;
@@ -117,6 +132,15 @@ public class Task {
 
   void assignTo(TaskList taskList) {
     this.taskList = taskList;
+  }
+
+  public String clientRef() {
+    return clientRef;
+  }
+
+  /** Blank is treated as absent: an empty string would deduplicate every task against itself. */
+  public void clientRef(String clientRef) {
+    this.clientRef = clientRef == null || clientRef.isBlank() ? null : clientRef.trim();
   }
 
   public int position() {

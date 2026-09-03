@@ -20,19 +20,29 @@ public final class Requests {
 
   public record Share(@NotBlank @Email String email) {}
 
+  /**
+   * {@code clientRef} is the caller's own reference for the task, and it is what makes a create
+   * safe to repeat: the web app queues captures made offline and replays them on reconnect, where a
+   * lost response looks exactly like a lost request. Sending the same reference twice yields the
+   * same task rather than two. Optional — every caller without a queue omits it.
+   */
   public record CreateTask(
       @NotBlank @Size(max = 255) String title,
       @Size(max = 10_000) String notes,
       @NotNull TaskZone zone,
       LocalDate dueDate,
-      List<String> labels) {}
+      List<String> labels,
+      @Size(max = 64) String clientRef) {}
 
   /**
    * The capture path. Zone is optional because a capture-only client has no read scope and so no
    * way to see how full the zones already are; defaulting keeps the call to a single argument.
    */
   public record CaptureTask(
-      @NotBlank @Size(max = 255) String title, TaskZone zone, List<String> labels) {
+      @NotBlank @Size(max = 255) String title,
+      TaskZone zone,
+      List<String> labels,
+      @Size(max = 64) String clientRef) {
     public TaskZone zoneOrDefault() {
       return zone == null ? TaskZone.OPPORTUNITY_NOW : zone;
     }

@@ -105,6 +105,17 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
   java.util.Optional<Task> findAccessible(
       @Param("id") Long id, @Param("user") ch.ethy.todo.domain.User user);
 
+  /**
+   * Finds the task a queued create already produced, if the queue got that far.
+   *
+   * <p>Scoped to the list rather than looking the reference up globally: the caller's access to the
+   * list is resolved before this runs, so a reference guessed by someone else cannot resolve to a
+   * task they may not see. It also keeps the lookup and the unique constraint the same shape, so a
+   * collision between two people is a miss rather than a constraint violation.
+   */
+  @EntityGraph(attributePaths = {"labels", "taskList"})
+  java.util.Optional<Task> findByTaskListAndClientRef(TaskList list, String clientRef);
+
   long countByTaskListAndZoneAndState(
       TaskList list, ch.ethy.todo.domain.TaskZone zone, ch.ethy.todo.domain.TaskState state);
 }

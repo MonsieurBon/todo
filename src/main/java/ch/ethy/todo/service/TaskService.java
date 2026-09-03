@@ -83,26 +83,62 @@ public class TaskService {
 
   public Task addTo(
       Long listId, User user, String title, TaskZone zone, java.util.Collection<String> labels) {
-    TaskList list = lists.accessible(listId, user);
+    return addTo(listId, user, title, zone, labels, null);
+  }
+
+  public Task addTo(
+      Long listId,
+      User user,
+      String title,
+      TaskZone zone,
+      java.util.Collection<String> labels,
+      String clientRef) {
+    return createIn(lists.accessible(listId, user), title, zone, labels, clientRef);
+  }
+
+  /**
+   * Files a task without naming a list. This is the capture path: it needs no read scope, so it
+   * works both for a client that cannot discover a list and for a quick capture from the web app.
+   */
+  public Task capture(User user, String title, TaskZone zone, java.util.Collection<String> labels) {
+    return capture(user, title, zone, labels, null);
+  }
+
+  public Task capture(
+      User user,
+      String title,
+      TaskZone zone,
+      java.util.Collection<String> labels,
+      String clientRef) {
+    return createIn(lists.inboxOf(user), title, zone, labels, clientRef);
+  }
+
+  /**
+   * Creates a task, unless the caller's reference says it already exists.
+   *
+   * <p>The web app queues captures made offline and replays them on reconnect, where a lost
+   * response is indistinguishable from a lost request. Matching the caller's own reference turns
+   * the replay into a lookup, so a create is safe to repeat. Everything else passes {@code null}
+   * and always creates.
+   */
+  private Task createIn(
+      TaskList list,
+      String title,
+      TaskZone zone,
+      java.util.Collection<String> labels,
+      String clientRef) {
+    if (clientRef != null && !clientRef.isBlank()) {
+      var existing = tasks.findByTaskListAndClientRef(list, clientRef.trim());
+      if (existing.isPresent()) {
+        return existing.get();
+      }
+    }
     Task task = new Task(title, zone);
+    task.clientRef(clientRef);
     if (labels != null) {
       task.labels(labels);
     }
     list.add(task);
-    return tasks.save(task);
-  }
-
-  /**
-   * Files a task without naming a list. This is the capture-only path: such a client has no read
-   * scope, so it cannot discover a list to choose.
-   */
-  public Task capture(User user, String title, TaskZone zone, java.util.Collection<String> labels) {
-    TaskList inbox = lists.inboxOf(user);
-    Task task = new Task(title, zone);
-    if (labels != null) {
-      task.labels(labels);
-    }
-    inbox.add(task);
     return tasks.save(task);
   }
 

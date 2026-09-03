@@ -41,7 +41,9 @@ public final class Responses {
       // The board spans lists, so a task has to say where it came from.
       Long listId,
       String listName,
-      List<String> labels) {
+      List<String> labels,
+      // Echoed back so an offline queue can match a response to the entry that produced it.
+      String clientRef) {
 
     public static TaskView of(Task task) {
       return new TaskView(
@@ -55,7 +57,8 @@ public final class Responses {
           task.lastReviewedAt(),
           task.taskList() == null ? null : task.taskList().id(),
           task.taskList() == null ? null : task.taskList().name(),
-          List.copyOf(task.labels()));
+          List.copyOf(task.labels()),
+          task.clientRef());
     }
   }
 
