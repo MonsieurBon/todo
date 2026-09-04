@@ -301,6 +301,13 @@ public class Task {
   /**
    * Whether this task is due to be swept again, per its zone's cadence. Critical Now has no cadence
    * because it is worked continuously, so a task there is never "due for review".
+   *
+   * <p>A task that has never been reviewed is due immediately, and that is deliberate rather than
+   * an oversight to be tidied away. Capture is one line with a defaulted zone, so the zone is the
+   * least considered thing about anything filed in a hurry — handing it straight back is the two
+   * halves working as intended: capture gets it out of your head, the sweep decides where it
+   * belongs. Setting this at creation time would look tidier on a fresh board and would quietly
+   * remove the only prompt to correct a rushed guess.
    */
   public boolean isReviewDue(Instant now) {
     return zone.reviewInterval()
