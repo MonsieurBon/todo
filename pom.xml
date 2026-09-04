@@ -10,7 +10,7 @@
   </parent>
   <groupId>ch.ethy</groupId>
   <artifactId>todo</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1-SNAPSHOT</version>
   <name>todo</name>
   <description>One Minute To-Do List</description>
 
