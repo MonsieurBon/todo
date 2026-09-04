@@ -73,6 +73,17 @@ export class CapturePage {
    */
   protected readonly INBOX = -1;
   protected readonly listId = signal<number>(this.INBOX);
+
+  /**
+   * The inbox is offered as the sentinel above, so it must not also appear among the real lists —
+   * it is one destination, and listing it twice invites the reader to wonder how the two differ.
+   */
+  protected readonly otherLists = computed(() => this.lists().filter((list) => !list.inbox));
+
+  /** By its own name, so renaming it to something meaningful actually shows up here. */
+  protected readonly inboxName = computed(
+    () => this.lists().find((list) => list.inbox)?.name ?? 'Inbox',
+  );
   protected readonly saved = signal(false);
 
   private readonly titleField = viewChild<ElementRef<HTMLInputElement>>('titleField');

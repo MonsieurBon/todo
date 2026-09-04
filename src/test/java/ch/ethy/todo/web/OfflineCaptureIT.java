@@ -2,8 +2,10 @@ package ch.ethy.todo.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import ch.ethy.todo.IntegrationTest;
 import java.util.HashMap;
@@ -227,5 +229,28 @@ class OfflineCaptureIT extends IntegrationTest {
 
     assertThat(created.get("notes").asString()).isEqualTo("page 40 onwards");
     assertThat(created.get("dueDate").asString()).isEqualTo("2030-02-28");
+  }
+
+  @Test
+  @DisplayName("the inbox cannot be deleted, because nothing could make another one")
+  void theInboxSurvives() throws Exception {
+    String me = someone();
+    captured(me, "Something to keep", null);
+
+    JsonNode lists = perform(get("/api/tasklists").with(as(me, READ)));
+    long inboxId = -1;
+    for (JsonNode list : lists) {
+      if (list.get("inbox").asBoolean()) {
+        inboxId = list.get("id").asLong();
+      }
+    }
+    assertThat(inboxId).as("every user is provisioned with an inbox").isNotEqualTo(-1);
+
+    // The web app hides the option, but the API is the boundary that holds. Deleting it would not
+    // remove a list, it would permanently break capture: nothing can create another inbox.
+    mvc.perform(delete("/api/tasklists/" + inboxId).with(as(me, ADMIN)))
+        .andExpect(status().isBadRequest());
+
+    assertThat(titlesOnBoard(me)).containsExactly("Something to keep");
   }
 }

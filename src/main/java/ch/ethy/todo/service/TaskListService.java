@@ -68,8 +68,22 @@ public class TaskListService {
     return list;
   }
 
+  /**
+   * Deletes a list, except the inbox.
+   *
+   * <p>The inbox is where anything captured without naming a list goes, and nothing can create
+   * another one — so deleting it does not remove a list, it permanently breaks capture for that
+   * person. The web app already hides the option; this is the boundary that actually holds, since
+   * the API is reachable without it.
+   */
   public void delete(Long id, User owner) {
-    lists.delete(owned(id, owner));
+    TaskList list = owned(id, owner);
+    if (list.isInbox()) {
+      throw new IllegalArgumentException(
+          "The inbox cannot be deleted - it is where anything captured without a list goes."
+              + " Rename it instead.");
+    }
+    lists.delete(list);
   }
 
   public TaskList share(Long id, User owner, String email) {

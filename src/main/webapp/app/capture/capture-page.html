@@ -53,8 +53,8 @@
   <mat-form-field>
     <mat-label>List</mat-label>
     <mat-select name="list" [ngModel]="listId()" (ngModelChange)="listId.set($event)">
-      <mat-option [value]="INBOX">Inbox</mat-option>
-      @for (list of lists(); track list.id) {
+      <mat-option [value]="INBOX">{{ inboxName() }}</mat-option>
+      @for (list of otherLists(); track list.id) {
         <mat-option [value]="list.id">{{ list.name }}</mat-option>
       }
     </mat-select>
