@@ -3,6 +3,7 @@
   "version": "1.0.0-SNAPSHOT",
   "scripts": {
     "ng": "ng",
+    "prepare": "npm run api:types",
     "start": "ng serve",
     "api:types": "openapi-typescript src/main/webapp/api/openapi.json -o src/main/webapp/api/schema.d.ts",
     "build": "npm run api:types && ng build",
