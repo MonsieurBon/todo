@@ -1,0 +1,100 @@
+# Runtime configuration is env-var driven; this file is the source of truth for
+# every knob and its default. See README.md for the full list.
+spring:
+  application:
+    name: todo
+
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:todo}?useSSL=false&allowPublicKeyRetrieval=true
+    username: ${DB_USER:todo}
+    password: ${DB_PASSWORD:todo}
+
+  jpa:
+    hibernate:
+      # Flyway owns the schema. Hibernate only verifies it matches the entities.
+      ddl-auto: validate
+    open-in-view: false
+
+  flyway:
+    enabled: true
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # This app never issues tokens. It validates tokens minted by the IdP.
+          issuer-uri: ${OIDC_ISSUER_URI:http://localhost:8081/realms/todo}
+          # Audience validation is the security boundary the MCP spec requires:
+          # a token minted for anything else MUST be rejected.
+          audiences: ${TODO_CANONICAL_URI:http://localhost:8080}
+
+  ai:
+    mcp:
+      server:
+        protocol: STREAMABLE
+        name: todo
+        version: 1.0.0
+        instructions: >
+          A One Minute To-Do List. Tasks live in one of three urgency zones —
+          CRITICAL_NOW (today, about five items), OPPORTUNITY_NOW (soon, about twenty)
+          and OVER_THE_HORIZON (not now, unlimited). Lists are sharing boundaries, not
+          topics; use labels for topics. Read get_board before promoting anything into
+          CRITICAL_NOW, and respect the caps: they are the only thing that keeps the
+          list honest.
+
+server:
+  port: ${SERVER_PORT:8080}
+
+# Health is the only endpoint exposed, and it is reachable unauthenticated (see
+# SecurityConfig) because a container healthcheck has no credentials. That makes
+# `show-details: never` a requirement rather than a preference: with details on, an
+# anonymous caller would learn the database vendor, the disk usage and which
+# components are failing.
+#
+# Note what health deliberately does NOT include: the identity provider. The app
+# starts without it, serves the web app without it, and recovers on its own when it
+# returns - so failing the healthcheck on an IdP blip would restart a container that
+# was working, and take the login page down with it.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+      # The links document at /actuator would otherwise be served to anyone who can reach
+      # the port - it only lists what is already exposed, but "one endpoint" should mean
+      # one endpoint. The healthcheck URL is in the README; nothing needs to discover it.
+      discovery:
+        enabled: false
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+
+logging:
+  level:
+    org.springframework.security: ${LOG_LEVEL_SECURITY:INFO}
+
+---
+# Local development against the compose stack.
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    # compose.yaml publishes the dev database on 3307; 3306 is taken by mysql-recipe.
+    url: jdbc:mysql://localhost:3307/todo?useSSL=false&allowPublicKeyRetrieval=true
+  jpa:
+    show-sql: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Must match the port below: the canonical URI IS the expected audience.
+          audiences: http://localhost:8090
+server:
+  # 8080 belongs to the recipes app on this machine.
+  port: 8090
+logging:
+  level:
+    org.springframework.security: DEBUG

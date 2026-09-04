@@ -1,12 +1,5 @@
-.travis.yml
-codecov.yml
-frontend
-LICENSE
-phpunit.xml.dist
-README.md
-src/DataFixtures/*
-sonar-project.properties
-tests
-var/cache/*
-var/log/*
-vendor
+# The build context is sent to the daemon in full before anything runs, and
+# node_modules alone is hundreds of megabytes. Only the built jar is needed.
+*
+!target/todo-*.jar
+!docker/healthcheck.sh

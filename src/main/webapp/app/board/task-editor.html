@@ -1,0 +1,38 @@
+<h2 mat-dialog-title>Edit task</h2>
+<mat-dialog-content class="editor">
+  <mat-form-field>
+    <mat-label>Title</mat-label>
+    <input matInput [ngModel]="title()" (ngModelChange)="title.set($event)" name="title" />
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>Notes</mat-label>
+    <textarea
+      matInput
+      rows="4"
+      [ngModel]="notes()"
+      (ngModelChange)="notes.set($event)"
+      name="notes"
+    ></textarea>
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>Due date</mat-label>
+    <input
+      matInput
+      type="date"
+      [ngModel]="dueDate()"
+      (ngModelChange)="dueDate.set($event)"
+      name="dueDate"
+    />
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>Topics, comma separated</mat-label>
+    <input matInput [ngModel]="labels()" (ngModelChange)="labels.set($event)" name="labels" />
+  </mat-form-field>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" mat-dialog-close>Cancel</button>
+  <button matButton="filled" type="button" (click)="save()">Save</button>
+</mat-dialog-actions>

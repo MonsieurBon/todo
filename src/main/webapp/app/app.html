@@ -1,0 +1,55 @@
+<mat-toolbar class="bar">
+  <span class="grow truncate">One Minute To-Do List</span>
+
+  @if (signedIn()) {
+    <!-- Never disabled: trying is how you find out the connection is back, and disabling the
+         one control that would tell you is how an app gets stuck saying "offline" forever. -->
+    <button matIconButton type="button" aria-label="Sync now" (click)="sync()">
+      <mat-icon [svgIcon]="online() ? 'sync' : 'offline'" />
+    </button>
+    <button matIconButton type="button" aria-label="Account" [matMenuTriggerFor]="accountMenu">
+      <mat-icon svgIcon="account" />
+    </button>
+    <mat-menu #accountMenu="matMenu">
+      <div class="account-name muted">{{ account() ?? 'Signed in' }}</div>
+      <button mat-menu-item type="button" (click)="signOut()">
+        <mat-icon svgIcon="logout" />
+        <span>Sign out</span>
+      </button>
+    </mat-menu>
+  }
+</mat-toolbar>
+
+@if (connectionNote(); as note) {
+  <p class="connection" role="status">{{ note }}</p>
+}
+
+@if (signedIn()) {
+  <main>
+    <router-outlet />
+  </main>
+
+  <nav class="tabs" aria-label="Sections">
+    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+      <mat-icon svgIcon="board" />
+      <span>Board</span>
+    </a>
+    <a routerLink="/capture" routerLinkActive="active">
+      <mat-icon svgIcon="add" />
+      <span>Capture</span>
+    </a>
+    <a routerLink="/review" routerLinkActive="active">
+      <mat-icon svgIcon="review" />
+      <span>Review</span>
+    </a>
+    <a routerLink="/lists" routerLinkActive="active">
+      <mat-icon svgIcon="lists" />
+      <span>Lists</span>
+    </a>
+  </nav>
+} @else {
+  <div class="empty">
+    <p>This device is not signed in.</p>
+    <button matButton="filled" type="button" (click)="signIn()">Sign in</button>
+  </div>
+}

@@ -1,0 +1,113 @@
+name: Build todo
+
+# Pull requests only. A push to a pull request branch would repeat this run commit for
+# commit, and a push to master is already built by the release workflow.
+on:
+  pull_request:
+    branches: [ "**" ]
+
+# Nothing here writes to the repository.
+permissions:
+  contents: read
+
+# A new commit on a pull request supersedes the whole matrix at once.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-frontend:
+    name: lint frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24.16.0'
+          cache: 'npm'
+      - run: npm ci
+      - name: lint
+        run: npm run lint:check
+      - name: format
+        run: npm run format:check
+
+  lint-backend:
+    name: lint backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+      - name: spotless
+        run: ./mvnw -B spotless:check
+
+  test-frontend:
+    name: test frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24.16.0'
+          cache: 'npm'
+      - run: npm ci
+      - name: test
+        run: npm run test:ci
+
+  test-backend:
+    name: test backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+      # The frontend has its own jobs above. Without these flags the Maven build fetches
+      # its own Node and repeats the entire frontend chain inside this job.
+      - name: test
+        run: ./mvnw -B test -Dskip.npm=true -Dskip.installnodenpm=true
+
+  integration-tests:
+    name: integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+      # Testcontainers needs a Docker daemon, which ubuntu-latest provides.
+      #
+      # OpenApiContractIT rewrites src/main/webapp/api/openapi.json when the API has
+      # changed and fails once; on CI that failure is the point, because it means the
+      # checked-in contract the web app generates its types from is out of date.
+      #
+      # The Playwright suite deliberately does not run here: it needs a browser and a
+      # Keycloak, and it is a local gate.
+      - name: verify
+        run: ./mvnw -B -Pintegration-tests verify -Dskip.npm=true -Dskip.installnodenpm=true
+
+  package:
+    name: package + image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+      # Packaging builds the web app into the jar, so this job runs the frontend chain
+      # rather than skipping it like the backend jobs do.
+      - name: build
+        run: ./mvnw -B clean package -DskipTests=true
+
+      # Proves the release will be able to build its image before master depends on it.
+      - name: build image
+        run: docker build -t todo:ci .

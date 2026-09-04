@@ -1,67 +1,118 @@
 {
   "name": "todo",
-  "version": "0.0.4",
-  "license": "MIT",
+  "version": "1.0.0-SNAPSHOT",
   "scripts": {
     "ng": "ng",
+    "prepare": "npm run api:types",
     "start": "ng serve",
-    "build": "ng build",
-    "build:prod": "ng build --prod",
-    "deploy": "scripts/copy_frontend.sh",
+    "api:types": "openapi-typescript src/main/webapp/api/openapi.json -o src/main/webapp/api/schema.d.ts",
+    "build": "npm run api:types && ng build",
+    "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "test:coverage": "ng test --watch=false --code-coverage",
-    "lint": "ng lint",
-    "e2e": "ng e2e",
-    "postinstall": "scripts/post_install.sh"
+    "test:ci": "ng test --no-watch --no-progress",
+    "format": "prettier --write src/main/webapp/**/*.{ts,html,scss}",
+    "format:check": "prettier --check src/main/webapp/**/*.{ts,html,scss}",
+    "lint": "ng lint --fix",
+    "lint:check": "ng lint",
+    "e2e": "playwright test"
+  },
+  "prettier": {
+    "printWidth": 100,
+    "singleQuote": true,
+    "overrides": [
+      {
+        "files": "*.html",
+        "options": {
+          "parser": "angular"
+        }
+      }
+    ]
   },
   "private": true,
+  "packageManager": "npm@11.6.2",
   "dependencies": {
-    "@angular-redux/router": "^9.0.0",
-    "@angular-redux/store": "^9.0.0",
-    "@angular/animations": "^6.0.4",
-    "@angular/common": "^6.0.4",
-    "@angular/compiler": "^6.0.4",
-    "@angular/core": "^6.0.4",
-    "@angular/forms": "^6.0.4",
-    "@angular/http": "^6.0.4",
-    "@angular/platform-browser": "^6.0.4",
-    "@angular/platform-browser-dynamic": "^6.0.4",
-    "@angular/pwa": "^0.6.8",
-    "@angular/router": "^6.0.4",
-    "@ng-bootstrap/ng-bootstrap": "^2.0.0",
-    "bootstrap": "^4.1.1",
-    "class-validator": "^0.8.1",
-    "core-js": "^2.4.1",
-    "graphql-request": "^1.4.1",
-    "lodash-es": "^4.17.4",
-    "redux": "^4.0.0",
-    "redux-logger": "^3.0.6",
-    "redux-observable": "^1.0.0-beta.1",
-    "rxjs": "^6.2.0",
-    "rxjs-tslint": "^0.1.4",
-    "web-animations-js": "^2.3.1",
-    "zone.js": "^0.8.19",
-    "@angular/service-worker": "^6.0.4"
+    "@angular/cdk": "22.1.4",
+    "@angular/common": "22.1.4",
+    "@angular/compiler": "22.1.4",
+    "@angular/core": "22.1.4",
+    "@angular/forms": "22.1.4",
+    "@angular/material": "22.1.4",
+    "@angular/platform-browser": "22.1.4",
+    "@angular/router": "22.1.4",
+    "@angular/service-worker": "22.1.4",
+    "angular-oauth2-oidc": "22.0.2",
+    "idb": "8.0.3",
+    "rxjs": "7.8.2",
+    "tslib": "2.8.1"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "~0.6.8",
-    "@angular/cli": "^6.0.8",
-    "@angular/compiler-cli": "^6.0.4",
-    "@angular/language-service": "^6.0.4",
-    "@types/jasmine": "~2.8.3",
-    "@types/jasminewd2": "~2.0.2",
-    "@types/node": "~9.4.6",
-    "codelyzer": "^4.0.1",
-    "jasmine-core": "~2.99.1",
-    "jasmine-spec-reporter": "~4.2.1",
-    "karma": "~2.0.0",
-    "karma-chrome-launcher": "~2.2.0",
-    "karma-coverage-istanbul-reporter": "~2.0.0",
-    "karma-jasmine": "~1.1.0",
-    "karma-jasmine-html-reporter": "^0.2.2",
-    "protractor": "~5.3.0",
-    "ts-node": "~5.0.0",
-    "tslint": "~5.9.1",
-    "typescript": "~2.7.2"
+    "@angular/build": "22.1.6",
+    "@angular/cli": "22.1.6",
+    "@angular/compiler-cli": "22.1.4",
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.62.1",
+    "@semantic-release/changelog": "7.0.0",
+    "@semantic-release/commit-analyzer": "13.0.1",
+    "@semantic-release/exec": "7.1.0",
+    "@semantic-release/git": "11.0.1",
+    "@semantic-release/npm": "13.1.5",
+    "@semantic-release/release-notes-generator": "14.1.1",
+    "angular-eslint": "22.2.0",
+    "eslint": "10.9.1",
+    "fake-indexeddb": "6.2.5",
+    "jsdom": "28.0.0",
+    "openapi-typescript": "7.13.0",
+    "prettier": "3.9.6",
+    "semantic-release": "25.0.9",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.61.0",
+    "vitest": "4.1.11"
+  },
+  "overrides": {
+    "openapi-typescript": {
+      "typescript": "$typescript"
+    }
+  },
+  "release": {
+    "branches": [
+      "main"
+    ],
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/changelog",
+      "@semantic-release/npm",
+      [
+        "@semantic-release/exec",
+        {
+          "prepareCmd": "./mvnw -B versions:set -DnewVersion=\"${nextRelease.version}\" -DgenerateBackupPoms=false",
+          "publishCmd": "./mvnw -B clean package -DskipTests=true && docker build --tag ghcr.io/monsieurbon/todo:\"${nextRelease.version}\" --tag ghcr.io/monsieurbon/todo:latest . && docker push ghcr.io/monsieurbon/todo:\"${nextRelease.version}\" && docker push ghcr.io/monsieurbon/todo:latest",
+          "successCmd": "NEXT_VERSION=$(npm version patch --no-git-tag-version | sed \"s/^v//\")-SNAPSHOT && npm pkg set version=\"$NEXT_VERSION\" && ./mvnw -B versions:set -DnewVersion=\"$NEXT_VERSION\" -DgenerateBackupPoms=false && git commit -am \"chore(release): $NEXT_VERSION [skip ci]\" && git push"
+        }
+      ],
+      [
+        "@semantic-release/git",
+        {
+          "assets": [
+            "package.json",
+            "package-lock.json",
+            "CHANGELOG.md",
+            "pom.xml"
+          ],
+          "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+        }
+      ],
+      [
+        "@semantic-release/github",
+        {
+          "assets": [
+            {
+              "path": "target/todo-*.jar",
+              "label": "JAR"
+            }
+          ]
+        }
+      ]
+    ]
   }
 }

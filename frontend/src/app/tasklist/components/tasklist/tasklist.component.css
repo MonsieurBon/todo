@@ -1,9 +1,0 @@
-.droppable-area {
-  margin: -1.25rem;
-  padding: 1.25rem;
-}
-
-.dragover {
-  border: 1px dashed black;
-  overflow: auto;
-}

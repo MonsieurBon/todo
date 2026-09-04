@@ -1,0 +1,61 @@
+.filters {
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0.25rem 0 0.75rem;
+}
+
+.zone {
+  margin-bottom: 1.5rem;
+
+  header {
+    padding: 0.25rem 0 0.35rem;
+    border-bottom: 2px solid var(--mat-sys-outline-variant);
+  }
+
+  h2 {
+    margin: 0;
+    font: var(--mat-sys-title-small);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.load {
+  font: var(--mat-sys-label-large);
+  font-variant-numeric: tabular-nums;
+  color: var(--mat-sys-on-surface-variant);
+
+  &.over {
+    color: var(--mat-sys-error);
+    font-weight: 600;
+  }
+}
+
+// The cap is advice, not a rule — it is styled as something to notice, never as an error state
+// that has to be cleared before continuing.
+.warning {
+  margin: 0.5rem 0 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font: var(--mat-sys-body-small);
+}
+
+.meaning {
+  margin: 0.75rem 0;
+  font: var(--mat-sys-body-small);
+}
+
+.hint {
+  padding: 0.5rem 1rem;
+  max-width: 16rem;
+  font: var(--mat-sys-label-medium);
+}
+
+.fab {
+  position: fixed;
+  right: 1rem;
+  bottom: calc(4.5rem + env(safe-area-inset-bottom));
+}

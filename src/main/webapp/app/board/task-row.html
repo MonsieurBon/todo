@@ -1,0 +1,79 @@
+<div class="task" [class.pending]="pending()">
+  <button
+    matIconButton
+    type="button"
+    class="tick"
+    [attr.aria-label]="'Complete ' + task().title"
+    (click)="complete()"
+  >
+    <mat-icon svgIcon="box" />
+  </button>
+
+  <div class="grow">
+    <div class="title truncate">{{ task().title }}</div>
+    <div class="meta row">
+      @if (pending()) {
+        <span class="chip waiting">waiting to sync</span>
+      }
+      @if (showList() && task().listName) {
+        <span class="chip">{{ task().listName }}</span>
+      }
+      @for (label of task().labels; track label) {
+        <span class="chip topic">{{ label }}</span>
+      }
+      @if (task().dueDate) {
+        <span class="chip due">due {{ task().dueDate }}</span>
+      }
+    </div>
+  </div>
+
+  <button
+    matIconButton
+    type="button"
+    [attr.aria-label]="'Actions for ' + task().title"
+    [matMenuTriggerFor]="menu"
+  >
+    <mat-icon svgIcon="more" />
+  </button>
+
+  <mat-menu #menu="matMenu">
+    @if (pending()) {
+      <div class="hint muted">Captured offline. It can be sent or taken back, nothing else.</div>
+      <button mat-menu-item type="button" (click)="remove()">
+        <mat-icon svgIcon="trash" />
+        <span>Take back</span>
+      </button>
+    } @else {
+      @if (promoteTo(); as zone) {
+        <button mat-menu-item type="button" [disabled]="!online()" (click)="move(zone)">
+          <mat-icon svgIcon="up" />
+          <span>Move to {{ zoneName(zone) }}</span>
+        </button>
+      }
+      @if (demoteTo(); as zone) {
+        <button mat-menu-item type="button" [disabled]="!online()" (click)="move(zone)">
+          <mat-icon svgIcon="down" />
+          <span>Move to {{ zoneName(zone) }}</span>
+        </button>
+      }
+      <button mat-menu-item type="button" [disabled]="!online()" [matMenuTriggerFor]="deferMenu">
+        <mat-icon svgIcon="later" />
+        <span>Defer</span>
+      </button>
+      <button mat-menu-item type="button" [disabled]="!online()" (click)="edit()">
+        <mat-icon svgIcon="edit" />
+        <span>Edit</span>
+      </button>
+      <button mat-menu-item type="button" [disabled]="!online()" (click)="remove()">
+        <mat-icon svgIcon="trash" />
+        <span>Delete</span>
+      </button>
+    }
+  </mat-menu>
+
+  <mat-menu #deferMenu="matMenu">
+    <button mat-menu-item type="button" (click)="deferBy(1)">Tomorrow</button>
+    <button mat-menu-item type="button" (click)="deferBy(7)">Next week</button>
+    <button mat-menu-item type="button" (click)="deferBy(30)">In a month</button>
+  </mat-menu>
+</div>

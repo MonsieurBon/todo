@@ -1,0 +1,256 @@
+package ch.ethy.todo.web;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import ch.ethy.todo.IntegrationTest;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+
+/**
+ * What the offline queue needs from the API.
+ *
+ * <p>A task captured with no signal is replayed when the connection returns, and a replay cannot
+ * tell "the request never arrived" from "the response never came back". Without a client-supplied
+ * reference the second case silently duplicates the task, which is the failure people actually
+ * notice — so creating twice with the same {@code clientRef} must create once.
+ */
+class OfflineCaptureIT extends IntegrationTest {
+
+  @Autowired private MockMvc mvc;
+  @Autowired private ObjectMapper json;
+
+  private static final AtomicLong SUBJECTS = new AtomicLong();
+
+  private static final String CAPTURE = "SCOPE_todo:capture";
+  private static final String READ = "SCOPE_todo:read";
+  private static final String WRITE = "SCOPE_todo:write";
+  private static final String ADMIN = "SCOPE_todo:admin";
+
+  private static String someone() {
+    return "offline-" + SUBJECTS.incrementAndGet() + "-" + System.nanoTime();
+  }
+
+  private static RequestPostProcessor as(String subject, String... authorities) {
+    List<GrantedAuthority> granted =
+        java.util.Arrays.stream(authorities)
+            .map(SimpleGrantedAuthority::new)
+            .map(GrantedAuthority.class::cast)
+            .toList();
+    return jwt()
+        .jwt(b -> b.subject(subject).claim("email", subject + "@example.com"))
+        .authorities(granted);
+  }
+
+  private JsonNode perform(MockHttpServletRequestBuilder request) throws Exception {
+    String content = mvc.perform(request).andReturn().getResponse().getContentAsString();
+    return content.isEmpty() ? json.createObjectNode() : json.readTree(content);
+  }
+
+  private JsonNode captured(String who, String title, String clientRef) throws Exception {
+    Map<String, Object> payload = new HashMap<>();
+    payload.put("title", title);
+    payload.put("clientRef", clientRef);
+    return perform(
+        post("/api/tasks/capture")
+            .with(as(who, CAPTURE))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(json.writeValueAsString(payload)));
+  }
+
+  private JsonNode addedTo(String who, Long list, String title, String clientRef) throws Exception {
+    Map<String, Object> payload = new HashMap<>();
+    payload.put("title", title);
+    payload.put("zone", "CRITICAL_NOW");
+    payload.put("clientRef", clientRef);
+    return perform(
+        post("/api/tasklists/" + list + "/tasks")
+            .with(as(who, WRITE))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(json.writeValueAsString(payload)));
+  }
+
+  private List<String> titlesOnBoard(String who) throws Exception {
+    List<String> titles = new java.util.ArrayList<>();
+    perform(get("/api/board").with(as(who, READ)))
+        .get("tasks")
+        .forEach(t -> titles.add(t.get("title").asString()));
+    return titles;
+  }
+
+  @Test
+  @DisplayName("replaying a capture with the same reference creates one task, not two")
+  void captureIsIdempotent() throws Exception {
+    String me = someone();
+    String ref = UUID.randomUUID().toString();
+
+    JsonNode first = captured(me, "Call the roofer", ref);
+    JsonNode replay = captured(me, "Call the roofer", ref);
+
+    assertThat(replay.get("id").asLong())
+        .as("the replay must resolve to the task the first attempt created")
+        .isEqualTo(first.get("id").asLong());
+    assertThat(titlesOnBoard(me)).containsExactly("Call the roofer");
+  }
+
+  @Test
+  @DisplayName("the reference comes back, so the queue can reconcile what it sent")
+  void referenceIsEchoed() throws Exception {
+    String me = someone();
+    String ref = UUID.randomUUID().toString();
+
+    assertThat(captured(me, "Buy tiles", ref).get("clientRef").asString()).isEqualTo(ref);
+  }
+
+  @Test
+  @DisplayName("distinct references are distinct tasks, however alike they look")
+  void differentReferencesAreDifferentTasks() throws Exception {
+    String me = someone();
+
+    captured(me, "Water the plants", UUID.randomUUID().toString());
+    captured(me, "Water the plants", UUID.randomUUID().toString());
+
+    assertThat(titlesOnBoard(me)).containsExactly("Water the plants", "Water the plants");
+  }
+
+  @Test
+  @DisplayName("a capture with no reference is never deduplicated")
+  void noReferenceMeansNoDeduplication() throws Exception {
+    String me = someone();
+
+    captured(me, "Same title twice", null);
+    captured(me, "Same title twice", null);
+
+    assertThat(titlesOnBoard(me)).hasSize(2);
+  }
+
+  @Test
+  @DisplayName("replaying against a list resolves to the task that list already holds")
+  void listCreateIsIdempotent() throws Exception {
+    String me = someone();
+    Long list =
+        perform(
+                post("/api/tasklists")
+                    .with(as(me, ADMIN))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(json.writeValueAsString(Map.of("name", "Household"))))
+            .get("id")
+            .asLong();
+    String ref = UUID.randomUUID().toString();
+
+    JsonNode first = addedTo(me, list, "Fix the tile", ref);
+    JsonNode replay = addedTo(me, list, "Fix the tile", ref);
+
+    assertThat(replay.get("id").asLong()).isEqualTo(first.get("id").asLong());
+    assertThat(titlesOnBoard(me)).containsExactly("Fix the tile");
+  }
+
+  @Test
+  @DisplayName("one person's reference never resolves to another person's task")
+  void referencesDoNotCrossUsers() throws Exception {
+    String me = someone();
+    String you = someone();
+    String ref = UUID.randomUUID().toString();
+
+    JsonNode mine = captured(me, "My private errand", ref);
+    JsonNode yours = captured(you, "Your errand", ref);
+
+    assertThat(yours.get("id").asLong())
+        .as("a guessed reference must not hand over someone else's task")
+        .isNotEqualTo(mine.get("id").asLong());
+    assertThat(yours.get("title").asString()).isEqualTo("Your errand");
+    assertThat(titlesOnBoard(you)).containsExactly("Your errand");
+  }
+
+  @Test
+  @DisplayName("a captured task keeps its notes and due date")
+  void captureKeepsEveryField() throws Exception {
+    String me = someone();
+    Map<String, Object> payload = new HashMap<>();
+    payload.put("title", "Read this");
+    payload.put("notes", "https://example.com/an-article");
+    payload.put("dueDate", "2030-01-31");
+    payload.put("labels", List.of("reading"));
+
+    JsonNode created =
+        perform(
+            post("/api/tasks/capture")
+                .with(as(me, CAPTURE))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(payload)));
+
+    // The share target files a link as a task; dropping the link would leave a task about nothing.
+    assertThat(created.get("notes").asString()).isEqualTo("https://example.com/an-article");
+    assertThat(created.get("dueDate").asString()).isEqualTo("2030-01-31");
+  }
+
+  @Test
+  @DisplayName("a task created in a list keeps its notes and due date too")
+  void listCreateKeepsEveryField() throws Exception {
+    String me = someone();
+    Long list =
+        perform(
+                post("/api/tasklists")
+                    .with(as(me, ADMIN))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(json.writeValueAsString(Map.of("name", "Reading"))))
+            .get("id")
+            .asLong();
+    Map<String, Object> payload = new HashMap<>();
+    payload.put("title", "Read that");
+    payload.put("zone", "OPPORTUNITY_NOW");
+    payload.put("notes", "page 40 onwards");
+    payload.put("dueDate", "2030-02-28");
+
+    JsonNode created =
+        perform(
+            post("/api/tasklists/" + list + "/tasks")
+                .with(as(me, WRITE))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(payload)));
+
+    assertThat(created.get("notes").asString()).isEqualTo("page 40 onwards");
+    assertThat(created.get("dueDate").asString()).isEqualTo("2030-02-28");
+  }
+
+  @Test
+  @DisplayName("the inbox cannot be deleted, because nothing could make another one")
+  void theInboxSurvives() throws Exception {
+    String me = someone();
+    captured(me, "Something to keep", null);
+
+    JsonNode lists = perform(get("/api/tasklists").with(as(me, READ)));
+    long inboxId = -1;
+    for (JsonNode list : lists) {
+      if (list.get("inbox").asBoolean()) {
+        inboxId = list.get("id").asLong();
+      }
+    }
+    assertThat(inboxId).as("every user is provisioned with an inbox").isNotEqualTo(-1);
+
+    // The web app hides the option, but the API is the boundary that holds. Deleting it would not
+    // remove a list, it would permanently break capture: nothing can create another inbox.
+    mvc.perform(delete("/api/tasklists/" + inboxId).with(as(me, ADMIN)))
+        .andExpect(status().isBadRequest());
+
+    assertThat(titlesOnBoard(me)).containsExactly("Something to keep");
+  }
+}

@@ -1,45 +1,28 @@
-FROM ubuntu:18.04
+# Pinned by digest, not by tag: a tag is a moving target, and an image that changed
+# underneath a release would make that release unreproducible.
+FROM eclipse-temurin:25.0.4_7-jre@sha256:f9e65324a37f28209ce7dd0e5149a7aa954520ed936fb87813cf6ded2400a112
 
-ENV APP_ENV=prod
-ENV DEBIAN_FRONTEND=noninteractive
+# Nothing here needs root. The app writes no files - everything durable is in MySQL -
+# so it does not even need to own its own directory.
+RUN groupadd --system --gid 1001 todo \
+ && useradd --system --uid 1001 --gid todo --no-create-home todo
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        apache2 \
-        ca-certificates \
-        curl \
-        libapache2-mod-php \
-        php \
-        php-intl \
-        php-mbstring \
-        php-mysql \
-        php-xml \
-        php-zip && \
-    apt-get autoclean
+WORKDIR /opt/app
+COPY target/todo-*.jar /opt/app/todo.jar
+COPY docker/healthcheck.sh /opt/app/healthcheck.sh
 
-WORKDIR /var/www/html
+USER todo:todo
 
-RUN EXPECTED_SIGNATURE=$(curl https://composer.github.io/installer.sig) && \
-    php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && \
-    ACTUAL_SIGNATURE=$(php -r "echo hash_file('SHA384', 'composer-setup.php');") && \
-    if [ "$EXPECTED_SIGNATURE" != "$ACTUAL_SIGNATURE" ]; then >&2 echo 'ERROR: Invalid installer signature'; rm composer-setup.php; exit 1; fi && \
-    php composer-setup.php --quiet && \
-    rm composer-setup.php
+# The default. SERVER_PORT moves it, and the healthcheck follows.
+EXPOSE 8080
 
-COPY composer.json composer.lock /var/www/html/
-RUN php composer.phar install --no-dev --no-scripts --no-plugins --no-autoloader
-RUN rm /var/www/html/index.html
-COPY scripts/docker/000-default.conf /etc/apache2/sites-available/000-default.conf
-COPY scripts/docker/todo.init /var/www/html/todo.init
-RUN chmod u+x /var/www/html/todo.init
-COPY bin /var/www/html/bin/
-COPY config /var/www/html/config/
-COPY public /var/www/html/public
-COPY src /var/www/html/src/
-COPY templates /var/www/html/templates
-COPY var /var/www/html/var/
-RUN php composer.phar dump-autoload --optimize
+# start-period covers Flyway plus the Spring context; the app is usually up in about
+# fifteen seconds, and a slow first migration should not count as a failure.
+HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=3 \
+  CMD ["/opt/app/healthcheck.sh"]
 
-
-EXPOSE 80
-CMD ["/var/www/html/todo.init"]
+# The JVM's default heap ceiling is a quarter of the container's memory, which wastes
+# most of a small limit. JAVA_OPTS is the documented way to change this and anything
+# else; `exec` keeps java as PID 1, so it still receives the signal to shut down.
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0"
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /opt/app/todo.jar"]

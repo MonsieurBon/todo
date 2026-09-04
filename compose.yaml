@@ -1,0 +1,63 @@
+# Local development stack: MySQL + Keycloak.
+# The app itself runs from the IDE or `./mvnw spring-boot:run`, not from here.
+services:
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: todo
+      MYSQL_USER: todo
+      MYSQL_PASSWORD: todo
+    ports:
+      # 3306 on the host belongs to the existing mysql-recipe container,
+      # so the dev database for this project lives on 3307.
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - db-data:/var/lib/mysql
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.3
+    command: ["start-dev", "--http-port=8081", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      # CIMD is what the current MCP spec prefers over the now-deprecated Dynamic
+      # Client Registration. It is EXPERIMENTAL in Keycloak - the Phase 0 spike
+      # exists to find out whether it actually works here.
+      KC_FEATURES: cimd
+      # Serves /health/ready on the management port. The image ships no curl or
+      # wget, so the probe below uses bash's /dev/tcp instead - and must invoke
+      # bash explicitly, since CMD-SHELL would run it under sh.
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "8081:8081"
+    volumes:
+      # Declarative realm config, in Keycloak's own RealmRepresentation format -
+      # which is what --import-realm takes here, and what the Keycloak Operator's
+      # KeycloakRealmImport takes elsewhere. Nothing about it is specific to either.
+      #
+      # NOTE: the audience mapper and todo-web's redirect URIs inside it are
+      # LITERAL http://localhost:8090. Keycloak does not substitute ${env.VAR}
+      # during realm import, so an environment variable here would do nothing at
+      # all - the placeholder would be stored verbatim as the expected audience and
+      # every token would be rejected. Another environment has to rewrite the file
+      # before importing it.
+      - ./keycloak:/opt/keycloak/data/import:ro
+    healthcheck:
+      test:
+        - CMD
+        - bash
+        - -c
+        - "exec 3<>/dev/tcp/localhost/9000 && printf 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && grep -q '200 OK' <&3"
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+volumes:
+  db-data:
