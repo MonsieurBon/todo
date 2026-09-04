@@ -43,7 +43,7 @@ Every variable the app reads. There are no others.
 | `DB_NAME` | `todo` | no | |
 | `DB_USER` | `todo` | **yes** | |
 | `DB_PASSWORD` | `todo` | **yes** | The default is a development password. Set it. |
-| `OIDC_ISSUER_URI` | `http://localhost:8081/realms/todo` | **yes** | The realm's issuer, exactly as it appears in tokens' `iss` claim. |
+| `OIDC_ISSUER_URI` | `http://localhost:8081/realms/todo` | **yes** | The identity provider's **public** realm URL. Both halves of that matter — see below. |
 | `TODO_CANONICAL_URI` | `http://localhost:8080` | **yes** | **The public origin of this app, and the audience it demands.** See below. |
 | `SERVER_PORT` | `8080` | no | The healthcheck follows it. |
 | `LOG_LEVEL_SECURITY` | `INFO` | no | `DEBUG` to see why a token was rejected. |
@@ -54,6 +54,29 @@ Every variable the app reads. There are no others.
 > identity provider mints (see below) **and** the public URL people reach the app on. A mismatch
 > fails as `401` on every request with nothing in the response explaining why —
 > `LOG_LEVEL_SECURITY=DEBUG` is what tells you.
+
+### `OIDC_ISSUER_URI` has to satisfy two things at once
+
+This is the setting that costs an evening, because the two obvious choices each fail, and they fail
+differently. Both failures below were reproduced against a real container.
+
+The URL must be **both**:
+
+1. **Byte-for-byte what the identity provider puts in the token's `iss` claim** — which, unless the
+   IdP is pinned to a hostname, is derived from whatever address the *browser* used to log in.
+2. **Reachable from inside this container**, because the app fetches signing keys from it.
+
+| What you set | What happens | How it looks |
+|---|---|---|
+| The internal name (`http://keycloak:8081/realms/todo`) | Reachable, but every token says `iss: http://localhost:8081/...` | **`401` on every request**, with a valid token and a correct audience. Nothing in the response says why. |
+| The public URL, not resolvable inside the container | `iss` matches, but the signing keys cannot be fetched | **`503`** with `identity_provider_unavailable`. |
+
+**The fix is to stop letting the IdP derive its own issuer.** Pin Keycloak to one public hostname
+(`KC_HOSTNAME`), so `iss` is that URL no matter how the realm was reached — and make that hostname
+resolve inside the app's container, with a DNS entry the container network can see or an
+`extra_hosts` entry. One URL, used by the browser, written in the token, and configured here.
+
+`LOG_LEVEL_SECURITY=DEBUG` names the mismatch in the log; nothing in the HTTP response does.
 
 ## Database
 

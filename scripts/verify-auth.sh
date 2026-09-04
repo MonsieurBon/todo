@@ -110,7 +110,16 @@ code=$(curl -sS -o /dev/null -w '%{http_code}' -X POST -H "Authorization: Bearer
 code=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $APP_TOKEN" "$APP/api/tasklists")
 body=$(curl -sS -H "Authorization: Bearer $APP_TOKEN" "$APP/api/tasklists")
 [ "$code" = "403" ] && ok "capture-only token cannot read -> 403" || bad "capture read -> $code, expected 403"
-[ -z "$body" ] && ok "denied response carries no data" || bad "DENIED RESPONSE LEAKED A BODY: $body"
+# The property is "the refusal hands over no tasks", not "the body is empty" - a 503 for an
+# unreachable IdP explains itself and is not a denial. Assert emptiness only for a real 403,
+# so this cannot cry wolf and train someone to ignore it.
+if [ "$code" = "403" ]; then
+  [ -z "$body" ] && ok "denied response carries no data" || bad "DENIED RESPONSE LEAKED A BODY: $body"
+else
+  echo "$body" | grep -qiE '"(id|name|slug|title)"' \
+    && bad "REFUSAL LEAKED TASK DATA: $body" \
+    || ok "refusal carries no task data (status $code)"
+fi
 
 head "4. a token for a different audience is rejected"
 curl -sS -X POST -H "Authorization: Bearer $ADM" -H "Content-Type: application/json" \
