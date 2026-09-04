@@ -18,7 +18,7 @@ ghcr.io/monsieurbon/todo:latest
 ```
 
 `<version>` is a semver tag produced by [semantic-release](#releasing) — `1.4.0`, not `v1.4.0`.
-**Pin a version.** `latest` moves on every push to `master`, which makes "what is actually running"
+**Pin a version.** `latest` moves on every push to `main`, which makes "what is actually running"
 unanswerable and a rollback guesswork.
 
 ## Shape of the service
@@ -176,7 +176,7 @@ No `volumes`, no `depends_on`, no `healthcheck` — all three are deliberate, fo
 
 ## Releasing
 
-Pushes to `master` are released automatically by semantic-release. The version comes from the
+Pushes to `main` are released automatically by semantic-release. The version comes from the
 commit messages, so **an unprefixed commit ships nothing** — it neither triggers a release nor
 appears in the changelog.
 
@@ -193,6 +193,17 @@ When squashing a branch, the prefix must describe the squashed whole.
 > (`0.0.1` … `0.3.2`) are still in this history, so without one semantic-release computes `0.4.0`
 > and quietly presents a total rewrite as a minor update to an app that no longer exists. The
 > footer is accurate, not a trick: the API is different, and no data is migrated.
+>
+> Two things about writing it, both verified against the analyzer:
+>
+> - It must read **`BREAKING CHANGE:`** with a space. `BREAKING-CHANGE:` is recognised by the
+>   conventional-commits preset but **not** by the angular one used here — it produces no release
+>   at all.
+> - It must be a **footer in the commit body**, its own paragraph. The same words in the subject
+>   line are just words, and yield a minor.
+>
+> Any commit in the released range carries it — including a merge commit, which semantic-release
+> reads like any other. Its type does not matter: `chore:` with the footer is still a major.
 
 The release builds the jar, builds and pushes the image, attaches the jar to a GitHub release, and
-commits the next `-SNAPSHOT` version back to `master`.
+commits the next `-SNAPSHOT` version back to `main`.

@@ -97,7 +97,7 @@ CI has neither a browser nor an IdP.
 - **TDD** — failing test first.
 - **Conventional commits.** `feat:` and `fix:` are what semantic-release ships; an unprefixed
   commit is invisible to the release. When squashing, the prefix describes the squashed whole.
-  Releases go out from `master` (not `main`). **The first release of the rewrite needs a
+  **The first release of the rewrite needs a
   `BREAKING CHANGE:` footer** — the old `0.x` tags are still reachable, so without one the version
   computes to `0.4.0`. See the README.
 - **Small commits** that each leave the build green.
