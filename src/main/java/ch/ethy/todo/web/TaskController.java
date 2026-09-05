@@ -4,6 +4,7 @@ import ch.ethy.todo.domain.TaskZone;
 import ch.ethy.todo.service.BoardFilter;
 import ch.ethy.todo.service.CurrentUserService;
 import ch.ethy.todo.service.NewTask;
+import ch.ethy.todo.service.TaskEdit;
 import ch.ethy.todo.service.TaskService;
 import ch.ethy.todo.web.dto.Requests;
 import ch.ethy.todo.web.dto.Responses;
@@ -141,17 +142,11 @@ public class TaskController {
   @PreAuthorize("hasAuthority('SCOPE_todo:write')")
   public Responses.TaskView updateTask(
       @PathVariable Long id, @Valid @RequestBody Requests.UpdateTask request) {
-    var task = tasks.accessible(id, currentUser.current());
-    if (request.title() != null) {
-      task.title(request.title());
-    }
-    if (request.notes() != null) {
-      task.notes(request.notes());
-    }
-    if (request.dueDate() != null) {
-      task.dueDate(request.dueDate());
-    }
-    return Responses.TaskView.of(task);
+    return Responses.TaskView.of(
+        tasks.update(
+            id,
+            currentUser.current(),
+            new TaskEdit(request.title(), request.notes(), request.dueDate())));
   }
 
   @PostMapping("/tasks/{id}/complete")
