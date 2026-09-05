@@ -1,0 +1,66 @@
+name: Claude review pass
+description: >-
+  Run one Claude Code review pass for a pull request: invoke a single named
+  review subagent on the given model and post its review as a PR comment.
+
+inputs:
+  model:
+    description: Model to run the review on (e.g. fable, opus).
+    required: true
+  reviewer:
+    description: >-
+      Name of the review subagent to invoke (must match a definition in
+      .claude/agents/), e.g. pr-code-reviewer or web-security-reviewer.
+    required: true
+  oauth_token:
+    description: Claude Code OAuth token. Passed in because composite actions cannot read secrets directly.
+    required: true
+  repo:
+    description: 'owner/name of the repository under review.'
+    required: true
+  pr:
+    description: Pull request number under review.
+    required: true
+
+outputs:
+  execution_file:
+    description: Path to the Claude Code execution output for this pass.
+    value: ${{ steps.run.outputs.execution_file }}
+
+runs:
+  using: composite
+  steps:
+    - name: Run Claude Code Review
+      id: run
+      uses: anthropics/claude-code-action@d75b94d5ad426cb8546e6628b6f5f19b84e5cce1 # v1.0.216
+      with:
+        claude_code_oauth_token: ${{ inputs.oauth_token }}
+        # Print the SDK output so a failed run's error is visible in the job
+        # log. The default hides it, which leaves an errored review with no
+        # diagnosable cause once the runner is gone.
+        show_full_output: true
+        prompt: |
+          Review PR ${{ inputs.repo }}#${{ inputs.pr }} by invoking the
+          `${{ inputs.reviewer }}` subagent exactly once via the Task tool,
+          synchronously (`run_in_background: false`) — a background subagent
+          dies when this CI job ends, so do not end your turn until the
+          subagent has finished and its comment is posted. The subagent is
+          defined in .claude/agents/ and must be invoked with its exact name
+          as `subagent_type`: `${{ inputs.reviewer }}`.
+
+          Pass the subagent the PR identifier `${{ inputs.repo }}#${{ inputs.pr }}`
+          and instruct it to fetch the diff (`gh pr diff <number>`), the existing
+          review comments (`gh pr view <number> --comments`), and — if the PR body
+          or commits link an issue via a `Closes #N` trailer — that issue
+          (`gh issue view <N>`), all before forming findings, so it does not
+          re-flag items already addressed or deferred in the thread and can check
+          the diff against the linked issue's requirements. Review only the
+          changed code, not the whole codebase.
+
+          Post the review as a single PR comment using `gh pr comment`,
+          prefixed with a header identifying the reviewer: `## ${{ inputs.reviewer }}`.
+        claude_args: >-
+          --model ${{ inputs.model }}
+          --max-turns 25
+          --allowedTools "Read,Grep,Glob,Task,WebFetch,Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(gh issue view:*),Bash(gh api:*)"
+          --append-system-prompt "You run in an ephemeral CI job that terminates the moment your turn ends. Never launch background subagents or background shell tasks — run everything synchronously (run_in_background: false) and do not end your turn while any delegated work is still pending."

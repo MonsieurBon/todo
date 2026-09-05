@@ -1,0 +1,157 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [ opened, synchronize, ready_for_review, reopened ]
+
+jobs:
+  claude-review:
+    # Skip dependency-bump PRs from dependabot — they don't need an opinionated review.
+    if: github.event.pull_request.user.login != 'dependabot[bot]'
+
+    # One job per review pass, run in parallel so the wall-clock is the slower
+    # pass rather than the sum of both. fail-fast is off so a failing code pass
+    # doesn't cancel the in-flight security pass. Each pass gates independently:
+    # the code review is required (its failure fails the job), the security
+    # review is best-effort (its failure posts a notice but stays green).
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - pass: code
+            label: Code review
+            model: opus
+            reviewer: pr-code-reviewer
+            required: true
+          - pass: security
+            label: Security review
+            model: opus
+            reviewer: web-security-reviewer
+            required: false
+
+    name: Claude ${{ matrix.pass }} review
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+
+      # Skip the review when the PR diff is identical to a diff we've already
+      # reviewed (e.g. a force-push from a rebase onto main). The cache key
+      # combines the pass, the PR number and a hash of the current diff; a cache
+      # hit means this pass has already reviewed the same diff, so we skip the
+      # expensive review step. Any new commit that actually changes the diff
+      # produces a new key, missing the cache, and triggers a fresh review. The
+      # key is namespaced per pass so the two passes never satisfy each other's
+      # cache.
+      - name: Compute PR diff hash
+        id: diff-hash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          diff=$(gh pr diff "${{ github.event.pull_request.number }}")
+          hash=$(printf '%s' "$diff" | sha256sum | cut -d' ' -f1)
+          echo "hash=$hash" >> "$GITHUB_OUTPUT"
+
+      - name: Look up cache for this diff
+        id: diff-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .claude-review-marker
+          key: claude-review-${{ matrix.pass }}-pr-${{ github.event.pull_request.number }}-${{ steps.diff-hash.outputs.hash }}
+
+      # Run the review pass. continue-on-error keeps the job going even if the
+      # pass fails; whether it succeeded is decided from the execution output in
+      # the assess step below.
+      - name: Run review
+        id: review
+        if: steps.diff-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        uses: ./.github/actions/claude-review
+        with:
+          model: ${{ matrix.model }}
+          reviewer: ${{ matrix.reviewer }}
+          oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          repo: ${{ github.repository }}
+          pr: ${{ github.event.pull_request.number }}
+
+      # Decide success from the pass's execution output and, when no review was
+      # posted, say so on the pull request. Three outcomes: a review was posted;
+      # the action declined to run at all; or it failed. Only the last one can
+      # fail the job, and only for a required pass.
+      - name: Assess review and post failure notice
+        id: assess
+        if: steps.diff-cache.outputs.cache-hit != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          FILE: ${{ steps.review.outputs.execution_file }}
+          LABEL: ${{ matrix.label }}
+          MODEL: ${{ matrix.model }}
+          REVIEWER: ${{ matrix.reviewer }}
+          REQUIRED: ${{ matrix.required }}
+          REVIEW_OUTCOME: ${{ steps.review.outcome }}
+        run: |
+          set -uo pipefail
+
+          # Capitalize the model id for display (opus -> Opus, fable -> Fable);
+          # the lowercase form is only needed as the --model argument.
+          model_label="${MODEL^}"
+
+          if .github/scripts/claude-review-ok.sh "$FILE" >/dev/null; then
+            echo "$LABEL ($model_label) posted."
+            echo "reviewed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Whether a review was posted and whether the job may go green are two
+          # different questions. Only the first one decides whether this diff
+          # counts as reviewed.
+          echo "reviewed=false" >> "$GITHUB_OUTPUT"
+
+          # The action exiting 0 without producing a review is a deliberate skip
+          # rather than a crash, and the step's outcome is what tells them apart.
+          # claude-code-action refuses to run when the workflow file differs from
+          # the copy on the default branch — which is precisely what a pull
+          # request that adds or edits this workflow looks like. Nobody can fix
+          # that before the merge, so report it and leave the pull request green.
+          # It does mean a pull request touching this file goes unreviewed; the
+          # notice is what keeps that visible rather than silent.
+          if [ "$REVIEW_OUTCOME" = "success" ]; then
+            echo "::warning::$LABEL ($model_label) was skipped by the action; posting a notice and keeping the job green."
+            gh pr comment "$PR" --body "$(printf '## ℹ️ %s was skipped (%s)\n\n`claude-code-action` declined to run, so no review was posted. The usual cause is this pull request changing `.github/workflows/claude-code-review.yml`: the action requires that file to match the copy on the default branch, so a pull request that adds or edits it cannot be reviewed by it. That resolves once this merges.\n\nThis does not block the PR. Details: [run log](%s).\n' "$LABEL" "$model_label" "$RUN_URL")" \
+              || echo "::warning::Could not post the skip notice."
+            exit 0
+          fi
+
+          reason=$(.github/scripts/claude-review-reason.sh "$FILE")
+
+          if [ "$REQUIRED" = "true" ]; then
+            echo "::error::$LABEL ($model_label) failed; posting a notice and failing the job."
+            gh pr comment "$PR" --body "$(printf '## ❌ %s did not run (%s)\n\nThe `%s` pass on %s failed, so no review was posted.\n\n%s\n\nFull error: [run log](%s).\n' "$LABEL" "$model_label" "$REVIEWER" "$model_label" "$reason" "$RUN_URL")" \
+              || echo "::error::Could not post the failure notice."
+            exit 1
+          fi
+
+          echo "::warning::$LABEL ($model_label) failed; posting a notice and keeping the job green."
+          gh pr comment "$PR" --body "$(printf '## ⚠️ %s did not run (%s)\n\nThe `%s` pass on %s failed, so no review was posted. This does not block the PR.\n\n%s\n\nFull error: [run log](%s).\n' "$LABEL" "$model_label" "$REVIEWER" "$model_label" "$reason" "$RUN_URL")" \
+            || echo "::warning::Could not post the failure notice."
+
+      # Mark the diff reviewed only when a review was actually posted, so a
+      # failed run isn't cached as "done" and is retried on the next run of the
+      # same diff. This has to key off `reviewed`, not off the step's outcome: a
+      # best-effort pass exits 0 on failure to keep the job green, so its outcome
+      # is `success` for a review that was never posted — and caching that would
+      # skip the security pass for the rest of the diff's life.
+      - name: Mark this diff as reviewed
+        if: steps.diff-cache.outputs.cache-hit != 'true' && steps.assess.outputs.reviewed == 'true'
+        run: touch .claude-review-marker
