@@ -69,6 +69,9 @@ public class TodoTools {
 
           Keep the title to the action itself and put the detail in notes; the title
           is capped at 255 characters and is what the person scans down a list.
+
+          A due date is when the work must be finished. It is not what decides when the
+          task is shown: that is the zone, and defer_task for pushing it out of sight.
           """)
   @PreAuthorize("hasAnyAuthority('SCOPE_todo:capture', 'SCOPE_todo:write')")
   public Responses.TaskView createTask(
@@ -82,6 +85,10 @@ public class TodoTools {
               required = false)
           TaskZone zone,
       @McpToolParam(
+              description = "When the work must be finished, as YYYY-MM-DD.",
+              required = false)
+          LocalDate dueDate,
+      @McpToolParam(
               description = "Topics for this task, e.g. [\"house\", \"project-a\"].",
               required = false)
           List<String> labels,
@@ -91,7 +98,7 @@ public class TodoTools {
           Long listId) {
     var me = currentUser.current();
     TaskZone target = zone == null ? TaskZone.OPPORTUNITY_NOW : zone;
-    var draft = new NewTask(title, target, notes, null, labels, null);
+    var draft = new NewTask(title, target, notes, dueDate, labels, null);
     return Responses.TaskView.of(
         listId == null ? tasks.capture(me, draft) : tasks.addTo(listId, me, draft));
   }

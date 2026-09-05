@@ -81,7 +81,8 @@ class McpToolAuthorizationIT extends IntegrationTest {
     @DisplayName("can file a task")
     void canCreate() {
       as(someone(), CAPTURE);
-      assertThatCode(() -> tools.createTask("Buy roof tiles", null, null, List.of("house"), null))
+      assertThatCode(
+              () -> tools.createTask("Buy roof tiles", null, null, null, List.of("house"), null))
           .doesNotThrowAnyException();
     }
 
@@ -159,7 +160,7 @@ class McpToolAuthorizationIT extends IntegrationTest {
       var list = tools.createTaskList("Household");
       var task =
           tools.createTask(
-              "Fix the tile", null, TaskZone.OPPORTUNITY_NOW, List.of("house"), list.id());
+              "Fix the tile", null, TaskZone.OPPORTUNITY_NOW, null, List.of("house"), list.id());
 
       assertThat(tools.listLabels()).contains("house");
 
@@ -176,6 +177,31 @@ class McpToolAuthorizationIT extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("can set every field a task has, without a second call")
+    void createsWithEveryField() {
+      String me = someone();
+      as(me, READ, WRITE, ADMIN);
+      String topic = "complete-" + System.nanoTime();
+      var list = tools.createTaskList("Roof " + System.nanoTime());
+
+      var task =
+          tools.createTask(
+              "Fix the tile",
+              "The cracked one above the porch.",
+              TaskZone.CRITICAL_NOW,
+              LocalDate.of(2026, 10, 1),
+              List.of(topic, "house"),
+              list.id());
+
+      assertThat(task.title()).isEqualTo("Fix the tile");
+      assertThat(task.notes()).isEqualTo("The cracked one above the porch.");
+      assertThat(task.zone()).isEqualTo(TaskZone.CRITICAL_NOW);
+      assertThat(task.dueDate()).isEqualTo(LocalDate.of(2026, 10, 1));
+      assertThat(task.labels()).containsExactlyInAnyOrder(topic, "house");
+      assertThat(task.listId()).isEqualTo(list.id());
+    }
+
+    @Test
     @DisplayName("can file detail as notes and revise it later")
     void carriesNotes() {
       String me = someone();
@@ -187,6 +213,7 @@ class McpToolAuthorizationIT extends IntegrationTest {
               "Fix the tile",
               "The cracked one above the porch.",
               TaskZone.OPPORTUNITY_NOW,
+              null,
               List.of(topic),
               null);
       assertThat(task.notes()).isEqualTo("The cracked one above the porch.");
@@ -210,7 +237,8 @@ class McpToolAuthorizationIT extends IntegrationTest {
       as(me, READ, WRITE, ADMIN);
       String topic = "partial-" + System.nanoTime();
 
-      var task = tools.createTask("Original title", "Original notes", null, List.of(topic), null);
+      var task =
+          tools.createTask("Original title", "Original notes", null, null, List.of(topic), null);
       tools.updateTask(task.id(), "Better title", null, LocalDate.of(2026, 10, 1));
 
       assertThat(tools.getBoard(topic, null, null, null).tasks())
@@ -231,8 +259,8 @@ class McpToolAuthorizationIT extends IntegrationTest {
       var personal = tools.createTaskList("Personal " + System.nanoTime());
       var family = tools.createTaskList("Family " + System.nanoTime());
       for (int i = 0; i < 3; i++) {
-        tools.createTask("P" + i, null, TaskZone.CRITICAL_NOW, List.of(), personal.id());
-        tools.createTask("F" + i, null, TaskZone.CRITICAL_NOW, List.of(), family.id());
+        tools.createTask("P" + i, null, TaskZone.CRITICAL_NOW, null, List.of(), personal.id());
+        tools.createTask("F" + i, null, TaskZone.CRITICAL_NOW, null, List.of(), family.id());
       }
 
       var criticalOnBoard =
