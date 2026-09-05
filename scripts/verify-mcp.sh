@@ -121,7 +121,9 @@ required = {n: sorted(t["inputSchema"].get("required", [])) for n, t in by.items
 expected = {
     "create_task": ["title"],
     "update_task": ["taskId"],
+    "get_task": ["taskId"],
     "complete_task": ["taskId"],
+    "reopen_task": ["taskId"],
     "delete_task": ["taskId"],
     "move_task_zone": ["taskId", "zone"],
     "defer_task": ["taskId", "until"],
@@ -148,7 +150,7 @@ PY
 count=$(awk '/^count/{print $2}' "$TMP/toolcheck")
 # Pinned rather than a floor: a lower bound stops pinning anything the moment a tool is added,
 # and this is the check that would notice one going missing.
-[ "$count" -eq 14 ] && ok "$count tools discovered" || bad "expected 14 tools, discovered $count"
+[ "$count" -eq 16 ] && ok "$count tools discovered" || bad "expected 16 tools, discovered $count"
 grep -q "optional_ok True" "$TMP/toolcheck" \
   && ok "optional parameters are not advertised as required" \
   || bad "an optional parameter is marked required — the model will be forced to invent one"

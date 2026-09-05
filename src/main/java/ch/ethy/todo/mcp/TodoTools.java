@@ -143,6 +143,30 @@ public class TodoTools {
   }
 
   @McpTool(
+      name = "get_task",
+      annotations =
+          @McpTool.McpAnnotations(
+              readOnlyHint = true,
+              destructiveHint = false,
+              idempotentHint = true,
+              openWorldHint = false),
+      title = "Read one task",
+      description =
+          """
+          Read a single task by id, whatever state it is in.
+
+          get_board answers with the open, undeferred tasks — which is the right
+          default for working the list, but means a task that was deferred or
+          completed cannot be found there at all. This can still read it, so an id
+          mentioned earlier in the conversation never becomes a dead end.
+          """)
+  @PreAuthorize("hasAuthority('SCOPE_todo:read')")
+  public Responses.TaskView getTask(
+      @McpToolParam(description = "Id of the task.", required = true) Long taskId) {
+    return Responses.TaskView.of(tasks.accessible(taskId, currentUser.current()));
+  }
+
+  @McpTool(
       name = "list_labels",
       annotations =
           @McpTool.McpAnnotations(
@@ -222,6 +246,31 @@ public class TodoTools {
   public Responses.TaskView completeTask(
       @McpToolParam(description = "Id of the task.", required = true) Long taskId) {
     return Responses.TaskView.of(tasks.complete(taskId, currentUser.current()));
+  }
+
+  @McpTool(
+      name = "reopen_task",
+      annotations =
+          @McpTool.McpAnnotations(
+              readOnlyHint = false,
+              destructiveHint = false,
+              idempotentHint = true,
+              openWorldHint = false),
+      title = "Put a completed task back on the list",
+      description =
+          """
+          Undo a completion: the task returns to the zone it was in. This is what to
+          reach for when the wrong task was completed, including by you — get_board
+          will not show a completed task, so use get_task to reach it by id.
+
+          It restores the state, not the visibility. A task that was deferred before it
+          was completed comes back still deferred, and so still off the board; check
+          deferUntil before reporting it as back, and use move_task_zone to clear it.
+          """)
+  @PreAuthorize("hasAuthority('SCOPE_todo:write')")
+  public Responses.TaskView reopenTask(
+      @McpToolParam(description = "Id of the task.", required = true) Long taskId) {
+    return Responses.TaskView.of(tasks.reopen(taskId, currentUser.current()));
   }
 
   @McpTool(

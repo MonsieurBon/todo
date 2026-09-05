@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import ch.ethy.todo.IntegrationTest;
+import ch.ethy.todo.domain.TaskState;
 import ch.ethy.todo.domain.TaskZone;
 import ch.ethy.todo.service.NotFoundException;
 import java.time.LocalDate;
@@ -164,5 +165,65 @@ class McpTaskFieldsIT extends IntegrationTest {
                 tools.createTask("Fine", "x".repeat(10_001), null, null, List.of("too-long"), null))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("10000");
+  }
+
+  @Test
+  @DisplayName("a completion can be undone, and the task is readable while it is done")
+  void canReopen() {
+    as(someone());
+    String topic = "reopen-" + System.nanoTime();
+
+    var task = tools.createTask("Cancel the skip", null, null, null, List.of(topic), null);
+    tools.completeTask(task.id());
+    assertThat(tools.getBoard(topic, null, null, null).tasks()).isEmpty();
+    assertThat(tools.getTask(task.id()).state())
+        .as("get_task is the only tool that still reaches a completed task")
+        .isEqualTo(TaskState.DONE);
+
+    var reopened = tools.reopenTask(task.id());
+    assertThat(reopened.state()).isEqualTo(TaskState.TODO);
+    assertThat(tools.getBoard(topic, null, null, null).tasks())
+        .extracting(t -> t.title())
+        .containsExactly("Cancel the skip");
+  }
+
+  @Test
+  @DisplayName("a deferred task is off the board but still readable by id")
+  void readsWhatTheBoardHides() {
+    as(someone());
+    String topic = "hidden-" + System.nanoTime();
+
+    var task =
+        tools.createTask(
+            "Renew the permit", "Office opens in March.", null, null, List.of(topic), null);
+    tools.deferTask(task.id(), LocalDate.now().plusMonths(6));
+
+    assertThat(tools.getBoard(topic, null, null, null).tasks())
+        .as("a deferred task is out of sight, which is the point of deferring")
+        .isEmpty();
+    assertThat(tools.getTask(task.id()))
+        .satisfies(
+            t -> {
+              assertThat(t.title()).isEqualTo("Renew the permit");
+              assertThat(t.notes()).isEqualTo("Office opens in March.");
+              assertThat(t.deferUntil()).isNotNull();
+            });
+  }
+
+  @Test
+  @DisplayName("a reopened task stays hidden if its deferral outlived the completion")
+  void reopenKeepsADeferral() {
+    as(someone());
+    String topic = "deferred-reopen-" + System.nanoTime();
+
+    var task = tools.createTask("Renew the permit", null, null, null, List.of(topic), null);
+    tools.deferTask(task.id(), LocalDate.now().plusMonths(6));
+    tools.completeTask(task.id());
+    tools.reopenTask(task.id());
+
+    assertThat(tools.getTask(task.id()).state()).isEqualTo(TaskState.TODO);
+    assertThat(tools.getBoard(topic, null, null, null).tasks())
+        .as("reopening restores the state, not the visibility — the deferral survives")
+        .isEmpty();
   }
 }

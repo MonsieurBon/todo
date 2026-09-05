@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import ch.ethy.todo.IntegrationTest;
 import ch.ethy.todo.domain.TaskZone;
+import ch.ethy.todo.service.NotFoundException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.function.Consumer;
@@ -91,6 +92,7 @@ class McpToolAuthorizationIT extends IntegrationTest {
     void cannotRead() {
       as(someone(), CAPTURE);
       refused("get_board", t -> t.getBoard(null, null, null, null));
+      refused("get_task", t -> t.getTask(1L));
       refused("list_labels", TodoTools::listLabels);
       refused("list_tasklists", TodoTools::listTaskLists);
       refused("get_review_queue", t -> t.getReviewQueue(1L));
@@ -101,6 +103,7 @@ class McpToolAuthorizationIT extends IntegrationTest {
     void cannotWrite() {
       as(someone(), CAPTURE);
       refused("complete_task", t -> t.completeTask(1L));
+      refused("reopen_task", t -> t.reopenTask(1L));
       refused("update_task", t -> t.updateTask(1L, null, "sneaky", null));
       refused("move_task_zone", t -> t.moveTaskZone(1L, TaskZone.CRITICAL_NOW));
       refused("defer_task", t -> t.deferTask(1L, LocalDate.now().plusDays(1)));
@@ -119,6 +122,23 @@ class McpToolAuthorizationIT extends IntegrationTest {
   }
 
   @Nested
+  @DisplayName("reading one task by id")
+  class ById {
+
+    @Test
+    @DisplayName("cannot reach another user's task, and says only that there is none")
+    void notAcrossUsers() {
+      as(someone(), READ, WRITE);
+      var hers = tools.createTask("Her roof", "Private.", null, null, List.of(), null);
+
+      as(someone(), READ, WRITE);
+      assertThatThrownBy(() -> tools.getTask(hers.id()))
+          .as("a different answer here would confirm the id exists")
+          .isInstanceOf(NotFoundException.class);
+    }
+  }
+
+  @Nested
   @DisplayName("scopes do not imply one another")
   class NoImplication {
 
@@ -127,6 +147,7 @@ class McpToolAuthorizationIT extends IntegrationTest {
     void readIsNotWrite() {
       as(someone(), READ);
       refused("complete_task", t -> t.completeTask(1L));
+      refused("reopen_task", t -> t.reopenTask(1L));
       refused("update_task", t -> t.updateTask(1L, null, "sneaky", null));
       refused("delete_task", t -> t.deleteTask(1L));
     }
@@ -144,6 +165,7 @@ class McpToolAuthorizationIT extends IntegrationTest {
     void adminIsNotRead() {
       as(someone(), ADMIN);
       refused("get_board", t -> t.getBoard(null, null, null, null));
+      refused("get_task", t -> t.getTask(1L));
     }
   }
 
