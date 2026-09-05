@@ -120,8 +120,12 @@ Two obligations come with that:
 - **Keep pull requests small.** A small one is easier to review, easier to address feedback on,
   and merges sooner. Several small ones beat one large one, even when that means stacking them
   and rebasing as each merges.
-- **Leave the history clean.** Squash the fix-ups that land on a PR after review, and squash
-  intermediate PRs together where they turned out to be one thing. The history should record
-  what changed, not the conversation that got it there.
+- **Leave the history clean — at the end.** While a PR is in review, fix-ups stay as their own
+  commits: the reviewer needs to see what actually changed in response to them. Squash only once
+  the reviews are clean and the build is green, just before merging. Intermediate PRs that turned
+  out to be one thing get folded together the same way. The history should record what changed,
+  not the conversation that got it there.
 
-Every PR gets reviewed, and the review is addressed before it merges.
+Every PR gets reviewed, and the review is addressed before it merges — but addressed does not
+mean obeyed. A finding can be answered with a reasoned reply instead of a change, and something
+real but out of scope belongs in a tracked issue rather than smuggled into the PR under review.
