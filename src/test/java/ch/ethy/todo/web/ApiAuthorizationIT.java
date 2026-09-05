@@ -230,11 +230,14 @@ class ApiAuthorizationIT extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a capture-only client cannot complete or delete")
+    @DisplayName("a capture-only client cannot edit, complete or delete")
     void captureCannotWrite() throws Exception {
       for (MockHttpServletRequestBuilder request :
           List.of(
               post("/api/tasks/" + aliceTask + "/complete").with(as(ALICE, CAPTURE)),
+              withBody(
+                  patch("/api/tasks/" + aliceTask).with(as(ALICE, CAPTURE)),
+                  java.util.Map.of("title", "not mine to edit")),
               delete("/api/tasks/" + aliceTask).with(as(ALICE, CAPTURE)))) {
         MvcResult r = mvc.perform(request).andReturn();
         assertThat(r.getResponse().getStatus()).isEqualTo(403);
@@ -258,12 +261,16 @@ class ApiAuthorizationIT extends IntegrationTest {
     @Test
     @DisplayName("a read-only client cannot write")
     void readCannotWrite() throws Exception {
-      assertThat(
-              mvc.perform(post("/api/tasks/" + aliceTask + "/complete").with(as(ALICE, READ)))
-                  .andReturn()
-                  .getResponse()
-                  .getStatus())
-          .isEqualTo(403);
+      for (MockHttpServletRequestBuilder request :
+          List.of(
+              post("/api/tasks/" + aliceTask + "/complete").with(as(ALICE, READ)),
+              withBody(
+                  patch("/api/tasks/" + aliceTask).with(as(ALICE, READ)),
+                  java.util.Map.of("title", "not mine to edit")))) {
+        MvcResult r = mvc.perform(request).andReturn();
+        assertThat(r.getResponse().getStatus()).isEqualTo(403);
+        assertThat(r.getResponse().getContentAsString()).isEmpty();
+      }
     }
 
     @Test

@@ -46,6 +46,12 @@ load-by-id helper: the previous version of this app had one, checked access afte
 data on the failure path. Cross-user access answers **404**, not 403 — a 403 would confirm the id
 exists. Insufficient scope stays 403, because the caller can act on that.
 
+**An entity a service hands back is detached.** `open-in-view` is off and the read path is
+`@Transactional(readOnly = true)`, so mutating an entity outside the service that loaded it writes
+nothing — and still answers 200. That is why every mutator resolves its own id through a private
+lookup rather than the public read one, and why a write belongs in the service, never in a
+controller. `PATCH /api/tasks/{id}` silently discarded every edit for exactly this reason.
+
 **Test the deny path.** Not just that the allowed thing works — that the refused thing returns no
 payload.
 

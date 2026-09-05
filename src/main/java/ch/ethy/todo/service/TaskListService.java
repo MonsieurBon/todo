@@ -39,6 +39,15 @@ public class TaskListService {
   /** Owner-only: renaming, deleting and sharing are not things a member may do. */
   @Transactional(readOnly = true)
   public TaskList owned(Long id, User user) {
+    return resolveOwned(id, user);
+  }
+
+  /**
+   * The same lookup for this service's own use, outside the read-only transaction, so the entity
+   * the mutators below change stays managed. See {@code TaskService.resolve} for why they do not
+   * simply call the public one.
+   */
+  private TaskList resolveOwned(Long id, User user) {
     return lists.findByIdAndOwner(id, user).orElseThrow(() -> notFound(id));
   }
 
@@ -62,7 +71,7 @@ public class TaskListService {
   }
 
   public TaskList rename(Long id, User owner, String name) {
-    TaskList list = owned(id, owner);
+    TaskList list = resolveOwned(id, owner);
     list.name(name);
     list.slug(uniqueSlug(owner, name));
     return list;
@@ -77,7 +86,7 @@ public class TaskListService {
    * the API is reachable without it.
    */
   public void delete(Long id, User owner) {
-    TaskList list = owned(id, owner);
+    TaskList list = resolveOwned(id, owner);
     if (list.isInbox()) {
       throw new IllegalArgumentException(
           "The inbox cannot be deleted - it is where anything captured without a list goes."
@@ -87,7 +96,7 @@ public class TaskListService {
   }
 
   public TaskList share(Long id, User owner, String email) {
-    TaskList list = owned(id, owner);
+    TaskList list = resolveOwned(id, owner);
     User target =
         users
             .findByEmail(email)
@@ -97,7 +106,7 @@ public class TaskListService {
   }
 
   public TaskList unshare(Long id, User owner, String email) {
-    TaskList list = owned(id, owner);
+    TaskList list = resolveOwned(id, owner);
     users.findByEmail(email).ifPresent(list::unshare);
     return list;
   }
