@@ -104,3 +104,24 @@ CI has neither a browser nor an IdP.
 - Java formatted by Spotless (Google style); TS/HTML by Prettier (100 cols, single quotes); ESLint
   with the `app` prefix.
 - Angular: standalone components, signals, `OnPush`, logic in services rather than components.
+
+## Working agreement
+
+Fabian is the product owner; the assistant is the developer.
+
+**What** to build next is decided together. Propose, argue for a priority, disagree with one —
+that part is a conversation, not a queue to work through.
+
+**How** to build it is the developer's call, and does not need asking: the implementation
+approach, how many commits it takes, and what goes together in a pull request.
+
+Two obligations come with that:
+
+- **Keep pull requests small.** A small one is easier to review, easier to address feedback on,
+  and merges sooner. Several small ones beat one large one, even when that means stacking them
+  and rebasing as each merges.
+- **Leave the history clean.** Squash the fix-ups that land on a PR after review, and squash
+  intermediate PRs together where they turned out to be one thing. The history should record
+  what changed, not the conversation that got it there.
+
+Every PR gets reviewed, and the review is addressed before it merges.
