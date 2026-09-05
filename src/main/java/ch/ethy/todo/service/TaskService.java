@@ -119,6 +119,27 @@ public class TaskService {
     return tasks.save(task);
   }
 
+  /**
+   * Applies an edit, inside this service's transaction.
+   *
+   * <p>It has to live here rather than in the controller: {@link #accessible} is read-only, so the
+   * entity it hands back across a bean boundary is detached, and mutating it there changes nothing
+   * a caller can read back.
+   */
+  public Task update(Long id, User user, TaskEdit edit) {
+    Task task = accessible(id, user);
+    if (edit.title() != null) {
+      task.title(edit.title());
+    }
+    if (edit.notes() != null) {
+      task.notes(edit.notes());
+    }
+    if (edit.dueDate() != null) {
+      task.dueDate(edit.dueDate());
+    }
+    return task;
+  }
+
   public Task complete(Long id, User user) {
     Task task = accessible(id, user);
     task.complete();
