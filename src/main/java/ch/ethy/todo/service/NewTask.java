@@ -27,9 +27,4 @@ public record NewTask(
   public NewTask {
     labels = labels == null ? List.of() : List.copyOf(labels);
   }
-
-  /** The shape the MCP tools and the simplest callers need. */
-  public static NewTask of(String title, TaskZone zone, Collection<String> labels) {
-    return new NewTask(title, zone, null, null, labels, null);
-  }
 }
