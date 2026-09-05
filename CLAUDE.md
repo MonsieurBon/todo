@@ -126,6 +126,11 @@ Two obligations come with that:
   out to be one thing get folded together the same way. The history should record what changed,
   not the conversation that got it there.
 
-Every PR gets reviewed, and the review is addressed before it merges — but addressed does not
-mean obeyed. A finding can be answered with a reasoned reply instead of a change, and something
-real but out of scope belongs in a tracked issue rather than smuggled into the PR under review.
+Every PR gets reviewed, and the review is addressed before it merges. **Comment first, then
+push:** the push is what triggers the re-review, so a reply written beforehand is context the
+re-reviewer actually sees — and a finding you argued rather than changed does not simply come
+back.
+
+Addressed does not mean obeyed. A finding can be answered with a reasoned reply instead of a
+change, and something real but out of scope belongs in a tracked issue rather than smuggled into
+the PR under review.
