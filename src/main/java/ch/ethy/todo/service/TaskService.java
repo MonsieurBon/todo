@@ -138,10 +138,11 @@ public class TaskService {
    *
    * <p>It has to live here rather than in the controller: {@link #accessible} is read-only, so the
    * entity it hands back across a bean boundary is detached, and mutating it there changes nothing
-   * a caller can read back.
+   * a caller can read back. Like every other mutator it resolves the id through {@link #resolve}
+   * for that reason.
    */
   public Task update(Long id, User user, TaskEdit edit) {
-    Task task = accessible(id, user);
+    Task task = resolve(id, user);
     if (edit.title() != null) {
       task.title(edit.title());
     }
