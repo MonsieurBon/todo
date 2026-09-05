@@ -30,6 +30,20 @@ public class TaskService {
 
   @Transactional(readOnly = true)
   public Task accessible(Long id, User user) {
+    return resolve(id, user);
+  }
+
+  /**
+   * The same lookup for this service's own use, without the read-only transaction.
+   *
+   * <p>Every mutator below starts by resolving the id, and each one needs the entity to stay
+   * managed so its changes are flushed. Calling the public {@link #accessible} would be safe only
+   * because a self-invocation misses the proxy and so never applies the read-only attribute — which
+   * is exactly the accident that made {@code updateTask} drop every edit once the call came from
+   * another bean. Depending on that is a trap for whoever next moves this lookup or turns on
+   * AspectJ weaving, so the mutators do not.
+   */
+  private Task resolve(Long id, User user) {
     return tasks.findAccessible(id, user).orElseThrow(() -> new NotFoundException("No task " + id));
   }
 
@@ -76,7 +90,7 @@ public class TaskService {
   }
 
   public Task setLabels(Long id, User user, java.util.Collection<String> labels) {
-    Task task = accessible(id, user);
+    Task task = resolve(id, user);
     task.labels(labels);
     return task;
   }
@@ -141,38 +155,38 @@ public class TaskService {
   }
 
   public Task complete(Long id, User user) {
-    Task task = accessible(id, user);
+    Task task = resolve(id, user);
     task.complete();
     return task;
   }
 
   public Task reopen(Long id, User user) {
-    Task task = accessible(id, user);
+    Task task = resolve(id, user);
     task.reopen();
     return task;
   }
 
   public Task moveTo(Long id, User user, TaskZone zone) {
-    Task task = accessible(id, user);
+    Task task = resolve(id, user);
     task.moveTo(zone);
     return task;
   }
 
   public Task defer(Long id, User user, LocalDate until) {
-    Task task = accessible(id, user);
+    Task task = resolve(id, user);
     task.deferUntil(until, LocalDate.now(clock));
     return task;
   }
 
   public void delete(Long id, User user) {
-    Task task = accessible(id, user);
+    Task task = resolve(id, user);
     task.taskList().remove(task);
     tasks.delete(task);
   }
 
   /** Marks a task as considered during a review sweep. */
   public Task markReviewed(Long id, User user) {
-    Task task = accessible(id, user);
+    Task task = resolve(id, user);
     task.markReviewed(clock.instant());
     return task;
   }

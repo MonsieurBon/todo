@@ -20,6 +20,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -51,27 +52,35 @@ class TaskEditingIT extends IntegrationTest {
 
   private MockHttpServletRequestBuilder withBody(
       MockHttpServletRequestBuilder builder, Object body) {
-    try {
-      return builder.contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(body));
-    } catch (Exception e) {
-      throw new IllegalStateException(e);
-    }
+    return builder.contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(body));
+  }
+
+  /** Files a task and returns its id, failing here rather than downstream if capture breaks. */
+  private long capture(String subject, Map<String, Object> body) throws Exception {
+    var response =
+        mvc.perform(withBody(post("/api/tasks/capture").with(as(subject, WRITE)), body))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    return json.readTree(response).get("id").asLong();
+  }
+
+  /** Reads a task back through the API, so nothing is asserted against an entity still in hand. */
+  private JsonNode reread(String subject, long id) throws Exception {
+    return json.readTree(
+        mvc.perform(get("/api/tasks/" + id).with(as(subject, READ)))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString());
   }
 
   @Test
   @DisplayName("an edited title, notes and due date are readable afterwards")
   void editsPersist() throws Exception {
     String me = "subject-editor-" + System.nanoTime();
-
-    var created =
-        mvc.perform(
-                withBody(
-                    post("/api/tasks/capture").with(as(me, WRITE)),
-                    Map.of("title", "Fix the tile", "zone", "OPPORTUNITY_NOW")))
-            .andReturn()
-            .getResponse()
-            .getContentAsString();
-    long id = json.readTree(created).get("id").asLong();
+    long id = capture(me, Map.of("title", "Fix the tile", "zone", "OPPORTUNITY_NOW"));
 
     mvc.perform(
             withBody(
@@ -82,15 +91,36 @@ class TaskEditingIT extends IntegrationTest {
                     "dueDate", "2026-10-01")))
         .andExpect(status().isOk());
 
-    var reread =
-        mvc.perform(get("/api/tasks/" + id).with(as(me, READ)))
-            .andReturn()
-            .getResponse()
-            .getContentAsString();
-    var task = json.readTree(reread);
-
+    var task = reread(me, id);
     assertThat(task.get("title").asString()).isEqualTo("Fix the ridge tile");
     assertThat(task.get("notes").asString()).isEqualTo("The cracked one above the porch.");
+    assertThat(task.get("dueDate").asString()).isEqualTo("2026-10-01");
+  }
+
+  @Test
+  @DisplayName("an edit leaves alone what it does not mention")
+  void omittedFieldsSurvive() throws Exception {
+    String me = "subject-partial-" + System.nanoTime();
+    long id =
+        capture(
+            me,
+            Map.of(
+                "title", "Fix the tile",
+                "notes", "The cracked one above the porch.",
+                "dueDate", "2026-10-01",
+                "zone", "OPPORTUNITY_NOW"));
+
+    mvc.perform(
+            withBody(
+                patch("/api/tasks/" + id).with(as(me, WRITE)),
+                Map.of("title", "Fix the ridge tile")))
+        .andExpect(status().isOk());
+
+    var task = reread(me, id);
+    assertThat(task.get("title").asString()).isEqualTo("Fix the ridge tile");
+    assertThat(task.get("notes").asString())
+        .as("a null field means leave it alone, which is what the partial update promises")
+        .isEqualTo("The cracked one above the porch.");
     assertThat(task.get("dueDate").asString()).isEqualTo("2026-10-01");
   }
 }
