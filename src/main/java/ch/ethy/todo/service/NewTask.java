@@ -25,6 +25,8 @@ public record NewTask(
     String clientRef) {
 
   public NewTask {
+    TaskFields.checkTitle(title);
+    TaskFields.checkNotes(notes);
     labels = labels == null ? List.of() : List.copyOf(labels);
   }
 }

@@ -15,4 +15,10 @@ import java.time.LocalDate;
  *
  * @see NewTask the same shape for a task that does not exist yet
  */
-public record TaskEdit(String title, String notes, LocalDate dueDate) {}
+public record TaskEdit(String title, String notes, LocalDate dueDate) {
+
+  public TaskEdit {
+    TaskFields.checkTitle(title);
+    TaskFields.checkNotes(notes);
+  }
+}

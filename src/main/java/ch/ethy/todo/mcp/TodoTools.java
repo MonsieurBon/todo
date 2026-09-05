@@ -77,7 +77,9 @@ public class TodoTools {
   public Responses.TaskView createTask(
       @McpToolParam(description = "What needs doing.", required = true) String title,
       @McpToolParam(
-              description = "Detail that does not belong in the title: context, links, steps.",
+              description =
+                  "Detail that does not belong in the title: context, links, steps. At most"
+                      + " 10000 characters.",
               required = false)
           String notes,
       @McpToolParam(
@@ -227,7 +229,9 @@ public class TodoTools {
       annotations =
           @McpTool.McpAnnotations(
               readOnlyHint = false,
-              destructiveHint = false,
+              // Replacing notes destroys the previous text, and nothing keeps a revision of it.
+              // A host uses this to decide what may run without asking the person first.
+              destructiveHint = true,
               idempotentHint = true,
               openWorldHint = false),
       title = "Revise a task's wording",
@@ -235,6 +239,10 @@ public class TodoTools {
           """
           Change a task's title, notes or due date. Send only the fields that change;
           anything omitted is left alone.
+
+          A field cannot be emptied this way — omitting it keeps the old value rather
+          than clearing it, so a request to remove a due date or a note cannot be
+          carried out here. Say so rather than reporting it done.
 
           This is for what the task says, not for where it sits: use move_task_zone to
           change its urgency, defer_task to postpone it and complete_task to finish it.
@@ -245,10 +253,18 @@ public class TodoTools {
   @PreAuthorize("hasAuthority('SCOPE_todo:write')")
   public Responses.TaskView updateTask(
       @McpToolParam(description = "Id of the task.", required = true) Long taskId,
-      @McpToolParam(description = "Replacement title. Omit to keep the current one.") String title,
-      @McpToolParam(description = "Replacement notes, which replace the existing ones entirely.")
+      @McpToolParam(
+              description =
+                  "Replacement title, at most 255 characters. Omit to keep the current one.",
+              required = false)
+          String title,
+      @McpToolParam(
+              description =
+                  "Replacement notes, at most 10000 characters. They replace the existing notes"
+                      + " entirely rather than being appended.",
+              required = false)
           String notes,
-      @McpToolParam(description = "Due date as YYYY-MM-DD.") LocalDate dueDate) {
+      @McpToolParam(description = "Due date as YYYY-MM-DD.", required = false) LocalDate dueDate) {
     return Responses.TaskView.of(
         tasks.update(taskId, currentUser.current(), new TaskEdit(title, notes, dueDate)));
   }

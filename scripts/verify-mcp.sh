@@ -114,15 +114,30 @@ import json, sys
 tools = json.load(open(sys.argv[1]))["result"]["tools"]
 by = {t["name"]: t for t in tools}
 print("count", len(tools))
-# An optional parameter listed as required forces the model to invent a value.
-print("optional_ok", "listId" not in by["create_task"]["inputSchema"].get("required", []))
+# An optional parameter listed as required forces the model to invent a value. Checked across
+# every tool rather than one known case: @McpToolParam defaults required=true, so the mistake is
+# made by omission and a hard-coded probe only ever catches the parameter it names.
+required = {n: sorted(t["inputSchema"].get("required", [])) for n, t in by.items()}
+expected = {
+    "create_task": ["title"],
+    "update_task": ["taskId"],
+    "complete_task": ["taskId"],
+    "delete_task": ["taskId"],
+    "get_board": [],
+    "list_labels": [],
+    "list_tasklists": [],
+}
+wrong = {n: required[n] for n, e in expected.items() if n in required and required[n] != e}
+print("optional_ok", not wrong, wrong or "")
 # A read-only tool flagged destructive trains clients to ignore the flag.
 print("readonly_ok", by["get_board"]["annotations"]["readOnlyHint"] is True
       and by["get_board"]["annotations"]["destructiveHint"] is False)
 print("delete_ok", by["delete_task"]["annotations"]["destructiveHint"] is True)
 PY
 count=$(awk '/^count/{print $2}' "$TMP/toolcheck")
-[ "$count" -ge 13 ] && ok "$count tools discovered" || bad "only $count tools discovered"
+# Pinned rather than a floor: a lower bound stops pinning anything the moment a tool is added,
+# and this is the check that would notice one going missing.
+[ "$count" -eq 14 ] && ok "$count tools discovered" || bad "expected 14 tools, discovered $count"
 grep -q "optional_ok True" "$TMP/toolcheck" \
   && ok "optional parameters are not advertised as required" \
   || bad "an optional parameter is marked required — the model will be forced to invent one"
