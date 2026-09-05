@@ -4,6 +4,7 @@ import ch.ethy.todo.domain.TaskZone;
 import ch.ethy.todo.service.BoardFilter;
 import ch.ethy.todo.service.CurrentUserService;
 import ch.ethy.todo.service.NewTask;
+import ch.ethy.todo.service.TaskEdit;
 import ch.ethy.todo.service.TaskListService;
 import ch.ethy.todo.service.TaskService;
 import ch.ethy.todo.web.dto.Responses;
@@ -65,10 +66,17 @@ public class TodoTools {
           If no zone is given, OPPORTUNITY_NOW is used. If no list is named the task
           goes to the user's inbox. Labels are topics such as "house" or "project-a";
           a task may carry several, and they are how tasks are grouped across lists.
+
+          Keep the title to the action itself and put the detail in notes; the title
+          is capped at 255 characters and is what the person scans down a list.
           """)
   @PreAuthorize("hasAnyAuthority('SCOPE_todo:capture', 'SCOPE_todo:write')")
   public Responses.TaskView createTask(
       @McpToolParam(description = "What needs doing.", required = true) String title,
+      @McpToolParam(
+              description = "Detail that does not belong in the title: context, links, steps.",
+              required = false)
+          String notes,
       @McpToolParam(
               description = "CRITICAL_NOW, OPPORTUNITY_NOW or OVER_THE_HORIZON.",
               required = false)
@@ -83,7 +91,7 @@ public class TodoTools {
           Long listId) {
     var me = currentUser.current();
     TaskZone target = zone == null ? TaskZone.OPPORTUNITY_NOW : zone;
-    var draft = NewTask.of(title, target, labels);
+    var draft = new NewTask(title, target, notes, null, labels, null);
     return Responses.TaskView.of(
         listId == null ? tasks.capture(me, draft) : tasks.addTo(listId, me, draft));
   }
@@ -205,6 +213,37 @@ public class TodoTools {
   public Responses.TaskView completeTask(
       @McpToolParam(description = "Id of the task.", required = true) Long taskId) {
     return Responses.TaskView.of(tasks.complete(taskId, currentUser.current()));
+  }
+
+  @McpTool(
+      name = "update_task",
+      annotations =
+          @McpTool.McpAnnotations(
+              readOnlyHint = false,
+              destructiveHint = false,
+              idempotentHint = true,
+              openWorldHint = false),
+      title = "Revise a task's wording",
+      description =
+          """
+          Change a task's title, notes or due date. Send only the fields that change;
+          anything omitted is left alone.
+
+          This is for what the task says, not for where it sits: use move_task_zone to
+          change its urgency, defer_task to postpone it and complete_task to finish it.
+
+          A due date is when the work must be done, which is not the same as the
+          deferral date that decides when the user next sees it.
+          """)
+  @PreAuthorize("hasAuthority('SCOPE_todo:write')")
+  public Responses.TaskView updateTask(
+      @McpToolParam(description = "Id of the task.", required = true) Long taskId,
+      @McpToolParam(description = "Replacement title. Omit to keep the current one.") String title,
+      @McpToolParam(description = "Replacement notes, which replace the existing ones entirely.")
+          String notes,
+      @McpToolParam(description = "Due date as YYYY-MM-DD.") LocalDate dueDate) {
+    return Responses.TaskView.of(
+        tasks.update(taskId, currentUser.current(), new TaskEdit(title, notes, dueDate)));
   }
 
   @McpTool(

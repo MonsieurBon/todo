@@ -81,7 +81,7 @@ class McpToolAuthorizationIT extends IntegrationTest {
     @DisplayName("can file a task")
     void canCreate() {
       as(someone(), CAPTURE);
-      assertThatCode(() -> tools.createTask("Buy roof tiles", null, List.of("house"), null))
+      assertThatCode(() -> tools.createTask("Buy roof tiles", null, null, List.of("house"), null))
           .doesNotThrowAnyException();
     }
 
@@ -100,6 +100,7 @@ class McpToolAuthorizationIT extends IntegrationTest {
     void cannotWrite() {
       as(someone(), CAPTURE);
       refused("complete_task", t -> t.completeTask(1L));
+      refused("update_task", t -> t.updateTask(1L, null, "sneaky", null));
       refused("move_task_zone", t -> t.moveTaskZone(1L, TaskZone.CRITICAL_NOW));
       refused("defer_task", t -> t.deferTask(1L, LocalDate.now().plusDays(1)));
       refused("set_task_labels", t -> t.setTaskLabels(1L, List.of("x")));
@@ -125,6 +126,7 @@ class McpToolAuthorizationIT extends IntegrationTest {
     void readIsNotWrite() {
       as(someone(), READ);
       refused("complete_task", t -> t.completeTask(1L));
+      refused("update_task", t -> t.updateTask(1L, null, "sneaky", null));
       refused("delete_task", t -> t.deleteTask(1L));
     }
 
@@ -156,7 +158,8 @@ class McpToolAuthorizationIT extends IntegrationTest {
 
       var list = tools.createTaskList("Household");
       var task =
-          tools.createTask("Fix the tile", TaskZone.OPPORTUNITY_NOW, List.of("house"), list.id());
+          tools.createTask(
+              "Fix the tile", null, TaskZone.OPPORTUNITY_NOW, List.of("house"), list.id());
 
       assertThat(tools.listLabels()).contains("house");
 
@@ -173,6 +176,54 @@ class McpToolAuthorizationIT extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("can file detail as notes and revise it later")
+    void carriesNotes() {
+      String me = someone();
+      as(me, READ, WRITE, ADMIN);
+      String topic = "notes-" + System.nanoTime();
+
+      var task =
+          tools.createTask(
+              "Fix the tile",
+              "The cracked one above the porch.",
+              TaskZone.OPPORTUNITY_NOW,
+              List.of(topic),
+              null);
+      assertThat(task.notes()).isEqualTo("The cracked one above the porch.");
+
+      tools.updateTask(task.id(), null, "Ridge tile, not the porch one.", null);
+
+      assertThat(tools.getBoard(topic, null, null, null).tasks())
+          .as("an assistant must be able to read back what it wrote")
+          .singleElement()
+          .satisfies(
+              t -> {
+                assertThat(t.title()).isEqualTo("Fix the tile");
+                assertThat(t.notes()).isEqualTo("Ridge tile, not the porch one.");
+              });
+    }
+
+    @Test
+    @DisplayName("leaves out what an edit does not mention")
+    void editIsPartial() {
+      String me = someone();
+      as(me, READ, WRITE, ADMIN);
+      String topic = "partial-" + System.nanoTime();
+
+      var task = tools.createTask("Original title", "Original notes", null, List.of(topic), null);
+      tools.updateTask(task.id(), "Better title", null, LocalDate.of(2026, 10, 1));
+
+      assertThat(tools.getBoard(topic, null, null, null).tasks())
+          .singleElement()
+          .satisfies(
+              t -> {
+                assertThat(t.title()).isEqualTo("Better title");
+                assertThat(t.notes()).isEqualTo("Original notes");
+                assertThat(t.dueDate()).isEqualTo(LocalDate.of(2026, 10, 1));
+              });
+    }
+
+    @Test
     @DisplayName("sees the zone loads counted across every list, not per list")
     void capsSpanLists() {
       String me = someone();
@@ -180,8 +231,8 @@ class McpToolAuthorizationIT extends IntegrationTest {
       var personal = tools.createTaskList("Personal " + System.nanoTime());
       var family = tools.createTaskList("Family " + System.nanoTime());
       for (int i = 0; i < 3; i++) {
-        tools.createTask("P" + i, TaskZone.CRITICAL_NOW, List.of(), personal.id());
-        tools.createTask("F" + i, TaskZone.CRITICAL_NOW, List.of(), family.id());
+        tools.createTask("P" + i, null, TaskZone.CRITICAL_NOW, List.of(), personal.id());
+        tools.createTask("F" + i, null, TaskZone.CRITICAL_NOW, List.of(), family.id());
       }
 
       var criticalOnBoard =
