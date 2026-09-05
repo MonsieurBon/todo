@@ -1,0 +1,48 @@
+# Every dependency here is pinned — the base image by digest, each action by
+# commit SHA — so nothing updates itself. Dependabot is what turns those pins
+# back into something that moves.
+version: 2
+updates:
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "daily"
+
+  # "/" covers .github/workflows only. Composite actions are found by naming the
+  # directory that holds each action.yml, so the glob keeps new ones covered
+  # without a matching edit here.
+  - package-ecosystem: "github-actions"
+    directories:
+      - "/"
+      - "/.github/actions/*"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    # Angular and its tooling move as a set, and so does the lint stack — one
+    # package at a time means peer-dependency conflicts that CI reports as a
+    # failed install rather than as the version skew it is.
+    groups:
+      angular:
+        patterns:
+          - "@angular/*"
+          - "@angular-devkit/*"
+      eslint:
+        patterns:
+          - "angular-eslint"
+          - "eslint"
+          - "@eslint/*"
+          - "typescript-eslint"
+          - "@typescript-eslint/*"
+      semantic-release:
+        patterns:
+          - "semantic-release"
+          - "@semantic-release/*"
