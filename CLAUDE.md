@@ -133,6 +133,10 @@ Two obligations come with that:
   Conventions — a `feat:` folded under a `docs:` subject ships nothing at all, because
   semantic-release reads only what landed.
 
+  With **stacked PRs**, retarget the child onto `main` *before* the parent merges: deleting the
+  parent's branch closes the child, and a PR whose base branch is gone can be neither reopened nor
+  retargeted. #10 was lost that way and had to be reopened as #16.
+
   GitHub squash merges are **disabled** on this repository, so the squash happens locally before
   merging and the PR goes in with *Rebase*. That is not a restriction to work around: it is what
   makes the subject line that reaches `main` one you wrote deliberately, rather than one GitHub
@@ -143,6 +147,16 @@ reviewer and a security reviewer — and the review is addressed before it merge
 what backstops the autonomy above, so it is not optional; the developer may merge once both are
 clean and the build is green, without waiting to be told. Fabian reviews when he wants to, which
 is a different thing from the gate.
+
+**A green check is not proof the review ran.** The security pass is `required: false`, so when it
+crashes the job posts a notice and stays green, and a PR that edits the review workflow itself is
+declined by the action and also stays green. Before merging, confirm a `## web-security-reviewer`
+comment exists *for the current diff* — and if it does not, read the notice rather than the
+check. This is not hypothetical: both passes fell over on #11 and reported nothing but a green
+tick.
+
+The gate is what makes an argued finding safe, so it has to actually close: a finding that is
+exploitable and in scope gets fixed before merge, not answered.
 
 **Comment first, then push:** the push is what triggers the re-review, so a reply written
 beforehand is context the re-reviewer actually sees — and a finding you argued rather than
