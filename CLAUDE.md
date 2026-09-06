@@ -124,7 +124,7 @@ Two obligations come with that:
   drive it to merged, then start the next. Several open at once means switching branches between
   review rounds, and that is where the mistakes come from rather than from the thinking.
 
-  Both of this session's real errors were that: a refactor applied on the wrong branch, where the
+  Two real errors came from exactly that: a refactor applied on the wrong branch, where the
   method it was meant to fix did not exist, so the merge silently restored the old call while the
   commit message claimed otherwise; and #10 closed unrecoverably when merging its parent deleted
   the branch it was based on.
@@ -142,6 +142,11 @@ Two obligations come with that:
   Conventions — a `feat:` folded under a `docs:` subject ships nothing at all, because
   semantic-release reads only what landed.
 
+  **Check the review gate before squashing, not after.** The squash writes a new commit with a
+  byte-identical diff, so the workflow's diff-hash cache skips the pass and posts nothing — and
+  the newest review then necessarily predates `HEAD`, which the check below reads as stale. Verify
+  while `HEAD` is still the commit the review was posted against, then squash and merge.
+
   GitHub squash merges are **disabled** on this repository, so the squash happens locally before
   merging and the PR goes in with *Rebase*. That is not a restriction to work around: it is what
   makes the subject line that reaches `main` one you wrote deliberately, rather than one GitHub
@@ -149,8 +154,11 @@ Two obligations come with that:
 
 Every PR is reviewed by the agents in `.github/workflows/claude-code-review.yml` — a code
 reviewer and a security reviewer — and the review is addressed before it merges. That gate is
-what backstops the autonomy above, so it is not optional; the developer may merge once both are
-clean and the build is green, without waiting to be told. Fabian reviews when he wants to, which
+what backstops the autonomy above, so it is not optional; the developer may merge once every
+finding from both reviewers is **addressed** and the build is green, without waiting to be told.
+Addressed, not clean: a finding closed by a reasoned reply produces no push, so no re-review runs
+and the last posted review still carries it. Waiting for a literally clean review would force a
+no-op commit to clear a finding that was correctly argued. Fabian reviews when he wants to, which
 is a different thing from the gate.
 
 **A green check is not proof the review ran.** Three ways to reach green with no review:
@@ -181,7 +189,7 @@ gh api --paginate repos/MonsieurBon/todo/issues/<n>/comments \
   --jq '.[] | select(.user.login == "claude[bot]")
             | select(.body | startswith("## web-security-reviewer"))
             | .created_at' | tail -1
-git show -s --format=%cI HEAD    # the review must not be older than this
+TZ=UTC0 git show -s --format=%cd --date=iso-strict-local HEAD   # UTC too, so the strings compare
 ```
 
 Three things that command is careful about, each of which fails *open* if dropped:
@@ -190,15 +198,20 @@ Three things that command is careful about, each of which fails *open* if droppe
   oldest first. Past that the command stops returning the newest review and starts returning the
   earliest — a real, bot-authored review of an early diff, presented as proof for the current one.
 - `.user.login == "claude[bot]"` rather than `.user.type == "Bot"`, which any app with
-  `issues: write` satisfies. Identity is the point.
-- `created_at` against the head commit. Every matching comment on the PR looks alike otherwise,
-  including one written several force-pushes ago.
+  `pull-requests: write` satisfies — which is what the review workflow itself is granted. Identity
+  is the point.
+- `created_at` against the head commit, in the same zone. Every matching comment on the PR looks
+  alike otherwise, including one written several force-pushes ago. It must be
+  `--date=iso-strict-local`: plain `iso-strict` keeps the commit's own offset and ignores `TZ`, so
+  the two strings look hours apart when they are seconds apart.
 
 What it deliberately does **not** prove is which workflow wrote the comment. `claude.yml` runs the
 same app on `@claude` mentions, and nothing on an issue comment names the workflow behind it, so
-someone with write access could make `claude[bot]` post a passing review. That is accepted rather
-than solved: it needs write access, and anyone holding that can merge without the gate anyway, so
-checking harder buys nothing against the only person who could do it. The check guards against a
+someone with write access could make `claude[bot]` post a passing review — either deliberately, or
+by invoking `@claude` on content they did not write, whose injected instructions steer the opening
+line. That is accepted rather than solved: both routes need write access, and anyone holding it can
+merge without the gate anyway, so checking harder buys nothing against the only actor who could
+reach it. #17 is the fix for both. The check guards against a
 stale or forged-by-an-outsider review, not against the maintainer. #17 removes the need for it
 entirely if the security pass becomes `required: true`.
 
@@ -220,4 +233,5 @@ changed does not simply come back.
 
 Addressed does not mean obeyed. A finding can be answered with a reasoned reply instead of a
 change, and something real but out of scope belongs in a tracked issue rather than smuggled into
-the PR under review.
+the PR under review — cite that issue's number in the reply, or the next pass cannot tell deferred
+from ignored and raises it again.

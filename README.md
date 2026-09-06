@@ -188,7 +188,8 @@ appears in the changelog.
 | `docs:`, `refactor:`, `test:`, `chore:`, `build:` | correct to use; ships nothing |
 
 When squashing a branch, the prefix must describe the squashed whole. GitHub squash merges are
-disabled here, so that squash happens locally before merging and the PR goes in with *Rebase*.
+disabled here, so that squash happens locally before merging. PRs then go in with *Rebase* by
+convention — the merge-commit button is still enabled, it is simply not what we use.
 
 > ⚠️ **The first release of the rewrite needs a `BREAKING CHANGE:` footer.** The old tags
 > (`0.0.1` … `0.3.2`) are still in this history, so without one semantic-release computes `0.4.0`
@@ -204,9 +205,10 @@ disabled here, so that squash happens locally before merging and the PR goes in 
 >   line are just words, and yield a minor.
 >
 > Any commit in the released range carries it, and its type does not matter: `chore:` with the
-> footer is still a major. But it has to be a commit that *exists* — merges here are rebases, so
-> there is no merge commit to hang it on. Put the footer in the branch commit itself, before
-> merging.
+> footer is still a major. But it has to be a commit that *lands*. Merging by *Rebase* produces no
+> merge commit to hang it on, and a footer sitting in an intermediate commit is discarded by the
+> local squash along with that commit's message. Put it in the body of the **squashed** commit —
+> the one that reaches `main`.
 
 The release builds the jar, builds and pushes the image, attaches the jar to a GitHub release, and
 commits the next `-SNAPSHOT` version back to `main`.
