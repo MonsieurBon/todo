@@ -194,6 +194,14 @@ Three things that command is careful about, each of which fails *open* if droppe
 - `created_at` against the head commit. Every matching comment on the PR looks alike otherwise,
   including one written several force-pushes ago.
 
+What it deliberately does **not** prove is which workflow wrote the comment. `claude.yml` runs the
+same app on `@claude` mentions, and nothing on an issue comment names the workflow behind it, so
+someone with write access could make `claude[bot]` post a passing review. That is accepted rather
+than solved: it needs write access, and anyone holding that can merge without the gate anyway, so
+checking harder buys nothing against the only person who could do it. The check guards against a
+stale or forged-by-an-outsider review, not against the maintainer. #17 removes the need for it
+entirely if the security pass becomes `required: true`.
+
 The third has no notice by construction, so the rule above has no answer there and a dependency
 bump is reviewed by whoever merges it. That is the class where the diff *is* the security content
 — a bumped transitive dependency, a changed lockfile resolution, a CVE arriving rather than
