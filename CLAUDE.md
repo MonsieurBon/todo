@@ -148,12 +148,22 @@ what backstops the autonomy above, so it is not optional; the developer may merg
 clean and the build is green, without waiting to be told. Fabian reviews when he wants to, which
 is a different thing from the gate.
 
-**A green check is not proof the review ran.** The security pass is `required: false`, so when it
-crashes the job posts a notice and stays green, and a PR that edits the review workflow itself is
-declined by the action and also stays green. Before merging, confirm a `## web-security-reviewer`
-comment exists *for the current diff* — and if it does not, read the notice rather than the
-check. This is not hypothetical: both passes fell over on #11 and reported nothing but a green
-tick.
+**A green check is not proof the review ran.** Three ways to reach green with no review:
+
+- the security pass is `required: false`, so a crash posts a notice and keeps the job green;
+- a PR editing the review workflow is declined by the action, which also posts a notice;
+- a Dependabot PR skips the job outright on the `if:` at the top of the workflow — **no notice,
+  nothing to read**.
+
+Before merging, confirm a `## web-security-reviewer` comment exists *for the current diff*; if it
+does not, read the notice rather than the check. The first case is not hypothetical — both passes
+fell over on #11 and reported nothing but a green tick.
+
+The third has no notice by construction, so the rule above has no answer there and a dependency
+bump is reviewed by whoever merges it. That is the class where the diff *is* the security content
+— a bumped transitive dependency, a changed lockfile resolution, a CVE arriving rather than
+leaving — so read it rather than trusting the absence of a complaint. #17 tracks fixing this in
+CI.
 
 The gate is what makes an argued finding safe, so it has to actually close: a finding that is
 exploitable and in scope gets fixed before merge, not answered.
