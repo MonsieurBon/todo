@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/MonsieurBon/todo/compare/v1.0.0...v1.0.1) (2026-09-06)
+
+
+### Bug Fixes
+
+* persist task edits instead of dropping them ([842acef](https://github.com/MonsieurBon/todo/commit/842acef149dcc9ead66ecbe25ab360c12f903396))
+
 # 1.0.0 (2026-09-04)
 
 
