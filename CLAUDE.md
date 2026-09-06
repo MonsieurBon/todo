@@ -177,16 +177,22 @@ dropping the `[bot]` suffix, and gives it the same `association: none` an outsid
 gets. The REST API keeps both:
 
 ```bash
-gh api repos/MonsieurBon/todo/issues/<n>/comments \
+gh api --paginate repos/MonsieurBon/todo/issues/<n>/comments \
   --jq '.[] | select(.user.login == "claude[bot]")
             | select(.body | startswith("## web-security-reviewer"))
-            | {created_at, body: .body[0:120]}'
+            | .created_at' | tail -1
+git show -s --format=%cI HEAD    # the review must not be older than this
 ```
 
-Pin the identity rather than `.user.type == "Bot"`, which any app with `issues: write` satisfies.
-And compare `created_at` against the head commit's date: the command returns every matching
-comment on the PR, including one written for a diff several force-pushes ago, and nothing in its
-output distinguishes them.
+Three things that command is careful about, each of which fails *open* if dropped:
+
+- `--paginate`. Without it `gh api` fetches one page, and `/issues/{n}/comments` defaults to 30,
+  oldest first. Past that the command stops returning the newest review and starts returning the
+  earliest — a real, bot-authored review of an early diff, presented as proof for the current one.
+- `.user.login == "claude[bot]"` rather than `.user.type == "Bot"`, which any app with
+  `issues: write` satisfies. Identity is the point.
+- `created_at` against the head commit. Every matching comment on the PR looks alike otherwise,
+  including one written several force-pushes ago.
 
 The third has no notice by construction, so the rule above has no answer there and a dependency
 bump is reviewed by whoever merges it. That is the class where the diff *is* the security content
