@@ -119,9 +119,18 @@ approach, how many commits it takes, and what goes together in a pull request.
 
 Two obligations come with that:
 
-- **Keep pull requests small.** A small one is easier to review, easier to address feedback on,
-  and merges sooner. Several small ones beat one large one, even when that means stacking them
-  and rebasing as each merges.
+- **Keep pull requests small, and work them one at a time.** A small PR is easier to review,
+  easier to address feedback on, and merges sooner. But small does not mean parallel: open one,
+  drive it to merged, then start the next. Several open at once means switching branches between
+  review rounds, and that is where the mistakes come from rather than from the thinking.
+
+  Both of this session's real errors were that: a refactor applied on the wrong branch, where the
+  method it was meant to fix did not exist, so the merge silently restored the old call while the
+  commit message claimed otherwise; and #10 closed unrecoverably when merging its parent deleted
+  the branch it was based on.
+
+  If work does have to stack, retarget the child onto `main` *before* the parent merges — a PR
+  whose base branch is gone can be neither reopened nor retargeted, only raised again.
 - **Leave the history clean — at the end.** While a PR is in review, fix-ups stay as their own
   commits: the reviewer needs to see what actually changed in response to them. Squash only once
   the reviews are clean and the build is green, just before merging. Intermediate PRs that turned
@@ -132,10 +141,6 @@ Two obligations come with that:
   commit per pull request. And the squashed subject takes the prefix of the whole, per
   Conventions — a `feat:` folded under a `docs:` subject ships nothing at all, because
   semantic-release reads only what landed.
-
-  With **stacked PRs**, retarget the child onto `main` *before* the parent merges: deleting the
-  parent's branch closes the child, and a PR whose base branch is gone can be neither reopened nor
-  retargeted. #10 was lost that way and had to be reopened as #16.
 
   GitHub squash merges are **disabled** on this repository, so the squash happens locally before
   merging and the PR goes in with *Rebase*. That is not a restriction to work around: it is what
@@ -155,8 +160,10 @@ is a different thing from the gate.
 - a Dependabot PR skips the job outright on the `if:` at the top of the workflow — **no notice,
   nothing to read**.
 
-Before merging, confirm a `## web-security-reviewer` comment exists *for the current diff*; if it
-does not, read the notice rather than the check. The first case is not hypothetical — both passes
+Before merging, confirm a `## web-security-reviewer` comment exists *for the current diff* —
+diff-identical counts, since the workflow caches on a diff hash and skips a pass whose diff it has
+already reviewed, which is exactly what a squash before merging produces. A diff that *changed*
+and has no new comment does not count. If there is none, read the notice rather than the check. The first case is not hypothetical — both passes
 fell over on #11 and reported nothing but a green tick.
 
 The third has no notice by construction, so the rule above has no answer there and a dependency
@@ -165,8 +172,11 @@ bump is reviewed by whoever merges it. That is the class where the diff *is* the
 leaving — so read it rather than trusting the absence of a complaint. #17 tracks fixing this in
 CI.
 
-The gate is what makes an argued finding safe, so it has to actually close: a finding that is
-exploitable and in scope gets fixed before merge, not answered.
+The gate is what makes an argued finding safe, so it has to actually close: a finding that
+demonstrates a defect — security or correctness — and is in scope gets fixed before merge, not
+answered. Opinions and design disagreements are what a reasoned reply is for; a cap counted per
+list, an unsafe operation queued for offline replay, or a write that answers 200 and persists
+nothing is not an opinion.
 
 **Comment first, then push:** the push is what triggers the re-review, so a reply written
 beforehand is context the re-reviewer actually sees — and a finding you argued rather than
