@@ -211,6 +211,22 @@ class McpTaskFieldsIT extends IntegrationTest {
   }
 
   @Test
+  @DisplayName("a completed task is findable with includeDone, which is how its id is recovered")
+  void completedIsFindableWithIncludeDone() {
+    as(someone());
+    String topic = "done-" + System.nanoTime();
+
+    var task = tools.createTask("Cancel the skip", null, null, null, List.of(topic), null);
+    tools.completeTask(task.id());
+
+    assertThat(tools.getBoard(topic, null, null, null).tasks()).isEmpty();
+    assertThat(tools.getBoard(topic, null, null, true).tasks())
+        .as("reopen_task's description sends the model here to find an id it does not have")
+        .extracting(t -> t.id())
+        .containsExactly(task.id());
+  }
+
+  @Test
   @DisplayName("a reopened task stays hidden if its deferral outlived the completion")
   void reopenKeepsADeferral() {
     as(someone());

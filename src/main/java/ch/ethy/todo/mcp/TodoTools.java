@@ -155,10 +155,11 @@ public class TodoTools {
           """
           Read a single task by id, whatever state it is in.
 
-          get_board answers with the open, undeferred tasks — which is the right
-          default for working the list, but means a task that was deferred or
-          completed cannot be found there at all. This can still read it, so an id
-          mentioned earlier in the conversation never becomes a dead end.
+          get_board answers with the open, undeferred tasks, which is the right default
+          for working the list. A completed task is still reachable there by passing
+          includeDone; a deferred one is not reachable at all, and a task that is both
+          is reachable only here. So this is what to use when an id is already in hand
+          and the board does not show it.
           """)
   @PreAuthorize("hasAuthority('SCOPE_todo:read')")
   public Responses.TaskView getTask(
@@ -260,8 +261,9 @@ public class TodoTools {
       description =
           """
           Undo a completion: the task returns to the zone it was in. This is what to
-          reach for when the wrong task was completed, including by you — get_board
-          will not show a completed task, so use get_task to reach it by id.
+          reach for when the wrong task was completed, including by you. get_board
+          hides completed tasks by default — pass includeDone to find the id, or use
+          get_task if you already have it.
 
           It restores the state, not the visibility. A task that was deferred before it
           was completed comes back still deferred, and so still off the board; check
