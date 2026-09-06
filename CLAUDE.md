@@ -160,6 +160,10 @@ is a different thing from the gate.
 - a Dependabot PR skips the job outright on the `if:` at the top of the workflow — **no notice,
   nothing to read**.
 
+The first is not hypothetical: the security pass fell over on #11 and reported nothing but a green
+tick. The code pass fell over on the same run and went red — `required: true` is the whole
+difference, which is what #17 is about.
+
 Before merging, confirm a `## web-security-reviewer` comment exists *for the current diff* —
 diff-identical counts, since the workflow caches on a diff hash and skips a pass whose diff it has
 already reviewed, which is exactly what a squash before merging produces. A diff that *changed*
@@ -175,8 +179,7 @@ gets. The REST API keeps both:
 ```bash
 gh api repos/MonsieurBon/todo/issues/<n>/comments \
   --jq '.[] | select(.user.type == "Bot") | select(.body | startswith("## web-security-reviewer"))'
-``` The first case is not hypothetical — both passes
-fell over on #11 and reported nothing but a green tick.
+```
 
 The third has no notice by construction, so the rule above has no answer there and a dependency
 bump is reviewed by whoever merges it. That is the class where the diff *is* the security content
