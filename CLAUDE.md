@@ -178,8 +178,15 @@ gets. The REST API keeps both:
 
 ```bash
 gh api repos/MonsieurBon/todo/issues/<n>/comments \
-  --jq '.[] | select(.user.type == "Bot") | select(.body | startswith("## web-security-reviewer"))'
+  --jq '.[] | select(.user.login == "claude[bot]")
+            | select(.body | startswith("## web-security-reviewer"))
+            | {created_at, body: .body[0:120]}'
 ```
+
+Pin the identity rather than `.user.type == "Bot"`, which any app with `issues: write` satisfies.
+And compare `created_at` against the head commit's date: the command returns every matching
+comment on the PR, including one written for a diff several force-pushes ago, and nothing in its
+output distinguishes them.
 
 The third has no notice by construction, so the rule above has no answer there and a dependency
 bump is reviewed by whoever merges it. That is the class where the diff *is* the security content
