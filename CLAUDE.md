@@ -133,6 +133,11 @@ Two obligations come with that:
   Conventions — a `feat:` folded under a `docs:` subject ships nothing at all, because
   semantic-release reads only what landed.
 
+  GitHub squash merges are **disabled** on this repository, so the squash happens locally before
+  merging and the PR goes in with *Rebase*. That is not a restriction to work around: it is what
+  makes the subject line that reaches `main` one you wrote deliberately, rather than one GitHub
+  assembled out of every commit on the branch.
+
 Every PR is reviewed by the agents in `.github/workflows/claude-code-review.yml` — a code
 reviewer and a security reviewer — and the review is addressed before it merges. That gate is
 what backstops the autonomy above, so it is not optional; the developer may merge once both are
