@@ -163,7 +163,19 @@ is a different thing from the gate.
 Before merging, confirm a `## web-security-reviewer` comment exists *for the current diff* —
 diff-identical counts, since the workflow caches on a diff hash and skips a pass whose diff it has
 already reviewed, which is exactly what a squash before merging produces. A diff that *changed*
-and has no new comment does not count. If there is none, read the notice rather than the check. The first case is not hypothetical — both passes
+and has no new comment does not count. If there is none, read the notice rather than the check.
+
+Check the comment's **author**, not just its heading, and check it through the API. This
+repository is public, so anyone can post a comment that begins `## web-security-reviewer`, and on
+a fork PR the workflow has no token to post a real one — so the forged review would be the only
+one there. `gh pr view --comments` cannot tell them apart: it prints the bot's login as `claude`,
+dropping the `[bot]` suffix, and gives it the same `association: none` an outside contributor
+gets. The REST API keeps both:
+
+```bash
+gh api repos/MonsieurBon/todo/issues/<n>/comments \
+  --jq '.[] | select(.user.type == "Bot") | select(.body | startswith("## web-security-reviewer"))'
+``` The first case is not hypothetical — both passes
 fell over on #11 and reported nothing but a green tick.
 
 The third has no notice by construction, so the rule above has no answer there and a dependency
