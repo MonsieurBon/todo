@@ -1,9 +1,11 @@
 package ch.ethy.todo.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import ch.ethy.todo.IntegrationTest;
 import ch.ethy.todo.domain.TaskZone;
+import ch.ethy.todo.service.NotFoundException;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
@@ -129,10 +131,35 @@ class McpTaskFieldsIT extends IntegrationTest {
   }
 
   @Test
+  @DisplayName("another person's task cannot be edited, and the refusal says only that")
+  void cannotEditSomeoneElsesTask() {
+    String owner = someone();
+    String topic = "hers-" + System.nanoTime();
+    as(owner);
+    var hers = tools.createTask("Her roof", "Private.", null, null, List.of(topic), null);
+
+    as(someone());
+    assertThatThrownBy(() -> tools.updateTask(hers.id(), "hijacked", "hijacked", null))
+        .as("a different answer would confirm the id exists")
+        .isInstanceOf(NotFoundException.class)
+        .hasMessageNotContaining("Her roof");
+
+    as(owner);
+    assertThat(tools.getBoard(topic, null, null, null).tasks())
+        .as("the refused edit wrote nothing")
+        .singleElement()
+        .satisfies(
+            t -> {
+              assertThat(t.title()).isEqualTo("Her roof");
+              assertThat(t.notes()).isEqualTo("Private.");
+            });
+  }
+
+  @Test
   @DisplayName("an oversized note is refused rather than truncated on its way to the column")
   void refusesOversizedNotes() {
     as(someone());
-    org.assertj.core.api.Assertions.assertThatThrownBy(
+    assertThatThrownBy(
             () ->
                 tools.createTask("Fine", "x".repeat(10_001), null, null, List.of("too-long"), null))
         .isInstanceOf(IllegalArgumentException.class)

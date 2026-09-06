@@ -27,6 +27,7 @@ public record NewTask(
   public NewTask {
     TaskFields.checkTitle(title);
     TaskFields.checkNotes(notes);
+    TaskFields.checkLabels(labels);
     labels = labels == null ? List.of() : List.copyOf(labels);
   }
 }

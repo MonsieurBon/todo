@@ -1,5 +1,7 @@
 package ch.ethy.todo.service;
 
+import java.util.Collection;
+
 /**
  * The bounds on a task's free text, in one place because two entry points reach it.
  *
@@ -17,6 +19,12 @@ final class TaskFields {
   /** Well inside the {@code text} column; the number the API has always advertised. */
   static final int MAX_NOTES = 10_000;
 
+  /** Matches {@code varchar(64)} in the schema, and {@code Requests.SetLabels}. */
+  static final int MAX_LABEL = 64;
+
+  /** No column forces this one — it is what keeps one call from writing unbounded rows. */
+  static final int MAX_LABELS = 25;
+
   private TaskFields() {}
 
   static void checkTitle(String title) {
@@ -28,6 +36,29 @@ final class TaskFields {
   static void checkNotes(String notes) {
     if (notes != null && notes.length() > MAX_NOTES) {
       throw new IllegalArgumentException("Notes are at most " + MAX_NOTES + " characters");
+    }
+  }
+
+  /**
+   * Bounds a label set both ways: each entry against its column, and the set against nothing in
+   * particular — a task with hundreds of topics is not a task anyone can read, and one create call
+   * should not be able to write unbounded rows.
+   *
+   * <p>Checked before {@code Slug.of} normalises, which is deliberate: the slug is shorter than
+   * what was sent, so bounding the output would silently accept an entry the caller should have
+   * been told about.
+   */
+  static void checkLabels(Collection<String> labels) {
+    if (labels == null) {
+      return;
+    }
+    if (labels.size() > MAX_LABELS) {
+      throw new IllegalArgumentException("A task carries at most " + MAX_LABELS + " topics");
+    }
+    for (String label : labels) {
+      if (label != null && label.length() > MAX_LABEL) {
+        throw new IllegalArgumentException("A topic is at most " + MAX_LABEL + " characters");
+      }
     }
   }
 }

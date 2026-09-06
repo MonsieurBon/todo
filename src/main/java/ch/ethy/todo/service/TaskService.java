@@ -90,6 +90,7 @@ public class TaskService {
   }
 
   public Task setLabels(Long id, User user, java.util.Collection<String> labels) {
+    TaskFields.checkLabels(labels);
     Task task = resolve(id, user);
     task.labels(labels);
     return task;

@@ -31,7 +31,7 @@ public final class Requests {
       @Size(max = 10_000) String notes,
       @NotNull TaskZone zone,
       LocalDate dueDate,
-      List<String> labels,
+      List<@Size(max = 64) String> labels,
       @Size(max = 64) String clientRef) {}
 
   /**
@@ -43,7 +43,7 @@ public final class Requests {
       @Size(max = 10_000) String notes,
       TaskZone zone,
       LocalDate dueDate,
-      List<String> labels,
+      List<@Size(max = 64) String> labels,
       @Size(max = 64) String clientRef) {
     public TaskZone zoneOrDefault() {
       return zone == null ? TaskZone.OPPORTUNITY_NOW : zone;

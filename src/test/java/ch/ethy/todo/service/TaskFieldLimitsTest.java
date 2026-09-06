@@ -59,6 +59,42 @@ class TaskFieldLimitsTest {
   }
 
   @Nested
+  @DisplayName("topics")
+  class Labels {
+
+    @Test
+    @DisplayName("refuses one past the column width")
+    void labelTooLong() {
+      assertThatThrownBy(
+              () ->
+                  new NewTask("Fine", TaskZone.OPPORTUNITY_NOW, null, null, List.of(of(65)), null))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("64");
+    }
+
+    @Test
+    @DisplayName("refuses more than a task can usefully carry")
+    void tooManyLabels() {
+      var many = java.util.stream.IntStream.range(0, 26).mapToObj(i -> "topic-" + i).toList();
+      assertThatThrownBy(
+              () -> new NewTask("Fine", TaskZone.OPPORTUNITY_NOW, null, null, many, null))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("25");
+    }
+
+    @Test
+    @DisplayName("is checked before normalising, since a slug is shorter than what was sent")
+    void checkedBeforeSlugging() {
+      assertThatThrownBy(
+              () ->
+                  new NewTask(
+                      "Fine", TaskZone.OPPORTUNITY_NOW, null, null, List.of("!".repeat(65)), null))
+          .as("normalising first would shrink this to nothing and accept it silently")
+          .isInstanceOf(IllegalArgumentException.class);
+    }
+  }
+
+  @Nested
   @DisplayName("an edit")
   class Editing {
 

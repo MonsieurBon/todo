@@ -123,12 +123,23 @@ expected = {
     "update_task": ["taskId"],
     "complete_task": ["taskId"],
     "delete_task": ["taskId"],
+    "move_task_zone": ["taskId", "zone"],
+    "defer_task": ["taskId", "until"],
+    "set_task_labels": ["labels", "taskId"],
+    "mark_task_reviewed": ["taskId"],
+    "get_review_queue": ["listId"],
+    "create_tasklist": ["name"],
+    "share_tasklist": ["email", "listId"],
     "get_board": [],
     "list_labels": [],
     "list_tasklists": [],
 }
-wrong = {n: required[n] for n, e in expected.items() if n in required and required[n] != e}
-print("optional_ok", not wrong, wrong or "")
+# Exhaustive on purpose, and asserted to be: the mistake is made by omission, so a tool with no
+# entry is exactly the one that would slip through. Adding a tool has to fail here until it is
+# listed — a guard with a hole in the shape of "the next tool" guards nothing.
+missing = sorted(set(required) - set(expected))
+wrong = {n: required[n] for n, e in expected.items() if n not in required or required[n] != e}
+print("optional_ok", not wrong and not missing, wrong or missing or "")
 # A read-only tool flagged destructive trains clients to ignore the flag.
 print("readonly_ok", by["get_board"]["annotations"]["readOnlyHint"] is True
       and by["get_board"]["annotations"]["destructiveHint"] is False)

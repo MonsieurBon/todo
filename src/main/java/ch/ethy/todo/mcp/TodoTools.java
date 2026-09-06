@@ -240,9 +240,10 @@ public class TodoTools {
           Change a task's title, notes or due date. Send only the fields that change;
           anything omitted is left alone.
 
-          A field cannot be emptied this way — omitting it keeps the old value rather
-          than clearing it, so a request to remove a due date or a note cannot be
-          carried out here. Say so rather than reporting it done.
+          Omitting a field keeps its current value, so the three differ on clearing:
+          notes are emptied by sending an empty string, a title cannot be blank at all,
+          and a due date cannot be removed here — omitting it keeps the old date. Say
+          so rather than reporting a removal that did not happen.
 
           This is for what the task says, not for where it sits: use move_task_zone to
           change its urgency, defer_task to postpone it and complete_task to finish it.
