@@ -100,7 +100,9 @@ CI has neither a browser nor an IdP.
   **The first release of the rewrite needs a
   `BREAKING CHANGE:` footer** — the old `0.x` tags are still reachable, so without one the version
   computes to `0.4.0`. See the README.
-- **Small commits** that each leave the build green.
+- **Small commits** that each leave the build green — while the branch is under review. What
+  lands on `main` is one commit per pull request; see Working agreement below for when the squash
+  happens and whose call it is.
 - Java formatted by Spotless (Google style); TS/HTML by Prettier (100 cols, single quotes); ESLint
   with the `app` prefix.
 - Angular: standalone components, signals, `OnPush`, logic in services rather than components.
@@ -126,10 +128,20 @@ Two obligations come with that:
   out to be one thing get folded together the same way. The history should record what changed,
   not the conversation that got it there.
 
-Every PR gets reviewed, and the review is addressed before it merges. **Comment first, then
-push:** the push is what triggers the re-review, so a reply written beforehand is context the
-re-reviewer actually sees — and a finding you argued rather than changed does not simply come
-back.
+  So the **Small commits** rule above governs a branch under review; what lands on `main` is one
+  commit per pull request. And the squashed subject takes the prefix of the whole, per
+  Conventions — a `feat:` folded under a `docs:` subject ships nothing at all, because
+  semantic-release reads only what landed.
+
+Every PR is reviewed by the agents in `.github/workflows/claude-code-review.yml` — a code
+reviewer and a security reviewer — and the review is addressed before it merges. That gate is
+what backstops the autonomy above, so it is not optional; the developer may merge once both are
+clean and the build is green, without waiting to be told. Fabian reviews when he wants to, which
+is a different thing from the gate.
+
+**Comment first, then push:** the push is what triggers the re-review, so a reply written
+beforehand is context the re-reviewer actually sees — and a finding you argued rather than
+changed does not simply come back.
 
 Addressed does not mean obeyed. A finding can be answered with a reasoned reply instead of a
 change, and something real but out of scope belongs in a tracked issue rather than smuggled into
