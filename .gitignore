@@ -49,6 +49,7 @@ Thumbs.db
 
 # Playwright MCP artifacts
 /.playwright-mcp/
+/test-results/
 
 # Local env overrides
 .env
