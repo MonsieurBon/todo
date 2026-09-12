@@ -36,9 +36,11 @@ back.
 
 **Rebase and squash before merging.** Shape the branch into the commits that make sense: several is
 fine, but a commit that fixes something introduced earlier *in the same branch* belongs squashed
-into the commit that introduced it, not kept as its own. A rebase that leaves the changeset
-identical does not trigger a fresh review — so don't wait for one. Merge as soon as the builds are
-green.
+into the commit that introduced it, not kept as its own. **Do that once, at the end** — not on every
+push. While the PR is under review a fix stays a commit of its own, so the next reviewer can see
+what changed since the last round; `git commit --fixup` records where it will eventually land
+without collapsing it now. A rebase that leaves the changeset identical does not trigger a fresh
+review — so don't wait for one. Merge as soon as the builds are green.
 
 **Commits are vertical slices, not layers.** Migration plus service plus controller plus UI for one
 behaviour, in one commit. Never a commit that is only the database, or only the backend.
