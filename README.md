@@ -17,7 +17,7 @@ ghcr.io/monsieurbon/todo:<version>
 ghcr.io/monsieurbon/todo:latest
 ```
 
-`<version>` is a semver tag produced by [semantic-release](#releasing) — `1.4.0`, not `v1.4.0`.
+`<version>` is a semver tag — `1.4.0`, not `v1.4.0`.
 **Pin a version.** `latest` moves on every push to `main`, which makes "what is actually running"
 unanswerable and a rollback guesswork.
 
@@ -174,36 +174,8 @@ todo:
 
 No `volumes`, no `depends_on`, no `healthcheck` — all three are deliberate, for the reasons above.
 
-## Releasing
+## Versions
 
-Pushes to `main` are released automatically by semantic-release. The version comes from the
-commit messages, so **an unprefixed commit ships nothing** — it neither triggers a release nor
-appears in the changelog.
-
-| Prefix | Effect |
-|---|---|
-| `feat:` | minor |
-| `fix:`, `perf:`, a revert | patch |
-| `BREAKING CHANGE:` footer | major |
-| `docs:`, `refactor:`, `test:`, `chore:`, `build:` | correct to use; ships nothing |
-
-When squashing a branch, the prefix must describe the squashed whole.
-
-> ⚠️ **The first release of the rewrite needs a `BREAKING CHANGE:` footer.** The old tags
-> (`0.0.1` … `0.3.2`) are still in this history, so without one semantic-release computes `0.4.0`
-> and quietly presents a total rewrite as a minor update to an app that no longer exists. The
-> footer is accurate, not a trick: the API is different, and no data is migrated.
->
-> Two things about writing it, both verified against the analyzer:
->
-> - It must read **`BREAKING CHANGE:`** with a space. `BREAKING-CHANGE:` is recognised by the
->   conventional-commits preset but **not** by the angular one used here — it produces no release
->   at all.
-> - It must be a **footer in the commit body**, its own paragraph. The same words in the subject
->   line are just words, and yield a minor.
->
-> Any commit in the released range carries it — including a merge commit, which semantic-release
-> reads like any other. Its type does not matter: `chore:` with the footer is still a major.
-
-The release builds the jar, builds and pushes the image, attaches the jar to a GitHub release, and
-commits the next `-SNAPSHOT` version back to `main`.
+**Only the newest version is maintained.** There are no maintenance branches and nothing is
+back-ported — a fix, security fixes included, is released as the next version and only as the next
+version. Staying on an old tag means keeping its bugs. To get a fix, update.

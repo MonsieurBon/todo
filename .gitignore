@@ -47,8 +47,9 @@ __screenshots__/
 .DS_Store
 Thumbs.db
 
-# Playwright MCP artifacts
+# Playwright artifacts: the MCP server's, and the runner's output
 /.playwright-mcp/
+/test-results/
 
 # Local env overrides
 .env
