@@ -15,17 +15,24 @@ server, not in GitHub issues. That is the list to read before asking what's next
 piece of work gets captured into. (A few GitHub issues predate this and are staying where they are
 for now; they'll be moved over later. Don't migrate them unprompted.)
 
-**One thing at a time, one PR at a time.** Don't open a second PR while the first is in flight, and
-don't bundle two changes into one.
+**One thing at a time, one PR at a time.** Don't open a second PR of your own while the first is in
+flight, and don't bundle two changes into one. Two things this does not mean: Dependabot's PRs
+don't count against it — several of those are open at any time, see below — and a fix or a piece of
+housekeeping that the work at hand turned up is not a second change. That belongs in the PR that
+found it.
 
 **TDD.** Failing test first, always.
 
-**Every change goes through a PR, and Claude reviews it.** Address every review comment — either
-fix it, or reply on the thread saying why it isn't being fixed. Silence is not an answer.
+**Every change the Developer writes goes through a PR, and Claude reviews it.** The review arrives
+as a single PR comment, so the answer is one too: take it point by point and either fix the thing or
+say why it isn't being fixed. Silence is not an answer. Dependabot's PRs are the exception —
+`claude-code-review.yml` skips that author deliberately, which is what makes a green bump something
+the Developer can merge alone.
 
-**Reply first, then push.** Post the replies for a review round *before* pushing the commits that
-answer it. The push triggers the next review, and that reviewer reads the comment threads too — so a
-reply that lands afterwards arrives too late to inform it, and the same point comes back.
+**Reply first, then push.** Post the answer to a review round *before* pushing the commits that
+address it. The push triggers the next review, and that reviewer reads the comments already on the
+PR — so an answer that lands after the push arrives too late to inform it, and the same point comes
+back.
 
 **Rebase and squash before merging.** Shape the branch into the commits that make sense: several is
 fine, but a commit that fixes something introduced earlier *in the same branch* belongs squashed
@@ -38,10 +45,13 @@ behaviour, in one commit. Never a commit that is only the database, or only the 
 
 **Dependabot PRs are the Developer's job.** They update pins that deliberately don't move on their
 own (`.github/dependabot.yml` explains why), and getting them merged is not Fabian's errand — sweep
-them before starting the next backlog item, so an update never sits behind a feature branch. Green
-ones merge. A red one is information, not an obstacle: the update found something, so fix the code
-and let the update land rather than closing the PR. Automating the merge is explicitly allowed — if
-you set that up, say so here.
+them before starting the next backlog item, so an update never sits behind a feature branch. A green
+bump merges. A red one is information: usually the update found something real and the fix belongs
+in our code — but closing it is a legitimate outcome when the problem is the release and not us, and
+a withdrawn or compromised upstream version is not something to bend the build around. Note what is
+downstream of that judgement: a merge to `main` publishes an image, so the gate is the only one
+there is. Automating the merge is allowed; what it gets scoped to is worth settling with Fabian when
+it's set up.
 
 **Don't defer on your own.** If something out of scope turns up and the instinct is to leave it for
 later, raise it with Fabian first. If it's a bug, the default is to fix it right there in the same
@@ -143,7 +153,6 @@ CI has neither a browser nor an IdP.
 
 ## Conventions
 
-- **TDD** — failing test first.
 - **Conventional commits** — see [Releasing](#releasing) for what each prefix ships.
 - **A commit message says *what* was implemented, not how.** The diff is the how, and it travels
   with the message — anyone who wants the detail reads it there. Spend the body on why the change
@@ -164,7 +173,7 @@ the changelog.
 | `feat:` | minor |
 | `fix:`, `perf:`, a revert | patch |
 | `BREAKING CHANGE:` footer | major |
-| `docs:`, `refactor:`, `test:`, `chore:`, `build:` | correct to use; ships nothing |
+| `docs:`, `refactor:`, `test:`, `chore:`, `build:`, `ci:`, `style:` | correct to use; ships nothing |
 
 When squashing a branch, the prefix must describe the squashed whole.
 
@@ -172,8 +181,8 @@ A breaking change is a **`BREAKING CHANGE:`** footer — with a space, in its ow
 commit body. Both halves were verified against the analyzer: `BREAKING-CHANGE:` is recognised by the
 conventional-commits preset but **not** by the angular one used here and produces no release at all,
 and the same words in the subject line are just words, yielding a minor. Any commit in the released
-range carries it, a merge commit included, and its type does not matter — `chore:` with the footer is
-still a major.
+range carries it, a merge commit included, and its type does not matter — `chore:` with the footer
+is still a major.
 
 The release builds the jar, builds and pushes the image, attaches the jar to a GitHub release, and
 commits the next `-SNAPSHOT` version back to `main`.

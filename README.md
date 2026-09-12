@@ -17,7 +17,7 @@ ghcr.io/monsieurbon/todo:<version>
 ghcr.io/monsieurbon/todo:latest
 ```
 
-`<version>` is a [semver tag](#versions) — `1.4.0`, not `v1.4.0`.
+`<version>` is a semver tag — `1.4.0`, not `v1.4.0`.
 **Pin a version.** `latest` moves on every push to `main`, which makes "what is actually running"
 unanswerable and a rollback guesswork.
 
