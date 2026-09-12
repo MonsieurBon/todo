@@ -4,6 +4,49 @@ A One Minute To-Do List (Michael Linenberger's method): three urgency zones, sof
 review sweep. Spring Boot 4 + Angular 22 in one jar, with an MCP server so an assistant can work
 the list by conversation.
 
+## How we work
+
+**Fabian is the PO, the agent is the Developer.** *What* gets built is his decision — discuss
+priorities and ordering with him freely, that discussion is welcome, but the call is his. *How* it
+gets built is the Developer's responsibility, exercised within the rules below.
+
+**The backlog lives in the todo app, under the label `todo-app`** — reachable over the `todo` MCP
+server, not in GitHub issues. That is the list to read before asking what's next, and the list a new
+piece of work gets captured into. (A few GitHub issues predate this and are staying where they are
+for now; they'll be moved over later. Don't migrate them unprompted.)
+
+**One thing at a time, one PR at a time.** Don't open a second PR while the first is in flight, and
+don't bundle two changes into one.
+
+**TDD.** Failing test first, always.
+
+**Every change goes through a PR, and Claude reviews it.** Address every review comment — either
+fix it, or reply on the thread saying why it isn't being fixed. Silence is not an answer.
+
+**Reply first, then push.** Post the replies for a review round *before* pushing the commits that
+answer it. The push triggers the next review, and that reviewer reads the comment threads too — so a
+reply that lands afterwards arrives too late to inform it, and the same point comes back.
+
+**Rebase and squash before merging.** Shape the branch into the commits that make sense: several is
+fine, but a commit that fixes something introduced earlier *in the same branch* belongs squashed
+into the commit that introduced it, not kept as its own. A rebase that leaves the changeset
+identical does not trigger a fresh review — so don't wait for one. Merge as soon as the builds are
+green.
+
+**Commits are vertical slices, not layers.** Migration plus service plus controller plus UI for one
+behaviour, in one commit. Never a commit that is only the database, or only the backend.
+
+**Dependabot PRs are the Developer's job.** They update pins that deliberately don't move on their
+own (`.github/dependabot.yml` explains why), and getting them merged is not Fabian's errand — sweep
+them before starting the next backlog item, so an update never sits behind a feature branch. Green
+ones merge. A red one is information, not an obstacle: the update found something, so fix the code
+and let the update land rather than closing the PR. Automating the merge is explicitly allowed — if
+you set that up, say so here.
+
+**Don't defer on your own.** If something out of scope turns up and the instinct is to leave it for
+later, raise it with Fabian first. If it's a bug, the default is to fix it right there in the same
+PR.
+
 ## Running it locally
 
 ```bash
@@ -101,12 +144,36 @@ CI has neither a browser nor an IdP.
 ## Conventions
 
 - **TDD** — failing test first.
-- **Conventional commits.** `feat:` and `fix:` are what semantic-release ships; an unprefixed
-  commit is invisible to the release. When squashing, the prefix describes the squashed whole.
-  **The first release of the rewrite needs a
-  `BREAKING CHANGE:` footer** — the old `0.x` tags are still reachable, so without one the version
-  computes to `0.4.0`. See the README.
+- **Conventional commits** — see [Releasing](#releasing) for what each prefix ships.
+- **A commit message says *what* was implemented, not how.** The diff is the how, and it travels
+  with the message — anyone who wants the detail reads it there. Spend the body on why the change
+  exists, if that isn't obvious, and nothing on restating the changeset in prose.
 - **Small commits** that each leave the build green.
 - Java formatted by Spotless (Google style); TS/HTML by Prettier (100 cols, single quotes); ESLint
   with the `app` prefix.
 - Angular: standalone components, signals, `OnPush`, logic in services rather than components.
+
+## Releasing
+
+Pushes to `main` are released automatically by semantic-release. The version comes from the commit
+messages, so **an unprefixed commit ships nothing** — it neither triggers a release nor appears in
+the changelog.
+
+| Prefix | Effect |
+|---|---|
+| `feat:` | minor |
+| `fix:`, `perf:`, a revert | patch |
+| `BREAKING CHANGE:` footer | major |
+| `docs:`, `refactor:`, `test:`, `chore:`, `build:` | correct to use; ships nothing |
+
+When squashing a branch, the prefix must describe the squashed whole.
+
+A breaking change is a **`BREAKING CHANGE:`** footer — with a space, in its own paragraph in the
+commit body. Both halves were verified against the analyzer: `BREAKING-CHANGE:` is recognised by the
+conventional-commits preset but **not** by the angular one used here and produces no release at all,
+and the same words in the subject line are just words, yielding a minor. Any commit in the released
+range carries it, a merge commit included, and its type does not matter — `chore:` with the footer is
+still a major.
+
+The release builds the jar, builds and pushes the image, attaches the jar to a GitHub release, and
+commits the next `-SNAPSHOT` version back to `main`.
