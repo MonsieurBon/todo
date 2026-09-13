@@ -179,3 +179,6 @@ No `volumes`, no `depends_on`, no `healthcheck` — all three are deliberate, fo
 **Only the newest version is maintained.** There are no maintenance branches and nothing is
 back-ported — a fix, security fixes included, is released as the next version and only as the next
 version. Staying on an old tag means keeping its bugs. To get a fix, update.
+
+Found a security problem? **Please don't report it in a public issue** — [SECURITY.md](SECURITY.md)
+explains how to report it privately, and what falls outside that.
