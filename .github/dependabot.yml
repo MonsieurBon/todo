@@ -1,12 +1,47 @@
 # Every dependency here is pinned — the base image by digest, each action by
 # commit SHA — so nothing updates itself. Dependabot is what turns those pins
 # back into something that moves.
+#
+# Every ecosystem gets a cooldown: a release has to be a few days old before it
+# is offered. What the window buys is not the same everywhere. Where a release
+# can be unpublished or a tag moved — npm, and a retagged action — it is the
+# time in which a compromised release gets yanked before we ever see it, which
+# is worth having because a malicious postinstall exits 0 and CI goes green.
+# Maven Central is immutable and nothing can be withdrawn from it, so there the
+# same window buys advisory and detection time instead.
+#
+# What normally makes the delay cheap is that it does not apply to Dependabot
+# security updates, so a known CVE fix still arrives the day it is published.
+# That bypass is a repository setting rather than anything in this file: with
+# automated security fixes switched off, every window below turns into
+# CVE-patch latency.
+#
+# docker is the exception on both counts. The advisory database has no
+# container ecosystem, so there are no security updates for it to bypass with,
+# and the base image is the only artifact that actually ships. Its seven days
+# are accepted deliberately — an image pulled from a public registry is exactly
+# the compromise a cooldown is for — but they are the full latency on a JDK or
+# OS package fix, and no scanner stands behind them.
+#
+# When a window closes Dependabot proposes the newest version that has itself
+# cleared it, not the one that opened it — so a major arrives as whatever its
+# first patches made it, rather than as x.0.0.
+#
+# docker and github-actions take `default-days` only; the semver-* keys need an
+# ecosystem Dependabot can read semver from. Where the tiers do apply,
+# `default-days` still has to be set: it is what a bump falls back to when
+# neither side parses into a major/minor/patch triple, or when the triple does
+# not move at all — a prerelease promoted to final, or a qualifier-only bump.
+# Those are patch-shaped, so they get the patch window rather than whatever
+# default the platform would have picked.
 version: 2
 updates:
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   # "/" covers .github/workflows only. Composite actions are found by naming the
   # directory that holds each action.yml, so the glob keeps new ones covered
@@ -17,16 +52,28 @@ updates:
       - "/.github/actions/*"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "maven"
     directory: "/"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 3
+      semver-patch-days: 3
+      semver-minor-days: 7
+      semver-major-days: 30
 
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 3
+      semver-patch-days: 3
+      semver-minor-days: 7
+      semver-major-days: 30
     # Angular and its tooling move as a set, and so does the lint stack — one
     # package at a time means peer-dependency conflicts that CI reports as a
     # failed install rather than as the version skew it is.
