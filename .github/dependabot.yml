@@ -18,10 +18,10 @@
 #
 # docker is the exception on both counts. The advisory database has no
 # container ecosystem, so there are no security updates for it to bypass with,
-# and the base image is the only artifact that actually ships. Its seven days
-# are accepted deliberately — an image pulled from a public registry is exactly
-# the compromise a cooldown is for — but they are the full latency on a JDK or
-# OS package fix, and no scanner stands behind them.
+# and the base image is the only artifact that actually ships. Its window is
+# accepted deliberately — an image pulled from a public registry is exactly the
+# compromise a cooldown is for — but it is the full latency on a JDK or OS
+# package fix, and no scanner stands behind it.
 #
 # When a window closes Dependabot proposes the newest version that has itself
 # cleared it, not the one that opened it — so a major arrives as whatever its
@@ -54,6 +54,15 @@ updates:
       interval: "daily"
     cooldown:
       default-days: 7
+    # claude-code-action is pinned in both directories above, and a bump to it
+    # would otherwise arrive as two identical pull requests. `group-by` is what
+    # collapses one dependency across directories into a single one — without
+    # it, a group still splits per directory.
+    groups:
+      claude-code-action:
+        patterns:
+          - "anthropics/claude-code-action"
+        group-by: dependency-name
 
   - package-ecosystem: "maven"
     directory: "/"
@@ -74,21 +83,29 @@ updates:
       semver-patch-days: 3
       semver-minor-days: 7
       semver-major-days: 30
-    # Angular and its tooling move as a set, and so does the lint stack — one
-    # package at a time means peer-dependency conflicts that CI reports as a
-    # failed install rather than as the version skew it is.
+    # One group per set of packages that can only install together. A dependency
+    # belongs to exactly one group, so anything sharing an enforced peer edge
+    # with a member has to be a member too — otherwise it moves alone and the
+    # pull request cannot install at all, which surfaces as a failed `npm ci`
+    # rather than as the version skew it is.
+    #
+    # Membership is derived, not decided: read `peerDependencies` against
+    # `peerDependenciesMeta` in package-lock.json, per edge rather than per
+    # package, and ignore the optional ones — npm does not hold an installed
+    # package to an optional range. That is why vitest is absent despite
+    # @angular/build peering it.
     groups:
-      angular:
+      angular-toolchain:
         patterns:
           - "@angular/*"
-          - "@angular-devkit/*"
-      eslint:
-        patterns:
+          - "angular-oauth2-oidc"
+          - "typescript"
+          - "rxjs"
+          - "tslib"
           - "angular-eslint"
           - "eslint"
           - "@eslint/*"
           - "typescript-eslint"
-          - "@typescript-eslint/*"
       semantic-release:
         patterns:
           - "semantic-release"
