@@ -66,6 +66,21 @@ retagged version is not something to take just because CI passed, and closing su
 legitimate outcome. A red one is usually the opposite case: the update found something real, and the
 fix belongs in our code.
 
+**Some npm updates are blocked on purpose, and nothing will remind you.** A peer range from one
+package can hold another below its next minor or major; `.github/dependabot.yml` lists those and
+says how the list is re-derived. An ignored update produces no pull request and no signal at all, so
+the blocked bumps are owed work that is invisible until someone goes looking. Two things follow. The
+Angular major upgrade carries a mandatory extra step — once the widened ranges land, bump the
+ignored packages by hand in that same pull request. And the rule above inverts for that pull
+request: it arrives red because of the ignore list, not because the update found something in our
+code, so read the ERESOLVE before believing it.
+
+TypeScript is the one that will not wait for the major. Angular's supported window is a single
+minor wide and moves at Angular's own minors, so whenever the `angular-toolchain` group bumps
+`@angular/build`, read its `typescript` peer range in the updated lockfile — if it moved, take the
+TypeScript minor by hand in that same pull request. That is a cheap check on a path someone already
+walks, and nothing else will raise it.
+
 **Don't defer on your own.** If something out of scope turns up and the instinct is to leave it for
 later, raise it with Fabian first. If it's a bug, the default is to fix it right there in the same
 PR.
