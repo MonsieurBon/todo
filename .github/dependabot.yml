@@ -110,3 +110,56 @@ updates:
         patterns:
           - "semantic-release"
           - "@semantic-release/*"
+
+    # Within a group, some members can never take an update on their own:
+    # another member's peer range holds them below it. Grouping does not help,
+    # because Dependabot resolves each member to its own latest and only bundles
+    # the result afterwards — it never solves the set against those peer ranges.
+    # The bump lands in the group regardless and `npm ci` fails on ERESOLVE,
+    # taking the group's patches down with it.
+    #
+    # So those updates are kept out entirely, and taken by hand when the package
+    # holding the bound widens its range. For the major-only entries that is the
+    # Angular major, which is hand-done anyway. typescript is the exception: the
+    # @angular/build window is one minor wide, and Angular widens it at its own
+    # minors, so that bump comes due mid-major — see CLAUDE.md for the check
+    # that catches it, because nothing else will.
+    #
+    # Note that `ignore` applies to Dependabot security updates too, unlike
+    # `cooldown` above, so a fix published above the bound waits for that same
+    # hand-done pass with the Dependabot alert as the only thing watching. The
+    # minor-level bound costs more than the others here: typescript does not
+    # backport, so once 6.1 ships the pinned line stops receiving patches at all
+    # rather than merely stopping at a major.
+    #
+    # To re-derive: for each member, test its next minor and next major against
+    # every enforced peer edge (`peerDependenciesMeta` optional ones excluded)
+    # pointing at it from a group sibling. An edge only counts if the sibling
+    # cannot move *to a version that widens the bound* in the same grouped bump.
+    # Sibling pins among @angular/* fail that test — @angular/common@23 cannot
+    # arrive without @angular/core@23 — which is why none of them are listed.
+    # angular-eslint passes it despite being a group member: typescript-eslint@9
+    # ships on a day when the newest angular-eslint still peers ^8.
+    #
+    # An optional peer edge is not enforced by npm, so it cannot fail the
+    # install — but where it encodes a lockstep that is real anyway and nothing
+    # exercises the skew, it lands green and silent, which is worse. @eslint/js
+    # is listed for that reason rather than for a resolution failure. vitest has
+    # the same optional edge from @angular/build and is deliberately not listed:
+    # `ng test` drives it through that builder on every pull request, so a skew
+    # there fails loudly instead.
+    ignore:
+      - dependency-name: "typescript"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+      - dependency-name: "typescript-eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@eslint/js"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "rxjs"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "tslib"
+        update-types: ["version-update:semver-major"]
