@@ -171,6 +171,16 @@ CI has neither a browser nor an IdP.
   with the `app` prefix.
 - Angular: standalone components, signals, `OnPush`, logic in services rather than components.
 
+**Comments are a last resort, and short when they are needed at all.** Needing prose to explain
+what code does is a smell — the fix is almost always the code, not a paragraph above it. Write one
+only for what the code genuinely cannot say: why a choice was made, or a constraint that isn't
+visible from here.
+
+Be most suspicious of the comment that pins a fact the next pull request will move — a version, a
+range, a PR number, a hand-maintained list. It goes stale silently, nobody updates it, and from
+then on it misleads. Prefer the durable rule and how to re-derive it over a snapshot of today's
+answer; leave the evidence in the pull request, where it is dated and stays true.
+
 ## Releasing
 
 Pushes to `main` are released automatically by semantic-release. The version comes from the commit
