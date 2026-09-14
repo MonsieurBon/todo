@@ -3,11 +3,10 @@ name: Claude Code Review
 # pull_request_target, not pull_request, so the reviewer is main's reviewer.
 # On a pull_request event GitHub runs the workflow, the composite action, the
 # agent definition and CLAUDE.md all from the branch — so a pull request that
-# weakens the review gets judged by the weakened review, and one that edits this
-# file cannot be reviewed at all (the action's token exchange requires the
-# workflow to exist on the default branch). Here every one of those comes from
-# the base branch and only the diff comes from the branch, which is what lets a
-# change to the review machinery be reviewed by the machinery it is changing.
+# weakens the review gets judged by the weakened review. Here every one of those
+# comes from the base branch and only the diff comes from the branch, which is
+# what lets a change to the review machinery be reviewed by the machinery it is
+# changing.
 on:
   pull_request_target:
     types: [ opened, synchronize, ready_for_review, reopened ]
@@ -37,11 +36,12 @@ jobs:
 
     name: Claude review
     runs-on: ubuntu-latest
+    # Exactly what the review does: read the branch and the pull request, and
+    # post one comment. It writes nothing to the repository.
     permissions:
       contents: read
       pull-requests: write
       issues: read
-      id-token: write
 
     steps:
       # No `ref:` — under pull_request_target checkout defaults to the base
@@ -96,6 +96,13 @@ jobs:
           model: opus
           reviewer: pr-code-reviewer
           oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Given a token, claude-code-action uses it; given none, it trades the
+          # job's OIDC token for a GitHub App one. That trade is refused for a
+          # pull_request_target run — the endpoint answers 401 Invalid OIDC
+          # token — which is why supplying this is what makes the job work at
+          # all rather than a preference. The job's own token carries less than
+          # the App's would, and carries everything the review needs.
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           repo: ${{ github.repository }}
           pr: ${{ github.event.pull_request.number }}
 
@@ -125,14 +132,15 @@ jobs:
           echo "reviewed=false" >> "$GITHUB_OUTPUT"
 
           # The action exiting 0 without producing a review is a deliberate skip
-          # rather than a crash. Running from the base branch should have
-          # removed the only cause we have seen — the action declining because
-          # the workflow differs from the copy on the default branch — so this
-          # branch is a safety net: if it ever fires, that assumption was wrong
-          # and the notice is what makes it visible instead of silent.
+          # rather than a crash. The only cause we have seen — the action
+          # declining because the workflow differs from the copy on the default
+          # branch — is decided during the token exchange, which no longer
+          # happens now that the job supplies its own token. So this branch is a
+          # safety net: if it ever fires, something we have not seen did it, and
+          # the notice is what makes that visible instead of silent.
           if [ "$REVIEW_OUTCOME" = "success" ]; then
             echo "::warning::The review was skipped by the action; posting a notice and keeping the job green."
-            gh pr comment "$PR" --body "$(printf '## ℹ️ Review skipped\n\n`claude-code-action` declined to run, so no review was posted. This is not expected now that the workflow runs from the base branch — worth investigating rather than ignoring.\n\nThis does not block the PR. Details: [run log](%s).\n' "$RUN_URL")" \
+            gh pr comment "$PR" --body "$(printf '## ℹ️ Review skipped\n\n`claude-code-action` declined to run, so no review was posted. Nothing known to us still does this — worth investigating rather than ignoring.\n\nThis does not block the PR. Details: [run log](%s).\n' "$RUN_URL")" \
               || echo "::warning::Could not post the skip notice."
             exit 0
           fi

@@ -14,6 +14,12 @@ inputs:
   oauth_token:
     description: Claude Code OAuth token. Passed in because composite actions cannot read secrets directly.
     required: true
+  github_token:
+    description: >-
+      Token the review reads the pull request and posts its comment with. Supplying one is what
+      stops claude-code-action exchanging the job's OIDC token for a GitHub App token, which is an
+      exchange this workflow cannot make — see the caller for why.
+    required: true
   repo:
     description: 'owner/name of the repository under review.'
     required: true
@@ -34,6 +40,7 @@ runs:
       uses: anthropics/claude-code-action@9c5ddab2e6d17b83ea679153b31f1d5f023cf636 # v1.0.217
       with:
         claude_code_oauth_token: ${{ inputs.oauth_token }}
+        github_token: ${{ inputs.github_token }}
         # Print the SDK output so a failed run's error is visible in the job
         # log. The default hides it, which leaves an errored review with no
         # diagnosable cause once the runner is gone.
