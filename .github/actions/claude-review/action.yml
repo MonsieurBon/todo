@@ -82,8 +82,28 @@ runs:
 
           Review only what the diff changes, not the codebase around it.
 
-          Post the review as a single PR comment with `gh pr comment`, headed
-          `## ${{ inputs.reviewer }}`.
+          **You cannot write anything here.** This job permits reads and
+          refuses writes, and no one is present to approve one — so a refused
+          write is a dead end, never a path to retry somewhere else. That
+          means no scratch file for the review, no temp file for the diff, no
+          shell redirect. Read files with the Read tool rather than `cat` or
+          `sed`, and keep the review in your head until you post it.
+
+          **One command per Bash call, never chained.** A compound command is
+          split into its parts and refused whole if any single part needs
+          approval, so chaining a permitted command onto a refused one loses
+          both.
+
+          Post the review as one PR comment, straight from a heredoc — this is
+          the command that works, so use it rather than discovering it:
+
+          ```
+          gh pr comment ${{ inputs.pr }} --body-file - <<'REVIEW_EOF'
+          ## ${{ inputs.reviewer }}
+
+          ...your review...
+          REVIEW_EOF
+          ```
         claude_args: >-
           --model ${{ inputs.model }}
           --max-turns 15
