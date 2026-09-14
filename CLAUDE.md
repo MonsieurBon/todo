@@ -37,6 +37,16 @@ definition, what it is judged against, or what decides whether it passed — sti
 the version of itself that is already on main. It also means a change to any of those only takes
 effect once merged, so the pull request that makes it is reviewed under the old rules.
 
+That holds structurally for all of them but this file. The branch is checked out in full so the
+review can read it, and Claude Code loads a `CLAUDE.md` from above whatever it opens — so the
+branch's copy lands in the reviewer's context on its first read from the branch, unasked and framed
+as project instructions. The branch's agent definition can reach the reviewer too, but it arrives
+as a file the reviewer deliberately opened and knows is a subject; this one does not announce
+itself. What keeps it from being authoritative is the review prompt, which spends a paragraph
+saying it is the branch's proposal rather than a rule. A guarantee the layout enforces holds
+whatever the model does; this one holds because the model is told. Anything that weakens that
+paragraph weakens the separation.
+
 Two kinds of PR still go green with no review behind them. Dependabot's, which the workflow skips
 by design — that is what makes a green bump something the Developer can merge alone. And anything
 from a fork, which is refused outright: `pull_request_target` runs with access to the repository's
