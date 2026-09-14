@@ -65,6 +65,14 @@ several.
 the message, so anyone who wants the detail reads it there. Spend the body on why the change exists
 if that isn't obvious, and nothing on restating the changeset in prose.
 
+**A pull request body is a brief, not a report.** It carries what the diff cannot say: why the
+change exists, the decisions worth arguing about, what they trade away, and anything the reviewer
+must check but could not derive. It does not carry the analysis that led there — the measurements,
+the run ids, the tables, the account of what was tried. Those justified the work to the person who
+did it; they cost every later reader, because the body is re-read on every review round. The same
+holds for an answer to a review: a line or two per point saying what was done, or why it wasn't.
+Where evidence genuinely settles a contested point, cite the number, not the working.
+
 **Dependabot PRs are the Developer's job.** They update pins that deliberately don't move on their
 own (`.github/dependabot.yml` explains why), and getting them merged is not Fabian's errand — sweep
 them before starting the next backlog item, so an update never sits behind a feature branch. A green
