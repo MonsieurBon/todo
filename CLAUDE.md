@@ -28,13 +28,20 @@ own. The test and the code that makes it pass land together, so every commit is 
 
 **Every change the Developer writes goes through a PR, and Claude reviews it.** The review arrives
 as a single PR comment, so the answer is one too: take it point by point and either fix the thing or
-say why it isn't being fixed. Silence is not an answer. Two kinds of PR go green without a review
-that means anything: Dependabot's, which the review workflow skips by design — that is what makes a
-green bump something the Developer can merge alone — and any PR that changes the review machinery
-itself, because a review cannot vouch for a change to its own definition, to the job that holds its
-token, to what it is judged against — this file included — or to what decides whether it passed.
-Depending on what was touched it declines outright and says so, or it runs and looks normal having
-been judged by the branch under review. Those want Fabian's eyes before they merge.
+say why it isn't being fixed. Silence is not an answer.
+
+**The reviewer is main's reviewer.** The workflow runs on `pull_request_target`, so the job, the
+composite action, the agent definition and this file all come from the base branch, and only the
+diff comes from the branch. That is what lets a pull request that changes the review — its own
+definition, what it is judged against, or what decides whether it passed — still be reviewed, by
+the version of itself that is already on main. It also means a change to any of those only takes
+effect once merged, so the pull request that makes it is reviewed under the old rules.
+
+Two kinds of PR still go green with no review behind them. Dependabot's, which the workflow skips
+by design — that is what makes a green bump something the Developer can merge alone. And anything
+from a fork, which is refused outright: `pull_request_target` runs with access to the repository's
+secrets, so the job checks that the branch lives in this repository before it does anything. There
+are no forks today; if one ever sends a pull request, it needs Fabian's eyes rather than a review.
 
 **Reply first, then push.** Post the answer to a review round *before* pushing the commits that
 address it. The push triggers the next review, and that reviewer reads the comments already on the
@@ -57,6 +64,14 @@ several.
 **A commit message says *what* was implemented, not how.** The diff is the how, and it travels with
 the message, so anyone who wants the detail reads it there. Spend the body on why the change exists
 if that isn't obvious, and nothing on restating the changeset in prose.
+
+**A pull request body is a brief, not a report.** It carries what the diff cannot say: why the
+change exists, the decisions worth arguing about, what they trade away, and anything the reviewer
+must check but could not derive. It does not carry the analysis that led there — the measurements,
+the run ids, the tables, the account of what was tried. Those justified the work to the person who
+did it; they cost every later reader, because the body is re-read on every review round. The same
+holds for an answer to a review: a line or two per point saying what was done, or why it wasn't.
+Where evidence genuinely settles a contested point, cite the number, not the working.
 
 **Dependabot PRs are the Developer's job.** They update pins that deliberately don't move on their
 own (`.github/dependabot.yml` explains why), and getting them merged is not Fabian's errand — sweep
