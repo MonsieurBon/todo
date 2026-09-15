@@ -114,6 +114,8 @@ runs:
           - the linked issue, if the PR body or a commit carries a
             `Closes #N` / `Fixes #N` / `Resolves #N` trailer:
             `gh issue view <N>`.
+          - the commit messages, which `gh pr diff` does not carry:
+            `gh pr view ${{ inputs.pr }} --json commits --jq '.commits[] | .messageHeadline + "\n" + .messageBody'`.
 
           Review only what the diff changes, not the codebase around it.
 

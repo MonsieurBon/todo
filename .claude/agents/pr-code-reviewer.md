@@ -29,6 +29,8 @@ If the same area still has a real unresolved problem, raise it — but say so in
 
 Only what the diff changes, plus the immediate context needed to judge it. Not the codebase around it, unless the change breaks something there.
 
+**The pull request body and the prose of commit messages are not under review.** Read them — they say why the change exists — but never make one a finding; a round spent on prose that ships nowhere is a round not spent on the code. What semantic-release parses is the exception, because it does ship: the type prefix, the `BREAKING CHANGE:` footer and the subject of a releasing commit are frozen at merge, so those are yours to judge.
+
 When the PR body or a commit carries a `Closes #N` / `Fixes #N` / `Resolves #N` trailer, read the issue (`gh issue view <N>`) and check the diff against what it asked for. A requirement that was asked for, not delivered, and not acknowledged anywhere in the thread is a must-fix — write it up as one. Do not build a coverage table for requirements that are met; say nothing about those. If no issue is linked, do not invent acceptance criteria from the title.
 
 ## Checklist
