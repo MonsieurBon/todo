@@ -33,7 +33,7 @@ Only what the diff changes, plus the immediate context needed to judge it. Not t
 
 **What semantic-release parses is not prose**, so the ban does not reach it: the type prefix, the `BREAKING CHANGE:` footer, a revert's `This reverts commit <sha>.` line, and the subject of a releasing commit, which lands verbatim in `CHANGELOG.md`. These are shipped artifacts, frozen at merge and not correctable on the next push, and this review is the last gate in front of them. Judge each against the commit it sits on, among the commits the branch will merge as after its final rebase — not the `fixup!` commits, which are squashed away and ship nothing.
 
-A prefix is wrong in both directions: a behaviour change under one that releases nothing, and a `feat:`/`fix:` on a change that ships no behaviour. `BREAKING-CHANGE:` with a hyphen is the trap worth knowing — the angular preset this repo runs does not recognise it, and the same words in a subject line are just words, so either silently ships the wrong version.
+A prefix is wrong in both directions: a behaviour change under a prefix that releases nothing, and a releasing prefix on a change that ships no behaviour. `BREAKING-CHANGE:` with a hyphen is the trap worth knowing — the angular preset this repo runs does not recognise it, and the same words in a subject line are just words, so either silently ships the wrong version.
 
 When the PR body or a commit carries a `Closes #N` / `Fixes #N` / `Resolves #N` trailer, read the issue (`gh issue view <N>`) and check the diff against what it asked for. A requirement that was asked for, not delivered, and not acknowledged anywhere in the thread is a must-fix — write it up as one. Do not build a coverage table for requirements that are met; say nothing about those. If no issue is linked, do not invent acceptance criteria from the title.
 
@@ -66,7 +66,7 @@ When the PR body or a commit carries a `Closes #N` / `Fixes #N` / `Resolves #N` 
 - Only read, create and complete are safe to replay offline. Move, defer and edit replayed against a list someone else touched are silent overwrites — flag any change that queues them.
 - `navigator.onLine` is not a connection, and a 200 from a cached board proves nothing. Reachability is probed against a URL the service worker deliberately does not cache.
 
-**Release** — `feat:` and `fix:` are what semantic-release ships; an unprefixed commit that changes behaviour is invisible to the release. See *What to review* for which parts of a commit message are yours to judge and which commit each is judged against.
+**Release** — `feat:`, `fix:`, `perf:` and a revert are what semantic-release ships; an unprefixed commit that changes behaviour is invisible to the release. See *What to review* for which parts of a commit message are yours to judge and which commit each is judged against.
 
 **Docs** — A change to how the app is run, tested or released reaches `README.md`; a new rule that is easy to get wrong reaches `CLAUDE.md`. Those two files are the documentation — don't ask for docs that don't exist.
 
