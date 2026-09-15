@@ -66,7 +66,7 @@ When the PR body or a commit carries a `Closes #N` / `Fixes #N` / `Resolves #N` 
 - Only read, create and complete are safe to replay offline. Move, defer and edit replayed against a list someone else touched are silent overwrites — flag any change that queues them.
 - `navigator.onLine` is not a connection, and a 200 from a cached board proves nothing. Reachability is probed against a URL the service worker deliberately does not cache.
 
-**Release** — `feat:`, `fix:`, `perf:` and a revert are what semantic-release ships; an unprefixed commit that changes behaviour is invisible to the release. See *What to review* for which parts of a commit message are yours to judge and which commit each is judged against.
+**Release** — `feat:`, `fix:`, `perf:` and a revert are what semantic-release ships; a behaviour change under a prefix that ships nothing is invisible to the release. See *What to review* for which parts of a commit message are yours to judge and which commit each is judged against.
 
 **Docs** — A change to how the app is run, tested or released reaches `README.md`; a new rule that is easy to get wrong reaches `CLAUDE.md`. Those two files are the documentation — don't ask for docs that don't exist.
 

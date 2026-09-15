@@ -114,6 +114,11 @@ runs:
           - the linked issue, if the PR body or a commit carries a
             `Closes #N` / `Fixes #N` / `Resolves #N` trailer:
             `gh issue view <N>`.
+          - the commits the branch will merge as, with their bodies:
+            `gh pr view ${{ inputs.pr }} --json commits --jq '.commits[] | .oid[0:8] + " " + .messageHeadline + "\n" + .messageBody'`.
+            `gh pr diff` carries no commit headers, so this is the only sight
+            you get of a prefix, a `BREAKING CHANGE:` footer or a revert's sha
+            line — and of which commits are `fixup!`s that ship nothing.
 
           Review only what the diff changes, not the codebase around it.
 
