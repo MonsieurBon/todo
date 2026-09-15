@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/MonsieurBon/todo/compare/v1.0.1...v1.0.2) (2026-09-15)
+
+
+### Bug Fixes
+
+* answer input the database would reject with a 400, not its statement ([ea91b41](https://github.com/MonsieurBon/todo/commit/ea91b413852609b1de499b5e7ef21cd4db2e4e1b))
+
 ## [1.0.1](https://github.com/MonsieurBon/todo/compare/v1.0.0...v1.0.1) (2026-09-06)
 
 
