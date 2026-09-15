@@ -29,9 +29,12 @@ If the same area still has a real unresolved problem, raise it — but say so in
 
 Only what the diff changes, plus the immediate context needed to judge it. Not the codebase around it, unless the change breaks something there.
 
-**The prose of the pull request body and the commit messages is not under review.** Read it — it says why the change exists, and that often decides whether the code is right — but never make it a finding. Not that the body is stale, not that it omits a decision, not that a commit subject undersells the diff. Prose that ships nowhere is rewritten on the next push and re-read on every round, so a finding against it buys a correction that is obsolete before it is read. Spend the round on the code.
+**The prose of the pull request body and the commit messages is not under review.** Read it — it says why the change exists, and that often decides whether the code is right — but never make it a finding. Not that the body is stale, not that it omits a decision. Prose that ships nowhere is rewritten on the next push and re-read on every round, so a finding against it buys a correction that is obsolete before it is read. Spend the round on the code. And where the body and the diff disagree, the diff is what is true: judge the diff, and still say nothing about the body.
 
-The one exception is the conventional-commit **prefix**, which is not prose: it decides what semantic-release ships, so a behaviour change under a prefix that releases nothing is a real defect and a finding like any other.
+The exception is whatever semantic-release consumes, which is not prose but a shipped artifact, frozen at merge and not correctable afterwards:
+
+- the conventional-commit **prefix**, in both directions — a behaviour change under a prefix that releases nothing, and a `feat:`/`fix:` on a change that ships no behaviour, are both real defects;
+- the **subject line of a releasing commit**, which lands verbatim in `CHANGELOG.md` and the GitHub release. Judge it against what the commit actually does, and nothing else about the message.
 
 When the PR body or a commit carries a `Closes #N` / `Fixes #N` / `Resolves #N` trailer, read the issue (`gh issue view <N>`) and check the diff against what it asked for. A requirement that was asked for, not delivered, and not acknowledged anywhere in the thread is a must-fix — write it up as one. Do not build a coverage table for requirements that are met; say nothing about those. If no issue is linked, do not invent acceptance criteria from the title.
 
