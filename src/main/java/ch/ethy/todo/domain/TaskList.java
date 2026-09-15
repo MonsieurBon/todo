@@ -40,6 +40,15 @@ import org.hibernate.annotations.CreationTimestamp;
     })
 public class TaskList {
 
+  public static final int MAX_NAME_LENGTH = 255;
+
+  /**
+   * The slug is derived from the name rather than given, and is narrower than it. A name that slugs
+   * longer is shortened to fit — see {@code TaskListService.uniqueSlug} — because refusing a name
+   * the name column accepts would be a limit nobody could see.
+   */
+  public static final int MAX_SLUG_LENGTH = 128;
+
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
@@ -50,10 +59,10 @@ public class TaskList {
   @JoinColumn(name = "owner_id", nullable = false)
   private User owner;
 
-  @Column(nullable = false)
+  @Column(nullable = false, length = MAX_NAME_LENGTH)
   private String name;
 
-  @Column(nullable = false, length = 128)
+  @Column(nullable = false, length = MAX_SLUG_LENGTH)
   private String slug;
 
   /**
@@ -85,12 +94,9 @@ public class TaskList {
     if (owner == null) {
       throw new IllegalArgumentException("A list needs an owner");
     }
-    if (name == null || name.isBlank()) {
-      throw new IllegalArgumentException("A list needs a name");
-    }
     this.owner = owner;
-    this.name = name.trim();
-    this.slug = slug;
+    name(name);
+    slug(slug);
   }
 
   public Long id() {
@@ -105,16 +111,19 @@ public class TaskList {
     return name;
   }
 
-  public void name(String name) {
-    this.name = name;
+  public final void name(String name) {
+    if (name == null || name.isBlank()) {
+      throw new IllegalArgumentException("A list needs a name");
+    }
+    this.name = Lengths.atMost(MAX_NAME_LENGTH, "A list name", name.trim());
   }
 
   public String slug() {
     return slug;
   }
 
-  public void slug(String slug) {
-    this.slug = slug;
+  public final void slug(String slug) {
+    this.slug = Lengths.atMost(MAX_SLUG_LENGTH, "A list slug", slug);
   }
 
   public boolean isInbox() {

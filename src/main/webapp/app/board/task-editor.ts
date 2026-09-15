@@ -11,6 +11,7 @@ import {
 } from '@angular/material/dialog';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
+import { parseLabels } from '../api/model';
 import { BoardTask } from './board-store';
 
 export interface TaskEdit {
@@ -66,10 +67,7 @@ export class TaskEditor {
       title,
       notes: this.notes().trim(),
       dueDate: this.dueDate(),
-      labels: this.labels()
-        .split(',')
-        .map((label) => label.trim())
-        .filter(Boolean),
+      labels: parseLabels(this.labels()),
     });
   }
 }

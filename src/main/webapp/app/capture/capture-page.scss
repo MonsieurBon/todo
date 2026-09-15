@@ -17,6 +17,13 @@ h1 {
   font: var(--mat-sys-body-small);
 }
 
+// A hint rather than a mat-error on purpose: mat-error only renders when the control's own
+// errorState is true, which needs a validator and a touched field. The topics input has neither —
+// what it is too long for is a rule only this component knows — so an error there is never shown.
+.too-long {
+  color: var(--mat-sys-error);
+}
+
 .load {
   margin: 0.25rem 0 1.25rem;
   font: var(--mat-sys-body-small);

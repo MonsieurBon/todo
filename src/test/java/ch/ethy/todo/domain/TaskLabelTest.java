@@ -81,6 +81,32 @@ class TaskLabelTest {
   }
 
   @Test
+  @DisplayName("a label as long as the column allows is accepted")
+  void labelAtTheLimit() {
+    Task task = task();
+    String label = "l".repeat(Task.MAX_LABEL_LENGTH);
+    task.addLabel(label);
+    assertThat(task.labels()).containsExactly(label);
+  }
+
+  @Test
+  @DisplayName("a longer label is refused, and the refusal names the limit")
+  void labelTooLong() {
+    assertThatThrownBy(() -> task().addLabel("l".repeat(Task.MAX_LABEL_LENGTH + 1)))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(String.valueOf(Task.MAX_LABEL_LENGTH));
+  }
+
+  @Test
+  @DisplayName("the length that counts is the normalised one, not what was typed")
+  void measuredAfterNormalising() {
+    Task task = task();
+    String slug = "l".repeat(Task.MAX_LABEL_LENGTH);
+    task.addLabel("  " + slug.toUpperCase(java.util.Locale.ROOT) + "  ");
+    assertThat(task.labels()).containsExactly(slug);
+  }
+
+  @Test
   @DisplayName("the returned set cannot be used to mutate the task")
   void labelsAreDefensive() {
     Task task = task();

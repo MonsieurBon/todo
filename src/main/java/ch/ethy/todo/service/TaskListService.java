@@ -6,6 +6,8 @@ import ch.ethy.todo.domain.User;
 import ch.ethy.todo.repository.TaskListRepository;
 import ch.ethy.todo.repository.UserRepository;
 import java.util.List;
+import java.util.function.Supplier;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -67,14 +69,72 @@ public class TaskListService {
   }
 
   public TaskList create(User owner, String name) {
-    return lists.save(new TaskList(owner, name, uniqueSlug(owner, name)));
+    refuseADuplicateName(owner, name, null);
+    return underAUniqueName(
+        () -> lists.saveAndFlush(new TaskList(owner, name, uniqueSlug(owner, name, null))));
   }
 
   public TaskList rename(Long id, User owner, String name) {
     TaskList list = resolveOwned(id, owner);
-    list.name(name);
-    list.slug(uniqueSlug(owner, name));
-    return list;
+    refuseADuplicateName(owner, name, id);
+    return underAUniqueName(
+        () -> {
+          list.name(name);
+          list.slug(uniqueSlug(owner, name, id));
+          // Flushed here rather than at commit so a name the constraint refuses is attributable
+          // to this call, and can be answered as one.
+          lists.flush();
+          return list;
+        });
+  }
+
+  /**
+   * A name already taken by another of this owner's lists.
+   *
+   * <p>Without this the duplicate is found by the driver instead: Hibernate must insert immediately
+   * for an identity key, so the constraint answers with its own name and the whole statement, and
+   * that reaches an MCP caller verbatim — a failure it cannot act on, carrying schema detail it has
+   * no business seeing.
+   *
+   * <p>A missing or blank name is not this method's complaint; the entity refuses it with its own
+   * message.
+   */
+  private void refuseADuplicateName(User owner, String name, Long excluding) {
+    if (name == null || name.isBlank()) {
+      return;
+    }
+    lists
+        .findByOwnerAndName(owner, name.trim())
+        .filter(held -> !held.id().equals(excluding))
+        .ifPresent(
+            held -> {
+              throw new IllegalArgumentException(duplicate(name));
+            });
+  }
+
+  /**
+   * The race neither check above can cover: two callers pass both, and the unique constraints are
+   * the boundary that actually holds.
+   *
+   * <p>Two of them sit under this write — the name, and the slug derived from it — and a race can
+   * trip either. Two different names that slug alike ("Project A" and "project-a!") clear the name
+   * check honestly and collide on the slug. Which one it was is not knowable here without reading
+   * driver text or re-reading in a transaction the violation has already marked rollback-only, so
+   * the message says what is true of both rather than naming the name. It also gives the right
+   * advice: retrying succeeds, because the loser's next slug sees the winner's.
+   */
+  private TaskList underAUniqueName(Supplier<TaskList> write) {
+    try {
+      return write.get();
+    } catch (DataIntegrityViolationException raced) {
+      throw new IllegalArgumentException(
+          "Another of your lists took that name or its address a moment earlier - try again",
+          raced);
+    }
+  }
+
+  private static String duplicate(String name) {
+    return "A list called \"" + name.trim() + "\" already exists";
   }
 
   /**
@@ -111,15 +171,33 @@ public class TaskListService {
     return list;
   }
 
-  /** Slugs are unique per owner, so a repeat name gets a numeric suffix rather than a 500. */
-  private String uniqueSlug(User owner, String name) {
-    String base = Slug.of(name);
-    String candidate = base;
+  /**
+   * Slugs are unique per owner, so a repeat name gets a numeric suffix rather than a 500.
+   *
+   * <p>The slug column is narrower than the name column, and the slug is derived rather than given,
+   * so a long name is shortened here instead of refused — the same loop that resolves a repeated
+   * name resolves the collisions shortening creates.
+   *
+   * <p>{@code renaming} is the list the slug is for, or null when creating. A rename has already
+   * applied the new name by this point, so without it the list collides with itself and walks its
+   * own slug one suffix further on every no-op rename — changing its URL for a rename that changed
+   * nothing.
+   */
+  private String uniqueSlug(User owner, String name, Long renaming) {
+    String candidate = Slug.of(name, TaskList.MAX_SLUG_LENGTH);
     int suffix = 2;
-    while (lists.findByOwnerAndSlug(owner, candidate).isPresent()) {
-      candidate = base + "-" + suffix++;
+    while (takenByAnother(owner, candidate, renaming)) {
+      String tail = "-" + suffix++;
+      candidate = Slug.of(name, TaskList.MAX_SLUG_LENGTH - tail.length()) + tail;
     }
     return candidate;
+  }
+
+  private boolean takenByAnother(User owner, String slug, Long renaming) {
+    return lists
+        .findByOwnerAndSlug(owner, slug)
+        .filter(held -> !held.id().equals(renaming))
+        .isPresent();
   }
 
   private static NotFoundException notFound(Long id) {

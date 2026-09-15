@@ -41,6 +41,21 @@ import org.hibernate.annotations.UpdateTimestamp;
             columnNames = {"task_list_id", "client_ref"}))
 public class Task {
 
+  /**
+   * The widths the schema actually has. Public because the request DTOs constrain against them: two
+   * copies of 255 in two source trees is how the API comes to accept what the table cannot hold.
+   */
+  public static final int MAX_TITLE_LENGTH = 255;
+
+  public static final int MAX_LABEL_LENGTH = 64;
+  public static final int MAX_CLIENT_REF_LENGTH = 64;
+
+  /**
+   * Notes are stored in a {@code text} column, which holds far more than this. The limit is a
+   * policy rather than the schema's: notes are a paragraph about a task, not a document store.
+   */
+  public static final int MAX_NOTES_LENGTH = 10_000;
+
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
@@ -56,10 +71,10 @@ public class Task {
    * on reconnect, and a replay cannot tell a lost request from a lost response. Matching on this
    * turns the second create into a lookup instead of a duplicate.
    */
-  @Column(name = "client_ref", length = 64, updatable = false)
+  @Column(name = "client_ref", length = MAX_CLIENT_REF_LENGTH, updatable = false)
   private String clientRef;
 
-  @Column(nullable = false)
+  @Column(nullable = false, length = MAX_TITLE_LENGTH)
   private String title;
 
   @Column(columnDefinition = "text")
@@ -94,7 +109,7 @@ public class Task {
    */
   @ElementCollection(fetch = FetchType.LAZY)
   @CollectionTable(name = "task_label", joinColumns = @JoinColumn(name = "task_id"))
-  @Column(name = "label", nullable = false, length = 64)
+  @Column(name = "label", nullable = false, length = MAX_LABEL_LENGTH)
   private Set<String> labels = new LinkedHashSet<>();
 
   /** Manual ordering within a zone. Lower sorts first. */
@@ -140,7 +155,10 @@ public class Task {
 
   /** Blank is treated as absent: an empty string would deduplicate every task against itself. */
   public void clientRef(String clientRef) {
-    this.clientRef = clientRef == null || clientRef.isBlank() ? null : clientRef.trim();
+    this.clientRef =
+        clientRef == null || clientRef.isBlank()
+            ? null
+            : Lengths.atMost(MAX_CLIENT_REF_LENGTH, "A client reference", clientRef.trim());
   }
 
   public int position() {
@@ -171,7 +189,7 @@ public class Task {
     if (title == null || title.isBlank()) {
       throw new IllegalArgumentException("A task needs a title");
     }
-    this.title = title.trim();
+    this.title = Lengths.atMost(MAX_TITLE_LENGTH, "A task title", title.trim());
   }
 
   public String notes() {
@@ -179,7 +197,7 @@ public class Task {
   }
 
   public void notes(String notes) {
-    this.notes = notes;
+    this.notes = notes == null ? null : Lengths.atMost(MAX_NOTES_LENGTH, "Notes", notes);
   }
 
   public TaskZone zone() {
@@ -290,7 +308,9 @@ public class Task {
     if (label == null || label.isBlank()) {
       throw new IllegalArgumentException("A label needs a name");
     }
-    return Slug.of(label);
+    // Measured after slugging, because that is the form actually stored: "Project A" and
+    // "project-a" are the same label and must be the same length.
+    return Lengths.atMost(MAX_LABEL_LENGTH, "A label", Slug.of(label));
   }
 
   /** Records that this task was considered during a review sweep. */
