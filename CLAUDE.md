@@ -79,12 +79,12 @@ if that isn't obvious, and nothing on restating the changeset in prose.
 change exists, the decisions worth arguing about, and anything the reviewer must check but could
 not derive — "verified by hand against the running stack, CI has no browser". Not the analysis
 that led there — the measurements, the run ids, the account of what was tried. Keep it short
-enough that it cannot drift away from the code, and do not rewrite it every round; it is not
-reviewed, and a body that has to be maintained is already too long. Where evidence settles a
-contested point, cite the number, not the working. The one line that does have to be re-stated is
-a claim about what was verified by hand: it covers the code it was written against, and the
-reviewer cannot check it against the diff the way it can check a decision. The same brevity holds
-for an answer to a review: a line or two per point saying what was done, or why it wasn't.
+enough that it cannot drift away from the code, and do not rewrite it every round; a body that has
+to be maintained is already too long. Where evidence settles a contested point, cite the number,
+not the working. The one line that does have to be re-stated is a claim about what was verified by
+hand: it covers the code it was written against, and the reviewer cannot check it against the diff
+the way it can check a decision. The same brevity holds for an answer to a review: a line or two
+per point saying what was done, or why it wasn't.
 
 **Dependabot PRs are the Developer's job.** They update pins that deliberately don't move on their
 own (`.github/dependabot.yml` explains why), and getting them merged is not Fabian's errand — sweep
