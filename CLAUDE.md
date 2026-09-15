@@ -76,12 +76,11 @@ the message, so anyone who wants the detail reads it there. Spend the body on wh
 if that isn't obvious, and nothing on restating the changeset in prose.
 
 **A pull request body is a brief, not a report.** It carries what the diff cannot say: why the
-change exists, the decisions worth arguing about, what they trade away, and anything the reviewer
-must check but could not derive. It does not carry the analysis that led there — the measurements,
-the run ids, the tables, the account of what was tried. Those justified the work to the person who
-did it; they cost every later reader, because the body is re-read on every review round. The same
-holds for an answer to a review: a line or two per point saying what was done, or why it wasn't.
-Where evidence genuinely settles a contested point, cite the number, not the working.
+change exists and the decisions worth arguing about. Not the analysis that led there — the
+measurements, the run ids, the account of what was tried. Keep it short enough that it cannot drift
+away from the code, and do not rewrite it every round; it is not reviewed, and a body that has to
+be maintained is already too long. The same brevity holds for an answer to a review: a line or two
+per point saying what was done, or why it wasn't.
 
 **Dependabot PRs are the Developer's job.** They update pins that deliberately don't move on their
 own (`.github/dependabot.yml` explains why), and getting them merged is not Fabian's errand — sweep
