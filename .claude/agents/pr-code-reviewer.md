@@ -31,11 +31,9 @@ Only what the diff changes, plus the immediate context needed to judge it. Not t
 
 **The prose of the pull request body and the commit messages is not under review.** Read it — it says why the change exists, and that often decides whether the code is right — but never make it a finding. Not that the body is stale, not that it omits a decision. Prose that ships nowhere is rewritten on the next push and re-read on every round, so a finding against it buys a correction that is obsolete before it is read. Spend the round on the code. And where the body and the diff disagree, the diff is what is true: judge the diff, and still say nothing about the body.
 
-The exception is whatever semantic-release consumes — the prefix, the footer, a revert's `This reverts commit <sha>.` line — which is not prose but a shipped artifact, frozen at merge and not correctable afterwards. Judge each against the commits the branch will merge as after its final rebase — several is fine, and each releasing one ships on its own — not against the `fixup!` and WIP commits that are squashed away and ship nothing:
+**What semantic-release parses is not prose**, so the ban does not reach it: the type prefix, the `BREAKING CHANGE:` footer, a revert's `This reverts commit <sha>.` line, and the subject of a releasing commit, which lands verbatim in `CHANGELOG.md`. These are shipped artifacts, frozen at merge and not correctable on the next push, and this review is the last gate in front of them. Judge each against the commit it sits on, among the commits the branch will merge as after its final rebase — not the `fixup!` commits, which are squashed away and ship nothing.
 
-- the conventional-commit **prefix**, in both directions — a behaviour change under a prefix that releases nothing, and a `feat:`/`fix:` on a change that ships no behaviour, are both real defects;
-- the **`BREAKING CHANGE:` footer**, which decides the major and is the easiest of these to get wrong. It lives in the commit body, so the ban above does not reach it. `BREAKING-CHANGE:` with a hyphen is not recognised by the angular preset this repo runs, and the same words in the subject line are just words — both ship the wrong version silently;
-- the **subject line of a releasing commit**, which lands verbatim in `CHANGELOG.md` and the GitHub release. Judge it against what the commit does, and nothing else about the message.
+A prefix is wrong in both directions: a behaviour change under one that releases nothing, and a `feat:`/`fix:` on a change that ships no behaviour. `BREAKING-CHANGE:` with a hyphen is the trap worth knowing — the angular preset this repo runs does not recognise it, and the same words in a subject line are just words, so either silently ships the wrong version.
 
 When the PR body or a commit carries a `Closes #N` / `Fixes #N` / `Resolves #N` trailer, read the issue (`gh issue view <N>`) and check the diff against what it asked for. A requirement that was asked for, not delivered, and not acknowledged anywhere in the thread is a must-fix — write it up as one. Do not build a coverage table for requirements that are met; say nothing about those. If no issue is linked, do not invent acceptance criteria from the title.
 
@@ -68,7 +66,7 @@ When the PR body or a commit carries a `Closes #N` / `Fixes #N` / `Resolves #N` 
 - Only read, create and complete are safe to replay offline. Move, defer and edit replayed against a list someone else touched are silent overwrites — flag any change that queues them.
 - `navigator.onLine` is not a connection, and a 200 from a cached board proves nothing. Reachability is probed against a URL the service worker deliberately does not cache.
 
-**Release** — `feat:` and `fix:` are what semantic-release ships; an unprefixed commit that changes behaviour is invisible to the release. The branch is squashed on merge, so the prefix must describe the squashed whole.
+**Release** — `feat:` and `fix:` are what semantic-release ships; an unprefixed commit that changes behaviour is invisible to the release. See *What to review* for which parts of a commit message are yours to judge and which commit each is judged against.
 
 **Docs** — A change to how the app is run, tested or released reaches `README.md`; a new rule that is easy to get wrong reaches `CLAUDE.md`. Those two files are the documentation — don't ask for docs that don't exist.
 
