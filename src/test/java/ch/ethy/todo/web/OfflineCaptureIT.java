@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import ch.ethy.todo.IntegrationTest;
+import ch.ethy.todo.domain.Task;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -229,6 +230,70 @@ class OfflineCaptureIT extends IntegrationTest {
 
     assertThat(created.get("notes").asString()).isEqualTo("page 40 onwards");
     assertThat(created.get("dueDate").asString()).isEqualTo("2030-02-28");
+  }
+
+  /**
+   * The REST half of the bound. The domain refuses an over-long value whichever door it came in by,
+   * but only this path turns the refusal into the field-by-field 400 the API promises — and a label
+   * was the field whose limit the create bodies did not publish.
+   */
+  @Test
+  @DisplayName("an over-long label is a 400 naming the field, not a 500")
+  void overLongLabelIsRejectedByTheApi() throws Exception {
+    String me = someone();
+    Long list =
+        perform(
+                post("/api/tasklists")
+                    .with(as(me, ADMIN))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(json.writeValueAsString(Map.of("name", "Roofing"))))
+            .get("id")
+            .asLong();
+    Map<String, Object> payload = new HashMap<>();
+    payload.put("title", "Fix the roof");
+    payload.put("zone", "OPPORTUNITY_NOW");
+    payload.put("labels", List.of("l".repeat(Task.MAX_LABEL_LENGTH + 1)));
+
+    JsonNode error =
+        json.readTree(
+            mvc.perform(
+                    post("/api/tasklists/" + list + "/tasks")
+                        .with(as(me, WRITE))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json.writeValueAsString(payload)))
+                .andExpect(status().isBadRequest())
+                .andReturn()
+                .getResponse()
+                .getContentAsString());
+
+    assertThat(error.get("error").asString()).isEqualTo("validation_failed");
+    assertThat(error.get("fields").propertyNames())
+        .as("the caller is told which field, not just that something was wrong")
+        .anyMatch(field -> field.startsWith("labels"));
+  }
+
+  @Test
+  @DisplayName("an over-long title on the capture path is a 400, and carries no statement")
+  void overLongTitleIsRejectedByTheApi() throws Exception {
+    String me = someone();
+    Map<String, Object> payload = new HashMap<>();
+    payload.put("title", "t".repeat(Task.MAX_TITLE_LENGTH + 1));
+
+    String body =
+        mvc.perform(
+                post("/api/tasks/capture")
+                    .with(as(me, WRITE))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(json.writeValueAsString(payload)))
+            .andExpect(status().isBadRequest())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    assertThat(body.toLowerCase(java.util.Locale.ROOT))
+        .as("the shape this whole change exists to remove")
+        .doesNotContain("insert")
+        .doesNotContain("truncat");
   }
 
   @Test

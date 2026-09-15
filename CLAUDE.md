@@ -37,6 +37,16 @@ definition, what it is judged against, or what decides whether it passed — sti
 the version of itself that is already on main. It also means a change to any of those only takes
 effect once merged, so the pull request that makes it is reviewed under the old rules.
 
+That holds structurally for all of them but this file. The branch is checked out in full so the
+review can read it, and Claude Code loads a `CLAUDE.md` from above whatever it opens — so the
+branch's copy lands in the reviewer's context on its first read from the branch, unasked and framed
+as project instructions. The branch's agent definition can reach the reviewer too, but it arrives
+as a file the reviewer deliberately opened and knows is a subject; this one does not announce
+itself. What keeps it from being authoritative is the review prompt, which spends a paragraph
+saying it is the branch's proposal rather than a rule. A guarantee the layout enforces holds
+whatever the model does; this one holds because the model is told. Anything that weakens that
+paragraph weakens the separation.
+
 Two kinds of PR still go green with no review behind them. Dependabot's, which the workflow skips
 by design — that is what makes a green bump something the Developer can merge alone. And anything
 from a fork, which is refused outright: `pull_request_target` runs with access to the repository's
@@ -148,6 +158,15 @@ nothing — and still answers 200. That is why every mutator resolves its own id
 lookup rather than the public read one, and why a write belongs in the service, never in a
 controller. `PATCH /api/tasks/{id}` silently discarded every edit for exactly this reason.
 
+**A length limit belongs on the entity.** The MCP tools hand their arguments straight to the
+domain, so a bound that lives only on a `Requests` record is not enforced for an assistant — the
+value reaches the driver instead and comes back as a truncation error quoting the insert statement.
+The entity holds the constant and the DTO's `@Size` constrains against it rather than against its
+own copy of the number. The entity measures characters (`codePointCount`), not `String.length()` —
+the columns are utf8mb4 and count an emoji as one where Java counts two. `@Size` cannot: it counts
+UTF-16 code units, which is stricter than the column and so safe, but it means the entity is the
+only layer actually measuring characters, and the entity is the one the MCP path reaches.
+
 **Test the deny path.** Not just that the allowed thing works — that the refused thing returns no
 payload.
 
@@ -165,6 +184,14 @@ are safe to replay blind. Move, defer and edit need a connection: replayed again
 else has touched, each is a silent overwrite. Full offline was considered and declined; it would
 mean reimplementing the caps, ordering and deferral rules in TypeScript, so the domain logic would
 exist twice in two languages.
+
+**A queued write's 4xx is discarded, not retried and not shown.** The outbox treats anything that
+is not a connection failure as the server's settled answer and drops the entry — which is right
+for the 404 of a task deleted meanwhile, and ruinous for a 400. So any limit the server enforces
+on a field the capture form can send has to be enforced in the form as well, or the user is told
+the task was saved and never sees it again. That is why the limits exist a third time in
+`model.ts` and why `model.spec.ts` pins them against the checked-in contract. The form measures in
+UTF-16 code units, because `@Size` does and `@Size` is what decides the 400.
 
 **`navigator.onLine` is not a connection.** It is true on a captive portal and true when the server
 is down — and once the service worker serves the board from cache, a 200 proves nothing either.

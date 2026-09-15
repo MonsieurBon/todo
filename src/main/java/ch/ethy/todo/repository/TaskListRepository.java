@@ -23,6 +23,12 @@ public interface TaskListRepository extends JpaRepository<TaskList, Long> {
   @EntityGraph(attributePaths = {"owner", "members"})
   Optional<TaskList> findByOwnerAndSlug(User owner, String slug);
 
+  /**
+   * Names are unique per owner in the schema. This is what lets a duplicate be refused as a client
+   * error rather than reaching the driver, whose answer quotes the insert statement.
+   */
+  Optional<TaskList> findByOwnerAndName(User owner, String name);
+
   @EntityGraph(attributePaths = {"owner", "members"})
   Optional<TaskList> findByOwnerAndInboxIsTrue(User owner);
 

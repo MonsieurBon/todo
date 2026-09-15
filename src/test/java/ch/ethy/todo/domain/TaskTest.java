@@ -43,6 +43,50 @@ class TaskTest {
       assertThatThrownBy(() -> new Task("Renew passport", null))
           .isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    @DisplayName("a title as long as the column allows is accepted")
+    void titleAtTheLimit() {
+      String title = "t".repeat(Task.MAX_TITLE_LENGTH);
+      assertThat(new Task(title, TaskZone.OPPORTUNITY_NOW).title()).isEqualTo(title);
+    }
+
+    @Test
+    @DisplayName("a longer title is refused, and the refusal names the limit")
+    void titleTooLong() {
+      assertThatThrownBy(
+              () -> new Task("t".repeat(Task.MAX_TITLE_LENGTH + 1), TaskZone.OPPORTUNITY_NOW))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining(String.valueOf(Task.MAX_TITLE_LENGTH));
+    }
+
+    @Test
+    @DisplayName("a title of emoji is measured in characters, as the column counts them")
+    void titleMeasuredInCharacters() {
+      String title = "\uD83E\uDDF9".repeat(Task.MAX_TITLE_LENGTH);
+      assertThat(title.length())
+          .as("two UTF-16 code units each, so measuring those would refuse this")
+          .isEqualTo(Task.MAX_TITLE_LENGTH * 2);
+      assertThat(new Task(title, TaskZone.OPPORTUNITY_NOW).title()).isEqualTo(title);
+    }
+
+    @Test
+    @DisplayName("one character too many is refused however wide the characters are")
+    void titleOfEmojiStillHasALimit() {
+      assertThatThrownBy(
+              () ->
+                  new Task(
+                      "\uD83E\uDDF9".repeat(Task.MAX_TITLE_LENGTH + 1), TaskZone.OPPORTUNITY_NOW))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining(String.valueOf(Task.MAX_TITLE_LENGTH + 1));
+    }
+
+    @Test
+    @DisplayName("surrounding whitespace does not count towards the limit")
+    void titleTrimmedBeforeMeasuring() {
+      String title = "t".repeat(Task.MAX_TITLE_LENGTH);
+      assertThat(new Task("  " + title + "  ", TaskZone.OPPORTUNITY_NOW).title()).isEqualTo(title);
+    }
   }
 
   @Nested
@@ -158,6 +202,57 @@ class TaskTest {
 
       assertThat(task.deferUntil()).isNull();
       assertThat(task.isVisibleOn(TODAY)).isTrue();
+    }
+  }
+
+  @Nested
+  @DisplayName("notes")
+  class Notes {
+
+    @Test
+    @DisplayName("notes as long as the limit allows are kept")
+    void atTheLimit() {
+      Task task = task();
+      String notes = "n".repeat(Task.MAX_NOTES_LENGTH);
+      task.notes(notes);
+      assertThat(task.notes()).isEqualTo(notes);
+    }
+
+    @Test
+    @DisplayName("longer notes are refused, and the refusal names the limit")
+    void tooLong() {
+      assertThatThrownBy(() -> task().notes("n".repeat(Task.MAX_NOTES_LENGTH + 1)))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining(String.valueOf(Task.MAX_NOTES_LENGTH));
+    }
+
+    @Test
+    @DisplayName("a task may have no notes at all")
+    void absent() {
+      Task task = task();
+      task.notes(null);
+      assertThat(task.notes()).isNull();
+    }
+  }
+
+  @Nested
+  @DisplayName("client reference")
+  class ClientRef {
+
+    @Test
+    @DisplayName("a reference longer than the column is refused")
+    void tooLong() {
+      assertThatThrownBy(() -> task().clientRef("r".repeat(Task.MAX_CLIENT_REF_LENGTH + 1)))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining(String.valueOf(Task.MAX_CLIENT_REF_LENGTH));
+    }
+
+    @Test
+    @DisplayName("a blank reference is absent, not an empty string")
+    void blankIsAbsent() {
+      Task task = task();
+      task.clientRef("   ");
+      assertThat(task.clientRef()).isNull();
     }
   }
 }

@@ -1,5 +1,7 @@
 package ch.ethy.todo.mcp;
 
+import ch.ethy.todo.domain.Task;
+import ch.ethy.todo.domain.TaskList;
 import ch.ethy.todo.domain.TaskZone;
 import ch.ethy.todo.service.BoardFilter;
 import ch.ethy.todo.service.CurrentUserService;
@@ -68,13 +70,19 @@ public class TodoTools {
           """)
   @PreAuthorize("hasAnyAuthority('SCOPE_todo:capture', 'SCOPE_todo:write')")
   public Responses.TaskView createTask(
-      @McpToolParam(description = "What needs doing.", required = true) String title,
+      @McpToolParam(
+              description = "What needs doing. At most " + Task.MAX_TITLE_LENGTH + " characters.",
+              required = true)
+          String title,
       @McpToolParam(
               description = "CRITICAL_NOW, OPPORTUNITY_NOW or OVER_THE_HORIZON.",
               required = false)
           TaskZone zone,
       @McpToolParam(
-              description = "Topics for this task, e.g. [\"house\", \"project-a\"].",
+              description =
+                  "Topics for this task, e.g. [\"house\", \"project-a\"]. At most "
+                      + Task.MAX_LABEL_LENGTH
+                      + " characters each.",
               required = false)
           List<String> labels,
       @McpToolParam(
@@ -270,7 +278,12 @@ public class TodoTools {
   @PreAuthorize("hasAuthority('SCOPE_todo:write')")
   public Responses.TaskView setTaskLabels(
       @McpToolParam(description = "Id of the task.", required = true) Long taskId,
-      @McpToolParam(description = "The complete set of topics.", required = true)
+      @McpToolParam(
+              description =
+                  "The complete set of topics, at most "
+                      + Task.MAX_LABEL_LENGTH
+                      + " characters each.",
+              required = true)
           List<String> labels) {
     return Responses.TaskView.of(tasks.setLabels(taskId, currentUser.current(), labels));
   }
@@ -331,7 +344,11 @@ public class TodoTools {
           """)
   @PreAuthorize("hasAuthority('SCOPE_todo:admin')")
   public Responses.TaskListSummary createTaskList(
-      @McpToolParam(description = "Name of the list.", required = true) String name) {
+      @McpToolParam(
+              description =
+                  "Name of the list. At most " + TaskList.MAX_NAME_LENGTH + " characters.",
+              required = true)
+          String name) {
     var me = currentUser.current();
     return Responses.TaskListSummary.of(lists.create(me, name), me);
   }

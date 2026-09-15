@@ -18,6 +18,11 @@
       (ngModelChange)="title.set($event)"
       (keydown.enter)="save()"
     />
+    @if (titleTooLong()) {
+      <mat-hint class="too-long"
+        >Too long by {{ title().trim().length - maxTitleLength }}.</mat-hint
+      >
+    }
   </mat-form-field>
 
   <mat-form-field>
@@ -29,6 +34,11 @@
       [ngModel]="notes()"
       (ngModelChange)="notes.set($event)"
     ></textarea>
+    @if (notesTooLong()) {
+      <mat-hint class="too-long"
+        >Too long by {{ notes().trim().length - maxNotesLength }}.</mat-hint
+      >
+    }
   </mat-form-field>
 
   <mat-form-field>
@@ -64,9 +74,14 @@
   <mat-form-field>
     <mat-label>Topics, comma separated</mat-label>
     <input matInput name="labels" [ngModel]="labels()" (ngModelChange)="labels.set($event)" />
+    @if (labelTooLong(); as tooLong) {
+      <mat-hint class="too-long">
+        "{{ tooLong }}" is longer than {{ maxLabelLength }} characters.
+      </mat-hint>
+    }
   </mat-form-field>
 
-  <button matButton="filled" type="button" [disabled]="!title().trim()" (click)="save()">
+  <button matButton="filled" type="button" [disabled]="!canSave()" (click)="save()">
     Add to the list
   </button>
 </div>
