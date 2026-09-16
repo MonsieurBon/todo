@@ -62,7 +62,8 @@ jobs:
       # One thing does cross the line: Claude Code loads the CLAUDE.md above
       # whatever it reads, so checking the branch out in full puts the branch's
       # copy into the reviewer's context unasked. The prompt is what tells it
-      # that copy is a proposal rather than a rule — see CLAUDE.md.
+      # that copy is a proposal rather than a rule — see the prompt in
+      # .github/actions/claude-review/action.yml.
       - name: Check out the branch under review (the subject)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
