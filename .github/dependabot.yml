@@ -49,21 +49,9 @@ updates:
       semver-minor-days: 7
       semver-major-days: 30
     groups:
-      angular-toolchain:
+      angular:
         patterns:
           - "@angular/*"
-          - "angular-oauth2-oidc"
-          - "typescript"
-          - "rxjs"
-          - "tslib"
-          - "angular-eslint"
-          - "eslint"
-          - "@eslint/*"
-          - "typescript-eslint"
-      semantic-release:
-        patterns:
-          - "semantic-release"
-          - "@semantic-release/*"
 
     # `ignore` applies to security updates too, unlike `cooldown` above — so a
     # fix published above a bound never arrives, with the Dependabot alert as
@@ -71,15 +59,4 @@ updates:
     ignore:
       - dependency-name: "typescript"
         update-types:
-          - "version-update:semver-minor"
           - "version-update:semver-major"
-      - dependency-name: "typescript-eslint"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "eslint"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "@eslint/js"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "rxjs"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "tslib"
-        update-types: ["version-update:semver-major"]
