@@ -2,13 +2,7 @@ import { inject, provideAppInitializer } from '@angular/core';
 import { MatIconRegistry } from '@angular/material/icon';
 import { DomSanitizer } from '@angular/platform-browser';
 
-/**
- * The icon set, inlined.
- *
- * <p>Material's icon font is a web font, and the app has to look the same with no connection —
- * an icon that arrives late renders as its own name in the meantime, which is worse than a shape
- * that was always there. These ship in the bundle, so there is nothing to fetch.
- */
+/** Inlined: Material's icon font is a web font, and a late icon renders as its own name. */
 const PATHS: Record<string, string> = {
   check: '<polyline points="4 12.5 9.5 18 20 6.5"/>',
   box: '<rect x="4.5" y="4.5" width="15" height="15" rx="4"/>',

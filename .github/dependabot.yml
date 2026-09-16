@@ -1,39 +1,7 @@
-# Every dependency here is pinned — the base image by digest, each action by
-# commit SHA — so nothing updates itself. Dependabot is what turns those pins
-# back into something that moves.
-#
-# Every ecosystem gets a cooldown: a release has to be a few days old before it
-# is offered. What the window buys is not the same everywhere. Where a release
-# can be unpublished or a tag moved — npm, and a retagged action — it is the
-# time in which a compromised release gets yanked before we ever see it, which
-# is worth having because a malicious postinstall exits 0 and CI goes green.
-# Maven Central is immutable and nothing can be withdrawn from it, so there the
-# same window buys advisory and detection time instead.
-#
-# What normally makes the delay cheap is that it does not apply to Dependabot
-# security updates, so a known CVE fix still arrives the day it is published.
-# That bypass is a repository setting rather than anything in this file: with
-# automated security fixes switched off, every window below turns into
-# CVE-patch latency.
-#
-# docker is the exception on both counts. The advisory database has no
-# container ecosystem, so there are no security updates for it to bypass with,
-# and the base image is the only artifact that actually ships. Its window is
-# accepted deliberately — an image pulled from a public registry is exactly the
-# compromise a cooldown is for — but it is the full latency on a JDK or OS
-# package fix, and no scanner stands behind it.
-#
-# When a window closes Dependabot proposes the newest version that has itself
-# cleared it, not the one that opened it — so a major arrives as whatever its
-# first patches made it, rather than as x.0.0.
-#
-# docker and github-actions take `default-days` only; the semver-* keys need an
-# ecosystem Dependabot can read semver from. Where the tiers do apply,
-# `default-days` still has to be set: it is what a bump falls back to when
-# neither side parses into a major/minor/patch triple, or when the triple does
-# not move at all — a prerelease promoted to final, or a qualifier-only bump.
-# Those are patch-shaped, so they get the patch window rather than whatever
-# default the platform would have picked.
+# The semver-* keys need an ecosystem Dependabot can read semver from, so docker
+# and github-actions take `default-days` only. Where the tiers do apply,
+# `default-days` is still the fallback for a bump whose triple does not parse or
+# does not move.
 version: 2
 updates:
   - package-ecosystem: "docker"
@@ -43,9 +11,8 @@ updates:
     cooldown:
       default-days: 7
 
-  # "/" covers .github/workflows only. Composite actions are found by naming the
-  # directory that holds each action.yml, so the glob keeps new ones covered
-  # without a matching edit here.
+  # "/" covers .github/workflows only; the glob keeps new composite actions
+  # covered without an edit here.
   - package-ecosystem: "github-actions"
     directories:
       - "/"
@@ -54,10 +21,8 @@ updates:
       interval: "daily"
     cooldown:
       default-days: 7
-    # claude-code-action is pinned in both directories above, and a bump to it
-    # would otherwise arrive as two identical pull requests. `group-by` is what
-    # collapses one dependency across directories into a single one — without
-    # it, a group still splits per directory.
+    # claude-code-action is pinned in both directories above. Without
+    # `group-by`, a group still splits per directory and the bump arrives twice.
     groups:
       claude-code-action:
         patterns:
@@ -83,17 +48,6 @@ updates:
       semver-patch-days: 3
       semver-minor-days: 7
       semver-major-days: 30
-    # One group per set of packages that can only install together. A dependency
-    # belongs to exactly one group, so anything sharing an enforced peer edge
-    # with a member has to be a member too — otherwise it moves alone and the
-    # pull request cannot install at all, which surfaces as a failed `npm ci`
-    # rather than as the version skew it is.
-    #
-    # Membership is derived, not decided: read `peerDependencies` against
-    # `peerDependenciesMeta` in package-lock.json, per edge rather than per
-    # package, and ignore the optional ones — npm does not hold an installed
-    # package to an optional range. That is why vitest is absent despite
-    # @angular/build peering it.
     groups:
       angular-toolchain:
         patterns:
@@ -111,43 +65,9 @@ updates:
           - "semantic-release"
           - "@semantic-release/*"
 
-    # Within a group, some members can never take an update on their own:
-    # another member's peer range holds them below it. Grouping does not help,
-    # because Dependabot resolves each member to its own latest and only bundles
-    # the result afterwards — it never solves the set against those peer ranges.
-    # The bump lands in the group regardless and `npm ci` fails on ERESOLVE,
-    # taking the group's patches down with it.
-    #
-    # So those updates are kept out entirely, and taken by hand when the package
-    # holding the bound widens its range. For the major-only entries that is the
-    # Angular major, which is hand-done anyway. typescript is the exception: the
-    # @angular/build window is one minor wide, and Angular widens it at its own
-    # minors, so that bump comes due mid-major — see CLAUDE.md for the check
-    # that catches it, because nothing else will.
-    #
-    # Note that `ignore` applies to Dependabot security updates too, unlike
-    # `cooldown` above, so a fix published above the bound waits for that same
-    # hand-done pass with the Dependabot alert as the only thing watching. The
-    # minor-level bound costs more than the others here: typescript does not
-    # backport, so once 6.1 ships the pinned line stops receiving patches at all
-    # rather than merely stopping at a major.
-    #
-    # To re-derive: for each member, test its next minor and next major against
-    # every enforced peer edge (`peerDependenciesMeta` optional ones excluded)
-    # pointing at it from a group sibling. An edge only counts if the sibling
-    # cannot move *to a version that widens the bound* in the same grouped bump.
-    # Sibling pins among @angular/* fail that test — @angular/common@23 cannot
-    # arrive without @angular/core@23 — which is why none of them are listed.
-    # angular-eslint passes it despite being a group member: typescript-eslint@9
-    # ships on a day when the newest angular-eslint still peers ^8.
-    #
-    # An optional peer edge is not enforced by npm, so it cannot fail the
-    # install — but where it encodes a lockstep that is real anyway and nothing
-    # exercises the skew, it lands green and silent, which is worse. @eslint/js
-    # is listed for that reason rather than for a resolution failure. vitest has
-    # the same optional edge from @angular/build and is deliberately not listed:
-    # `ng test` drives it through that builder on every pull request, so a skew
-    # there fails loudly instead.
+    # `ignore` applies to security updates too, unlike `cooldown` above — so a
+    # fix published above a bound never arrives, with the Dependabot alert as
+    # the only thing watching.
     ignore:
       - dependency-name: "typescript"
         update-types:

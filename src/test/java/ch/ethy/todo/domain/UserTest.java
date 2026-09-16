@@ -6,10 +6,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-/**
- * The IdP's claims are the one input this application is handed rather than offered, so the two
- * bounds here go opposite ways on purpose. See the constructor for why.
- */
 class UserTest {
 
   @Test

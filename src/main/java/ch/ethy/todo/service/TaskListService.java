@@ -11,11 +11,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Every method that takes an id also takes the user, and resolves the two together through a scoped
- * query. There is deliberately no "load by id" helper on this service: the previous version of this
- * app had one, checked access afterwards, and leaked data whenever the check failed.
- */
 @Service
 @Transactional
 public class TaskListService {
@@ -38,17 +33,12 @@ public class TaskListService {
     return lists.findAccessible(id, user).orElseThrow(() -> notFound(id));
   }
 
-  /** Owner-only: renaming, deleting and sharing are not things a member may do. */
   @Transactional(readOnly = true)
   public TaskList owned(Long id, User user) {
     return resolveOwned(id, user);
   }
 
-  /**
-   * The same lookup for this service's own use, outside the read-only transaction, so the entity
-   * the mutators below change stays managed. See {@code TaskService.resolve} for why they do not
-   * simply call the public one.
-   */
+  /** Outside the read-only transaction, so mutators keep a managed entity. */
   private TaskList resolveOwned(Long id, User user) {
     return lists.findByIdAndOwner(id, user).orElseThrow(() -> notFound(id));
   }
@@ -81,23 +71,15 @@ public class TaskListService {
         () -> {
           list.name(name);
           list.slug(uniqueSlug(owner, name, id));
-          // Flushed here rather than at commit so a name the constraint refuses is attributable
-          // to this call, and can be answered as one.
+          // Flushed here, not at commit, so a refused name is attributable to this call.
           lists.flush();
           return list;
         });
   }
 
   /**
-   * A name already taken by another of this owner's lists.
-   *
-   * <p>Without this the duplicate is found by the driver instead: Hibernate must insert immediately
-   * for an identity key, so the constraint answers with its own name and the whole statement, and
-   * that reaches an MCP caller verbatim — a failure it cannot act on, carrying schema detail it has
-   * no business seeing.
-   *
-   * <p>A missing or blank name is not this method's complaint; the entity refuses it with its own
-   * message.
+   * Checked up front so the duplicate is not found by the driver instead, whose message quotes the
+   * constraint and the whole statement and reaches an MCP caller verbatim.
    */
   private void refuseADuplicateName(User owner, String name, Long excluding) {
     if (name == null || name.isBlank()) {
@@ -113,15 +95,8 @@ public class TaskListService {
   }
 
   /**
-   * The race neither check above can cover: two callers pass both, and the unique constraints are
-   * the boundary that actually holds.
-   *
-   * <p>Two of them sit under this write — the name, and the slug derived from it — and a race can
-   * trip either. Two different names that slug alike ("Project A" and "project-a!") clear the name
-   * check honestly and collide on the slug. Which one it was is not knowable here without reading
-   * driver text or re-reading in a transaction the violation has already marked rollback-only, so
-   * the message says what is true of both rather than naming the name. It also gives the right
-   * advice: retrying succeeds, because the loser's next slug sees the winner's.
+   * The race the checks above cannot cover. Whether the name or the slug collided is not knowable
+   * here — the transaction is already rollback-only — so the message covers both.
    */
   private TaskList underAUniqueName(Supplier<TaskList> write) {
     try {
@@ -137,14 +112,6 @@ public class TaskListService {
     return "A list called \"" + name.trim() + "\" already exists";
   }
 
-  /**
-   * Deletes a list, except the inbox.
-   *
-   * <p>The inbox is where anything captured without naming a list goes, and nothing can create
-   * another one — so deleting it does not remove a list, it permanently breaks capture for that
-   * person. The web app already hides the option; this is the boundary that actually holds, since
-   * the API is reachable without it.
-   */
   public void delete(Long id, User owner) {
     TaskList list = resolveOwned(id, owner);
     if (list.isInbox()) {
@@ -172,16 +139,8 @@ public class TaskListService {
   }
 
   /**
-   * Slugs are unique per owner, so a repeat name gets a numeric suffix rather than a 500.
-   *
-   * <p>The slug column is narrower than the name column, and the slug is derived rather than given,
-   * so a long name is shortened here instead of refused — the same loop that resolves a repeated
-   * name resolves the collisions shortening creates.
-   *
-   * <p>{@code renaming} is the list the slug is for, or null when creating. A rename has already
-   * applied the new name by this point, so without it the list collides with itself and walks its
-   * own slug one suffix further on every no-op rename — changing its URL for a rename that changed
-   * nothing.
+   * {@code renaming} is the list being renamed, or null when creating. Without it a no-op rename
+   * collides with itself and walks its own slug one suffix further, changing the list's URL.
    */
   private String uniqueSlug(User owner, String name, Long renaming) {
     String candidate = Slug.of(name, TaskList.MAX_SLUG_LENGTH);

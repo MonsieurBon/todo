@@ -3,7 +3,6 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { BoardView, CaptureTask, CreateTask, Task, TaskList, Zone } from './model';
 
-/** The board's filters, as the API takes them. */
 export interface BoardFilter {
   list?: number | null;
   label?: string | null;
@@ -28,7 +27,6 @@ function params(filter: BoardFilter): HttpParams {
   return query;
 }
 
-/** One place that knows the URLs. Every type here comes from the API's own contract. */
 @Injectable({ providedIn: 'root' })
 export class TodoApi {
   private readonly http = inject(HttpClient);

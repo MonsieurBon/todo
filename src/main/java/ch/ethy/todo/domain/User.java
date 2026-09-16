@@ -9,13 +9,6 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import org.hibernate.annotations.CreationTimestamp;
 
-/**
- * A person, as this application knows them.
- *
- * <p>Authentication is delegated entirely to the IdP, so there is deliberately no password, no
- * token and no session state here — only the IdP's subject claim plus enough profile to render a
- * name. Anything more would be a second copy of data the IdP already owns.
- */
 @Entity
 @Table(name = "app_user")
 public class User {
@@ -28,7 +21,7 @@ public class User {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  /** The IdP's {@code sub} claim. Immutable, and the only identity this app trusts. */
+  /** The IdP's {@code sub} claim. */
   @Column(
       name = "external_id",
       nullable = false,
@@ -52,17 +45,9 @@ public class User {
   }
 
   /**
-   * The three strings here come from the IdP's claims rather than from a caller, and they are
-   * bounded in two different ways on purpose.
-   *
-   * <p>The external id is <em>refused</em> when it is too long: it is the identity everything else
-   * hangs on, and shortening two subjects that share a prefix would merge two people into one
-   * account. Failing closed costs that person access; shortening would cost them someone else's
-   * data.
-   *
-   * <p>Email and display name are <em>shortened</em>. Neither identifies anyone — the external id
-   * does — so the cost is a truncated address or name, against locking a person out of their own
-   * account on their very first request, before they have so much as an inbox.
+   * The external id is refused when too long, not shortened: truncating two subjects that share a
+   * prefix would merge two people into one account. Email and display name identify nobody, so they
+   * are shortened rather than locking the person out on their first request.
    */
   public User(String externalId, String email, String displayName) {
     if (externalId == null || externalId.isBlank()) {

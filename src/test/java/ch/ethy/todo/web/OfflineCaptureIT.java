@@ -27,12 +27,8 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * What the offline queue needs from the API.
- *
- * <p>A task captured with no signal is replayed when the connection returns, and a replay cannot
- * tell "the request never arrived" from "the response never came back". Without a client-supplied
- * reference the second case silently duplicates the task, which is the failure people actually
- * notice — so creating twice with the same {@code clientRef} must create once.
+ * What the offline queue needs from the API: a replay cannot tell "the request never arrived" from
+ * "the response never came back", so creating twice with the same {@code clientRef} creates once.
  */
 class OfflineCaptureIT extends IntegrationTest {
 
@@ -232,11 +228,7 @@ class OfflineCaptureIT extends IntegrationTest {
     assertThat(created.get("dueDate").asString()).isEqualTo("2030-02-28");
   }
 
-  /**
-   * The REST half of the bound. The domain refuses an over-long value whichever door it came in by,
-   * but only this path turns the refusal into the field-by-field 400 the API promises — and a label
-   * was the field whose limit the create bodies did not publish.
-   */
+  /** Only this path turns the domain's refusal into the field-by-field 400 the API promises. */
   @Test
   @DisplayName("an over-long label is a 400 naming the field, not a 500")
   void overLongLabelIsRejectedByTheApi() throws Exception {
@@ -311,8 +303,7 @@ class OfflineCaptureIT extends IntegrationTest {
     }
     assertThat(inboxId).as("every user is provisioned with an inbox").isNotEqualTo(-1);
 
-    // The web app hides the option, but the API is the boundary that holds. Deleting it would not
-    // remove a list, it would permanently break capture: nothing can create another inbox.
+    // Nothing can create another inbox, so deleting it would break capture permanently.
     mvc.perform(delete("/api/tasklists/" + inboxId).with(as(me, ADMIN)))
         .andExpect(status().isBadRequest());
 

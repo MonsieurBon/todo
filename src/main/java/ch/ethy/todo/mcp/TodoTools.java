@@ -17,17 +17,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
 
 /**
- * The MCP tool surface.
- *
- * <p>Every tool is gated by the same scope as the REST endpoint behind it, so an assistant holding
- * a capture-only token can create tasks and nothing else. The check is {@code @PreAuthorize} on the
- * method, which throws rather than returning a partial result — the failure mode the previous
- * version of this app shipped was an authorization check that returned the data anyway.
- *
- * <p>Descriptions are written for a model rather than a developer. They carry the method's
- * discipline — what each zone means, that Critical Now is meant to hold about five things — because
- * an assistant that does not know the rules will cheerfully file forty tasks as critical and
- * quietly destroy the one signal the list exists to give.
+ * Descriptions here are written for a model, not a developer: they carry the method's discipline,
+ * because an assistant that does not know the rules will file forty tasks as Critical Now.
  */
 @Component
 public class TodoTools {

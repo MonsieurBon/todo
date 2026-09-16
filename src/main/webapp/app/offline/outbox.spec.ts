@@ -7,11 +7,8 @@ import { TodoApi } from '../api/todo-api';
 import { Outbox } from './outbox';
 
 /**
- * What the outbox does with a failure decides whether a captured task survives.
- *
- * <p>The distinction it has to get right: a request that could not be delivered must stay queued,
- * and a request the server considered and rejected must not — a completion for a task someone
- * deleted meanwhile would otherwise be retried until the end of time.
+ * The distinction that decides whether a captured task survives: an undelivered request stays
+ * queued, a rejected one must not — otherwise it is retried until the end of time.
  */
 describe('the outbox', () => {
   let api: { capture: ReturnType<typeof vi.fn>; complete: ReturnType<typeof vi.fn> };
@@ -20,8 +17,8 @@ describe('the outbox', () => {
   beforeEach(() => {
     api = { capture: vi.fn(() => of({})), complete: vi.fn(() => of({})) };
     TestBed.configureTestingModule({ providers: [{ provide: TodoApi, useValue: api }] });
-    // Each test gets a fresh Outbox, whose queue starts empty until something calls load();
-    // deleting the database instead would block on the previous test's open connection.
+    // A fresh Outbox starts empty until load(); deleting the database would block on the previous
+    // test's open connection.
     outbox = TestBed.inject(Outbox);
   });
 
@@ -85,8 +82,7 @@ describe('the outbox', () => {
   });
 
   it('drops a completion for a task that is no longer there', async () => {
-    // The task was deleted while this device was offline. Retrying will never succeed, and the
-    // person's intent - be rid of it - is satisfied either way.
+    // Deleted while this device was offline: retrying never succeeds, and the intent is met.
     api.complete = fails(404);
     await outbox.enqueue({ kind: 'complete', taskId: 42 });
 

@@ -14,14 +14,6 @@ import { BoardStore } from '../board/board-store';
 const NO_ACCOUNT =
   'No account with that address yet. They have to sign in once before a list can be shared with them.';
 
-/**
- * Lists, which exist to answer one question: who else can see this.
- *
- * <p>They are deliberately not topics. Topics are labels, because urgency has to be counted across
- * everything at once — a Critical Now cap enforced once per list would permit five urgent tasks per
- * project and call every list healthy. In practice that means very few lists: one private, and one
- * per person you share with.
- */
 @Component({
   selector: 'app-lists-page',
   imports: [
@@ -56,8 +48,8 @@ export class ListsPage {
     if (!name) {
       return;
     }
-    // Cleared only when it worked. The failures now say what to change about the name, and a
-    // field emptied under that message is advice the reader cannot take.
+    // Cleared only on success: the failure says what to change, and an emptied field takes the
+    // advice away.
     if (await this.run(() => firstValueFrom(this.api.createList(name)))) {
       this.newName.set('');
     }
@@ -96,13 +88,8 @@ export class ListsPage {
   }
 
   /**
-   * The one place errors surface as words. Sharing fails for a reason worth reading — most often
-   * that the person has never signed in, so there is no account to share with yet.
-   *
-   * <p>A 400 is the server refusing the input rather than failing, and it says why: a name another
-   * list already holds, or one longer than the column. That sentence is shown as it stands,
-   * because the fallback below tells the reader to wait for a connection — advice that is wrong
-   * for every 400, and points away from the one thing that would work.
+   * A 400's own sentence is shown as it stands: the fallback tells the reader to wait for a
+   * connection, which is wrong for every 400 and points away from the one thing that would work.
    */
   private async run(
     change: () => Promise<unknown>,
@@ -120,14 +107,9 @@ export class ListsPage {
   }
 
   /**
-   * A 404 means different things to different callers — no such list, or no such account — and
-   * the server cannot distinguish them by status, so the caller says which it asked for.
-   *
-   * <p>A 400 is the server refusing the input, and it carries two shapes. `invalid_request` is a
-   * sentence written for a person — a name another list holds — and is shown as it stands.
-   * `validation_failed` is Bean Validation's own wording, per field, which is terse but true;
-   * the top-level message on that one is only "Request body is invalid", so the fields are what
-   * gets read out.
+   * A 404 is either no such list or no such account and the status cannot say which, so the caller
+   * names what it asked for. A 400 carries two shapes: `invalid_request` is a sentence for a
+   * person; `validation_failed` says only "Request body is invalid", so its fields are read out.
    */
   private reasonFor(error: unknown, missing: string): string {
     const failure = error as {

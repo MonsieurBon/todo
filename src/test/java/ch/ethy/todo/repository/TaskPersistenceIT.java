@@ -20,13 +20,11 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MySQLContainer;
 
 /**
- * Runs the real Flyway migration against a real MySQL and then lets Hibernate validate the entities
- * against it. That validation is the point: the schema is hand-written, so nothing else would catch
- * it drifting from the mappings.
+ * Hibernate validating the entities against the real migration is the point: the schema is
+ * hand-written, so nothing else catches it drifting from the mappings.
  *
- * <p>Uses {@code @DataJpaTest} rather than {@code @SpringBootTest} deliberately — the full context
- * would try to reach the IdP for issuer metadata at startup, which has nothing to do with
- * persistence.
+ * <p>{@code @DataJpaTest} rather than {@code @SpringBootTest}: the full context would reach for the
+ * IdP's issuer metadata at startup.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)

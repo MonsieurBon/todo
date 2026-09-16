@@ -16,10 +16,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoderInitializationException
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
- * What an operator and a container runtime see.
- *
- * <p>These are the two things whatever runs this in production actually consumes: a probe that says
- * whether the application is serving, and a status code that says who is broken when it is not.
+ * What an operator and a container runtime see: a health probe, and who is broken when it fails.
  */
 class OperabilityIT extends IntegrationTest {
 
@@ -37,8 +34,7 @@ class OperabilityIT extends IntegrationTest {
     String body =
         mvc.perform(get("/actuator/health")).andReturn().getResponse().getContentAsString();
 
-    // show-details: never. With details on, this would name the database, its vendor, the disk
-    // and which component is failing - to anyone who can reach the port.
+    // show-details: never — otherwise this names the database, the disk and what is failing.
     assertThat(body).contains("\"status\":\"UP\"");
     assertThat(body).doesNotContain("database").doesNotContain("MySQL").doesNotContain("diskSpace");
   }
@@ -46,8 +42,7 @@ class OperabilityIT extends IntegrationTest {
   @Test
   @DisplayName("nothing but health is exposed")
   void onlyHealthIsExposed() throws Exception {
-    // An actuator surface grows quietly. env and configprops would publish the datasource
-    // password's key, the issuer, and every other setting.
+    // env and configprops would publish the datasource password's key, the issuer, everything.
     for (String endpoint : new String[] {"/actuator/env", "/actuator/configprops", "/actuator"}) {
       assertThat(mvc.perform(get(endpoint)).andReturn().getResponse().getStatus())
           .as("GET %s", endpoint)
@@ -58,8 +53,7 @@ class OperabilityIT extends IntegrationTest {
   @Test
   @DisplayName("an unreachable identity provider is 503, not 500")
   void idpDownIsServiceUnavailable() throws Exception {
-    // The decoder resolves issuer metadata on the first request carrying a token; this is what
-    // that failing looks like.
+    // What an unreachable IdP looks like on the first request carrying a token.
     given(jwtDecoder.decode(anyString()))
         .willThrow(
             new JwtDecoderInitializationException(

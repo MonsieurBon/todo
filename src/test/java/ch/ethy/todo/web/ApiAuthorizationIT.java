@@ -24,27 +24,16 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * The authorization suite.
- *
- * <p>Every test here asserts a <em>denial</em>, because that is the half the previous version of
- * this app got wrong. Its {@code editTask} resolver checked access, skipped the write when the
- * check failed, and then returned the entity anyway — so any user could read any task in the
- * database. The allow paths were all correct and thoroughly exercised; nothing was watching the
- * deny paths.
- *
- * <p>Two distinct boundaries are covered:
+ * Every test here asserts a <em>denial</em>, across two boundaries:
  *
  * <ul>
- *   <li><b>Scope</b> — what the AI client is allowed to do at all. Enforced by Spring Security
- *       before the controller runs; a violation is 403 and must carry no body.
- *   <li><b>Ownership</b> — whose data it is. Enforced by resolving every id together with the user
- *       in a scoped query; a violation is 404, deliberately indistinguishable from "no such id" so
- *       that probing cannot confirm which ids exist.
+ *   <li><b>Scope</b> — enforced before the controller runs; a violation is 403 and carries no body.
+ *   <li><b>Ownership</b> — enforced by resolving every id together with the user; a violation is
+ *       404, indistinguishable from "no such id" so probing cannot confirm which ids exist.
  * </ul>
  */
 class ApiAuthorizationIT extends IntegrationTest {
 
-  /** Replaced so the context starts without reaching out to the IdP for issuer metadata. */
   @Autowired private MockMvc mvc;
 
   @Autowired private ObjectMapper json;
@@ -57,7 +46,6 @@ class ApiAuthorizationIT extends IntegrationTest {
   private static final String ADMIN = "SCOPE_todo:admin";
   private static final String CAPTURE = "SCOPE_todo:capture";
 
-  /** A caller identified by IdP subject, holding exactly the scopes given. */
   private static org.springframework.test.web.servlet.request.RequestPostProcessor as(
       String subject, String... authorities) {
     List<GrantedAuthority> granted =

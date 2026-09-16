@@ -24,12 +24,8 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * That an edit is still there afterwards.
- *
- * <p>{@link ApiAuthorizationIT} covers who may PATCH a task; nothing covered whether the PATCH
- * survives the request. It did not: the controller mutated an entity that {@code
- * TaskService.accessible} had already detached, so every edit was accepted, echoed back, and
- * dropped.
+ * That an edit is still there afterwards. It once was not: the controller mutated an entity {@code
+ * TaskService.accessible} had already detached, so every edit was echoed back and dropped.
  */
 class TaskEditingIT extends IntegrationTest {
 
@@ -55,7 +51,6 @@ class TaskEditingIT extends IntegrationTest {
     return builder.contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(body));
   }
 
-  /** Files a task and returns its id, failing here rather than downstream if capture breaks. */
   private long capture(String subject, Map<String, Object> body) throws Exception {
     var response =
         mvc.perform(withBody(post("/api/tasks/capture").with(as(subject, WRITE)), body))
@@ -66,7 +61,7 @@ class TaskEditingIT extends IntegrationTest {
     return json.readTree(response).get("id").asLong();
   }
 
-  /** Reads a task back through the API, so nothing is asserted against an entity still in hand. */
+  /** Through the API, so nothing is asserted against an entity still in hand. */
   private JsonNode reread(String subject, long id) throws Exception {
     return json.readTree(
         mvc.perform(get("/api/tasks/" + id).with(as(subject, READ)))

@@ -7,12 +7,8 @@ import { BoardStore } from '../board/board-store';
 import { ListsPage } from './lists-page';
 
 /**
- * What the screen says when the server refuses a list name.
- *
- * <p>Rendered rather than unit-tested on the component, for the reason the capture form's spec
- * gives: a message can be entirely correct in the component and never reach the DOM. It matters
- * more here than most, because the fallback tells the reader to wait for a connection — advice
- * that is wrong for every 400 and points away from the one thing that would work.
+ * What the screen says when the server refuses a list name. Rendered rather than unit-tested for
+ * the reason capture-page.spec.ts gives: a right message can never reach the DOM.
  */
 describe('the lists screen', () => {
   let createList: ReturnType<typeof vi.fn>;

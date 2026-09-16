@@ -26,7 +26,6 @@ export class TaskRow {
 
   protected readonly online = this.board.online;
 
-  /** Only worth saying which list a task is on when there is more than one to be on. */
   protected readonly showList = computed(() => this.board.lists().length > 1);
 
   /** A queued capture has no server id, so everything but completing it is out of reach. */

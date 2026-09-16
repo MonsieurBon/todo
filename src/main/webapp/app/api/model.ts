@@ -3,12 +3,9 @@ import type { components } from '../../api/schema';
 type Schemas = components['schemas'];
 
 /**
- * Narrows a generated response type to what the server actually promises.
- *
- * <p>springdoc marks every field of a Java record optional, because a record component carries no
- * nullability. Rather than annotate each one, the fields that really can be absent are named here
- * and the rest are required. This still catches drift: naming a field that no longer exists is a
- * compile error, so a rename on the server breaks the build here rather than at runtime.
+ * springdoc marks every field of a Java record optional, since a record component carries no
+ * nullability — so the genuinely absent ones are named here and the rest made required. Naming a
+ * field that no longer exists is a compile error, which is what catches drift.
  */
 type Sent<T, Absent extends keyof T> = Required<Omit<T, Absent>> & Partial<Pick<T, Absent>>;
 
@@ -47,7 +44,7 @@ export const ZONE_NAMES: Record<Zone, string> = {
   OVER_THE_HORIZON: 'Over the Horizon',
 };
 
-/** What each zone is for, in the method's own terms. Shown where the zone is empty. */
+/** Shown where a zone is empty. */
 export const ZONE_MEANINGS: Record<Zone, string> = {
   CRITICAL_NOW: 'Must be done today.',
   OPPORTUNITY_NOW: 'Do soon, when the chance arises.',
@@ -60,21 +57,14 @@ export function zoneAfter(zone: Zone, steps: number): Zone | null {
 }
 
 /**
- * What the server will accept, so the form can refuse it before it is queued rather than after.
- *
- * <p>These matter more than a tidy form: a capture made offline is replayed from the outbox, and
- * the outbox reads a 4xx as the server's settled answer and drops the entry. A value the server
- * refuses is therefore a task the user is told was saved and never sees again — so the limit has
- * to be enforced where it is typed.
- *
- * <p>Third copy of a number that starts on the Java entity, so `model.spec.ts` checks them against
- * the contract rather than trusting this comment.
+ * Enforced where a value is typed, because the outbox drops a 4xx as settled — so a value the
+ * server refuses is a task reported saved and never seen again. Third copy of a number that starts
+ * on the Java entity; `model.spec.ts` pins them against the contract.
  */
 export const MAX_TITLE_LENGTH = 255;
 export const MAX_NOTES_LENGTH = 10_000;
 export const MAX_LABEL_LENGTH = 64;
 
-/** The labels a comma-separated field is asking for, which is what the server will be sent. */
 export function parseLabels(input: string): string[] {
   return input
     .split(',')
@@ -82,10 +72,7 @@ export function parseLabels(input: string): string[] {
     .filter(Boolean);
 }
 
-/**
- * A title for a body of text that is too long to be one: its first line, cut at the last space
- * that fits so the result is words rather than a word sliced in half.
- */
+/** Cut at the last space that fits, so the result is words rather than a sliced one. */
 export function openingLine(body: string): string {
   const line = body.split('\n', 1)[0].trim();
   if (line.length <= MAX_TITLE_LENGTH) {
@@ -97,22 +84,14 @@ export function openingLine(body: string): string {
 }
 
 /**
- * Shortens to `max` **code units**, without splitting a character in half.
- *
- * <p>Code units rather than characters on purpose, unlike the entity: what decides whether this is
- * accepted is the DTO's `@Size`, which counts code units, and a 400 on the capture path is
- * discarded by the outbox rather than shown to anyone. Cutting to 255 characters could be 510 code
- * units and would be refused.
- *
- * <p>A trailing high surrogate can only be an orphan — a whole character ends in a low one — so
- * dropping one is exactly the broken case and nothing else. Left in, it survives `JSON.stringify`
- * as an escape, comes back as a `char` with no UTF-8 encoding, and reaches the column as `?`.
+ * Code units, not characters, because the DTO's `@Size` counts them: 255 characters could be 510
+ * code units and be refused. A trailing high surrogate can only be an orphan, and left in it
+ * reaches the column as `?`.
  */
 export function cutTo(max: number, value: string): string {
   return value.length <= max ? value : value.slice(0, max).replace(/[\uD800-\uDBFF]$/, '');
 }
 
-/** The first label too long to store, or null. Named so the form can say which one. */
 export function tooLongLabel(input: string): string | null {
   return parseLabels(input).find((label) => label.length > MAX_LABEL_LENGTH) ?? null;
 }

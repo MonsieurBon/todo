@@ -7,14 +7,9 @@ import { BoardStore } from '../board/board-store';
 import { CapturePage } from './capture-page';
 
 /**
- * A capture is queued and replayed, and the outbox reads any 4xx as the server's settled answer
- * and drops the entry — so a body the server would refuse is a task reported saved and never seen
- * again. The form is the only thing standing in front of that, which makes two properties worth
- * rendering the component for: it must not send what would be refused, and it must say why.
- *
- * <p>The second half is why this renders rather than asserting on the computeds. `mat-error`
- * reaches the DOM only when the control's own errorState is true, which needs a validator and a
- * touched field — so a message can be entirely right in the component and invisible on screen.
+ * The form must not send what the server would refuse, and must say why. Rendered rather than
+ * asserted on the computeds because `mat-error` reaches the DOM only when the control's own
+ * errorState is true — a message can be right in the component and invisible on screen.
  */
 describe('the capture form', () => {
   let captured: ReturnType<typeof vi.fn>;
@@ -93,9 +88,7 @@ describe('the capture form', () => {
     expect(captured).not.toHaveBeenCalled();
   });
 
-  // A share with no `title` parameter puts the whole shared body here, and it is set
-  // programmatically — so neither maxlength nor a touched-based error state ever sees it. It must
-  // still be one tap: the body goes to the notes and its opening line becomes the title.
+  // Set programmatically, so neither maxlength nor a touched-based error state ever sees it.
   it('files a share too long to be a title without the user editing anything', async () => {
     const body = `Ring the plumber back\n${'and '.repeat(MAX_TITLE_LENGTH)}`;
     TestBed.overrideProvider(ActivatedRoute, shareOf(body));
@@ -110,9 +103,7 @@ describe('the capture form', () => {
     );
   });
 
-  // Typed or pasted rather than shared, so there is someone here who can shorten it. There is no
-  // maxlength on the field on purpose: a paste cut to 255 without saying so is the same silent
-  // loss this change is about.
+  // No maxlength on the field on purpose: a paste cut to 255 without saying so is silent loss.
   it('says why the button is dead when a pasted title runs past the limit', async () => {
     const fixture = await render();
     await set(fixture, 'title', 't'.repeat(MAX_TITLE_LENGTH + 12));
@@ -136,8 +127,7 @@ describe('the capture form', () => {
     );
   });
 
-  // ' ' is truthy, so || alone keeps it: the field looks empty, the button is dead, nothing says
-  // why, and the focus check passed it too.
+  // ' ' is truthy, so without the trim the field looks empty and the button is dead in silence.
   it('falls through a whitespace-only title the same way', async () => {
     TestBed.overrideProvider(
       ActivatedRoute,

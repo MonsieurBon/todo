@@ -13,10 +13,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class ApiExceptionHandler {
 
-  /**
-   * Both "no such list" and "not your list" arrive here. Answering 403 for the latter would confirm
-   * the id exists, so they are deliberately indistinguishable from outside.
-   */
+  /** 404 for "not yours" as well as "no such thing": a 403 would confirm the id exists. */
   @ExceptionHandler(NotFoundException.class)
   public ResponseEntity<Responses.ApiError> notFound(NotFoundException e) {
     return ResponseEntity.status(HttpStatus.NOT_FOUND)

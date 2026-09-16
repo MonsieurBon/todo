@@ -5,12 +5,8 @@ import { TodoApi } from '../api/todo-api';
 import { Zone } from '../api/model';
 
 /**
- * A write made with no connection, waiting to be sent.
- *
- * <p>Only two kinds exist, and that is the design rather than an unfinished list. Creating is
- * append-only and completing is idempotent, so both are safe to replay blind. Moving, deferring and
- * editing are not: replayed against a list someone else has touched they are a silent overwrite,
- * and none of them is urgent enough underground to be worth that.
+ * Two kinds by design, not an unfinished list: creating is append-only and completing idempotent,
+ * so both replay blind. Moving, deferring and editing would be silent overwrites.
  */
 export type OutboxEntry =
   | {
@@ -36,11 +32,8 @@ const DB_NAME = 'todo-outbox';
 const STORE = 'entries';
 
 /**
- * The queue of writes this device still owes the server.
- *
- * <p>Every capture goes through here, online or not. One path instead of two means the case that
- * loses a task — the request left, the response never came back — is exercised constantly rather
- * than only on the day the tunnel swallows it.
+ * Every capture goes through here, online or not, so the case that loses a task — request left,
+ * response never came back — is exercised constantly rather than only in a tunnel.
  */
 @Injectable({ providedIn: 'root' })
 export class Outbox {
@@ -70,12 +63,10 @@ export class Outbox {
     this.entries.set(await this.readAll());
   }
 
-  /** Queues a write and tries immediately; when there is a connection this is over in a moment. */
   async enqueue(entry: OutboxDraft): Promise<string> {
     const stored = {
       ...entry,
-      // The id doubles as the clientRef the server deduplicates on, so a retry after a lost
-      // response resolves to the task the first attempt already created.
+      // Doubles as the clientRef the server deduplicates on, so a retry resolves to the same task.
       id: crypto.randomUUID(),
       createdAt: Date.now(),
     } as OutboxEntry;
@@ -85,17 +76,14 @@ export class Outbox {
     return stored.id;
   }
 
-  /** Drops a queued write. Used to take back a capture that never left the device. */
   async discard(id: string): Promise<void> {
     await (await this.open()).delete(STORE, id);
     this.entries.update((current) => current.filter((entry) => entry.id !== id));
   }
 
   /**
-   * Sends what is queued, oldest first and strictly in order.
-   *
-   * <p>Order matters for one case: a task captured and completed in the same offline stretch. Send
-   * them out of order and the completion refers to a task the server has not heard of.
+   * Strictly in order: a task captured and completed in the same offline stretch would otherwise
+   * have its completion refer to a task the server has not heard of.
    */
   async flush(): Promise<void> {
     if (this.flushing) {
@@ -134,9 +122,9 @@ export class Outbox {
       return 'done';
     } catch (error) {
       const status = (error as { status?: number }).status ?? 0;
-      // 0 is no network; 401 means the token could not be renewed, which offline looks the same as.
-      // Anything else is the server's considered answer, and repeating it will not change it: a
-      // completion for a task that was deleted meanwhile is exactly the 404 this drops on purpose.
+      // 0 is no network; 401 is a token that could not be renewed, which looks the same offline.
+      // Anything else is settled and repeating will not change it — the 404 of a task deleted
+      // meanwhile is exactly what this drops on purpose.
       return status === 0 || status === 401 || status === 408 || status >= 500
         ? 'unreachable'
         : 'done';

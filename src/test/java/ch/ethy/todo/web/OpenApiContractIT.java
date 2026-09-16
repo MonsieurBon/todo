@@ -15,15 +15,10 @@ import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Keeps the checked-in OpenAPI document equal to the one this application actually serves.
+ * Keeps the checked-in OpenAPI document equal to the one the application serves, since the web
+ * app's TypeScript types are generated from it.
  *
- * <p>The web app's TypeScript types are generated from that file at build time, so it is the only
- * thing standing between a renamed field and a frontend that compiles happily against a shape the
- * server stopped sending. Choosing Java for the backend and TypeScript for the frontend means the
- * DTOs exist twice; this is what stops the second copy from drifting.
- *
- * <p>When the API changes on purpose, this test rewrites the file and fails once. Review the diff
- * and commit it — the failure is the review prompt, not a defect.
+ * <p>An intended change rewrites the file and fails once: review the diff and commit it.
  */
 class OpenApiContractIT extends IntegrationTest {
 

@@ -3,15 +3,6 @@ package ch.ethy.todo.service;
 import ch.ethy.todo.domain.Slug;
 import ch.ethy.todo.domain.TaskZone;
 
-/**
- * What to narrow the board to. Every field is optional; all null means "everything I can see",
- * which is the default view.
- *
- * @param listId restrict to one list — the sharing axis
- * @param label restrict to one topic — the axis that cuts across lists
- * @param zone restrict to one zone; the zone loads ignore this so all three stay visible
- * @param includeDone show completed tasks as well as open ones
- */
 public record BoardFilter(Long listId, String label, TaskZone zone, boolean includeDone) {
 
   public static BoardFilter everything() {
