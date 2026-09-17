@@ -99,13 +99,22 @@ passwords and has no login form. Something must issue tokens for it.
 
 What it requires of that issuer, independent of which product you use:
 
-- Four scopes: `todo:capture`, `todo:read`, `todo:write`, `todo:admin`.
+- Two scopes, one per surface: `todo:api` opens the REST API, `todo:mcp` opens the MCP server.
+  Neither is a permission tier — past the gate a token may do everything its surface offers, to
+  its own data. A client is granted one of them and cannot obtain the other.
+- **Each must be a _default_ client scope of its client, not an optional one**, because no client
+  names it in its request: the web app must not, so that a bundle cached in a browser never pins a
+  scope name, and an assistant cannot be relied upon to, since nothing obliges a third-party MCP
+  client to read the metadata that advertises it. Configure either as optional and that surface
+  answers `403` to everyone.
 - Tokens whose **`aud` contains `TODO_CANONICAL_URI`**. This is the security boundary the MCP
   specification requires, and it is not optional.
 - Standard OIDC discovery at `${OIDC_ISSUER_URI}/.well-known/openid-configuration`.
 - A public client `todo-web` (authorization code + PKCE) whose redirect URI is the app's origin,
-  permitted to request `offline_access` — without it the web app asks for a password every time a
-  phone reclaims the process.
+  with `todo:api` among its default scopes and `offline_access` optional — without `offline_access`
+  the web app asks for a password every time a phone reclaims the process.
+- A public client `todo-mcp` (authorization code + PKCE) for AI assistants, with `todo:mcp` among
+  its default scopes.
 - Confidential clients are not used anywhere; there are no client secrets to manage.
 
 **A working implementation is provided**: [`keycloak/realm-todo.json`](keycloak/realm-todo.json),
@@ -115,6 +124,35 @@ importable with `--import-realm`. It also defines clients for AI assistants over
 > literal `http://localhost:8090`. Keycloak does **not** substitute `${env.VAR}` during realm
 > import — a placeholder is stored verbatim, becomes the expected audience, and rejects every token
 > ever issued. Substitute the real origin as part of whatever applies the file.
+
+### Upgrading a deployment that still has the four capability scopes
+
+Until the surface scopes replaced them, clients were granted `todo:read`, `todo:write`, `todo:admin`
+and `todo:capture`. `--import-realm` will not update a realm that already exists, so an existing
+IdP has to be changed by hand. Add before removing and no client is ever locked out:
+
+1. Create the client scopes `todo:api` and `todo:mcp`, both with `include.in.token.scope` on.
+2. Give `todo-web` `todo:api` and `todo-mcp` `todo:mcp`, both as **default** client scopes, so that
+   neither client has to name one. Leave the old scopes assigned: a token then carries both sets,
+   which the old and the new app each accept, and that overlap is the window to deploy in.
+3. Deploy the app.
+4. Unassign the four old scopes and delete them, along with the capture-only client — without
+   `todo:capture` it can no longer obtain a scope that opens anything. **Only once nothing asks for
+   them any more**: a browser still running the pre-deploy bundle names `todo:read` in its
+   authorization request, and Keycloak refuses that request outright, so the user cannot sign in at
+   all — not even to recover. A hard reload is the way out for a client that missed the window.
+
+Do it in the other order and every client is refused until the IdP catches up. Tokens minted before
+step 2 carry no `todo:api` and are answered `403`; whether a refresh repairs that depends on how
+your Keycloak applies default scopes on refresh, so expect users to sign in again.
+
+There is no waiting period that makes step 4 provably safe — a device that has not opened the app
+since before the deploy still holds the old bundle. It is a one-off: the current bundle names no
+`todo:` scope, relying on the default grant instead, so nothing cached can pin a name again.
+
+The realm file also renames the full-access MCP client from `todo-claude-code` to `todo-mcp`, since
+the MCP server is not Claude Code's. Renaming an existing one is optional — keeping the old client
+id spares you re-pointing every assistant.
 
 **Ordering: none required.** Measured, not assumed:
 

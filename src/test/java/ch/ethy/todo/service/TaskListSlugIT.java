@@ -13,7 +13,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.TestingAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 
@@ -36,9 +35,7 @@ class TaskListSlugIT extends IntegrationTest {
             .subject(subject)
             .claim("email", subject + "@example.com")
             .build();
-    var auth =
-        new TestingAuthenticationToken(
-            jwt, null, List.of(new SimpleGrantedAuthority("SCOPE_todo:admin")));
+    var auth = new TestingAuthenticationToken(jwt, null, List.of());
     auth.setAuthenticated(true);
     SecurityContextHolder.getContext().setAuthentication(auth);
     return currentUser.current();

@@ -13,7 +13,6 @@ import java.time.LocalDate;
 import java.util.List;
 import org.springframework.ai.mcp.annotation.McpTool;
 import org.springframework.ai.mcp.annotation.McpToolParam;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
 
 /**
@@ -32,8 +31,6 @@ public class TodoTools {
     this.lists = lists;
     this.currentUser = currentUser;
   }
-
-  // ------------------------------------------------------------------ capture
 
   @McpTool(
       name = "create_task",
@@ -59,7 +56,6 @@ public class TodoTools {
           goes to the user's inbox. Labels are topics such as "house" or "project-a";
           a task may carry several, and they are how tasks are grouped across lists.
           """)
-  @PreAuthorize("hasAnyAuthority('SCOPE_todo:capture', 'SCOPE_todo:write')")
   public Responses.TaskView createTask(
       @McpToolParam(
               description = "What needs doing. At most " + Task.MAX_TITLE_LENGTH + " characters.",
@@ -87,8 +83,6 @@ public class TodoTools {
         listId == null ? tasks.capture(me, draft) : tasks.addTo(listId, me, draft));
   }
 
-  // --------------------------------------------------------------------- read
-
   @McpTool(
       name = "get_board",
       annotations =
@@ -109,7 +103,6 @@ public class TodoTools {
 
           Deferred tasks and completed tasks are hidden by default.
           """)
-  @PreAuthorize("hasAuthority('SCOPE_todo:read')")
   public Responses.BoardView getBoard(
       @McpToolParam(description = "Only this topic, e.g. \"house\".", required = false)
           String label,
@@ -136,7 +129,6 @@ public class TodoTools {
       description =
           "Every topic in use across the user's tasks. Prefer reusing one of these over "
               + "inventing a new one, so related tasks stay grouped.")
-  @PreAuthorize("hasAuthority('SCOPE_todo:read')")
   public List<String> listLabels() {
     return tasks.labelsVisibleTo(currentUser.current());
   }
@@ -156,7 +148,6 @@ public class TodoTools {
           personal list and one shared with family. Use labels for topics instead of
           asking the user to create more lists.
           """)
-  @PreAuthorize("hasAuthority('SCOPE_todo:read')")
   public List<Responses.TaskListSummary> listTaskLists() {
     var me = currentUser.current();
     return lists.visibleTo(me).stream().map(l -> Responses.TaskListSummary.of(l, me)).toList();
@@ -180,15 +171,12 @@ public class TodoTools {
           Walk these one at a time with the user and for each one promote, demote,
           complete, defer or delete it, then call mark_task_reviewed.
           """)
-  @PreAuthorize("hasAuthority('SCOPE_todo:read')")
   public List<Responses.TaskView> getReviewQueue(
       @McpToolParam(description = "The list to sweep.", required = true) Long listId) {
     return tasks.reviewQueue(listId, currentUser.current()).stream()
         .map(Responses.TaskView::of)
         .toList();
   }
-
-  // -------------------------------------------------------------------- write
 
   @McpTool(
       name = "complete_task",
@@ -200,7 +188,6 @@ public class TodoTools {
               openWorldHint = false),
       title = "Mark a task done",
       description = "Mark a task as completed. It drops off the list immediately.")
-  @PreAuthorize("hasAuthority('SCOPE_todo:write')")
   public Responses.TaskView completeTask(
       @McpToolParam(description = "Id of the task.", required = true) Long taskId) {
     return Responses.TaskView.of(tasks.complete(taskId, currentUser.current()));
@@ -223,7 +210,6 @@ public class TodoTools {
           Before promoting into CRITICAL_NOW, check get_board: if that zone is already
           at its cap, something should come out before anything else goes in.
           """)
-  @PreAuthorize("hasAuthority('SCOPE_todo:write')")
   public Responses.TaskView moveTaskZone(
       @McpToolParam(description = "Id of the task.", required = true) Long taskId,
       @McpToolParam(description = "The zone to move it to.", required = true) TaskZone zone) {
@@ -246,7 +232,6 @@ public class TodoTools {
           deferring says when the user wants to see it again, a due date says when it
           must be finished. The date cannot be in the past.
           """)
-  @PreAuthorize("hasAuthority('SCOPE_todo:write')")
   public Responses.TaskView deferTask(
       @McpToolParam(description = "Id of the task.", required = true) Long taskId,
       @McpToolParam(description = "Date to bring it back, as YYYY-MM-DD.", required = true)
@@ -266,7 +251,6 @@ public class TodoTools {
       description =
           "Replace every topic on a task. Pass the complete set, not just the additions. "
               + "Call list_labels first so existing topics are reused rather than duplicated.")
-  @PreAuthorize("hasAuthority('SCOPE_todo:write')")
   public Responses.TaskView setTaskLabels(
       @McpToolParam(description = "Id of the task.", required = true) Long taskId,
       @McpToolParam(
@@ -291,7 +275,6 @@ public class TodoTools {
       description =
           "Record that a task was considered during a review sweep, so it drops out of "
               + "the review queue until its zone's cadence comes round again.")
-  @PreAuthorize("hasAuthority('SCOPE_todo:write')")
   public Responses.TaskView markTaskReviewed(
       @McpToolParam(description = "Id of the task.", required = true) Long taskId) {
     return Responses.TaskView.of(tasks.markReviewed(taskId, currentUser.current()));
@@ -309,14 +292,11 @@ public class TodoTools {
       description =
           "Delete a task permanently. Prefer complete_task for something that was done; "
               + "this is for something that should never have been on the list.")
-  @PreAuthorize("hasAuthority('SCOPE_todo:write')")
   public String deleteTask(
       @McpToolParam(description = "Id of the task.", required = true) Long taskId) {
     tasks.delete(taskId, currentUser.current());
     return "Deleted task " + taskId;
   }
-
-  // -------------------------------------------------------------------- admin
 
   @McpTool(
       name = "create_tasklist",
@@ -333,7 +313,6 @@ public class TodoTools {
           user needs to share with a different person — most users need just a personal
           list and a shared one. For separating topics, use labels instead.
           """)
-  @PreAuthorize("hasAuthority('SCOPE_todo:admin')")
   public Responses.TaskListSummary createTaskList(
       @McpToolParam(
               description =
@@ -356,7 +335,6 @@ public class TodoTools {
       description =
           "Share a list with another registered user by email. They will be able to read "
               + "and change its tasks, but not rename, delete or re-share the list.")
-  @PreAuthorize("hasAuthority('SCOPE_todo:admin')")
   public Responses.TaskListSummary shareTaskList(
       @McpToolParam(description = "Id of the list.", required = true) Long listId,
       @McpToolParam(description = "Email of the person to share with.", required = true)

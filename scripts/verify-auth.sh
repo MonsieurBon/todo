@@ -2,16 +2,10 @@
 #
 # Verifies the auth chain end to end against the running dev stack.
 #
-# This is the Phase 0 exit criterion made repeatable. Re-run it after any change to
-# keycloak/realm-todo.json or to SecurityConfig, because the properties it checks are
-# the ones that silently stop holding:
-#
-#   1. The IdP refuses to mint a scope a client was never granted.
-#   2. Tokens carry this deployment's canonical URI as their audience.
-#   3. A token minted for a different audience is rejected.
-#   4. An insufficient scope is refused WITH NO DATA IN THE BODY. The previous version
-#      of this app leaked every task in the database precisely because its authorization
-#      check failed open and returned the entity anyway.
+# Re-run it after any change to keycloak/realm-todo.json or to SecurityConfig: the
+# properties below are the ones that stop holding silently, and the previous version of
+# this app leaked every task in the database because an authorization check failed open
+# and returned the entity anyway.
 #
 # Uses the password grant to fetch tokens without a browser, enabling it only for the
 # duration of the run. That grant is deprecated in OAuth 2.1 and is dev-tooling only —
@@ -42,7 +36,7 @@ client_uuid() {
 }
 
 set_password_grant() {
-  for c in todo-claude-code todo-claude-app; do
+  for c in todo-web todo-mcp; do
     curl -sS -X PUT -H "Authorization: Bearer $ADM" -H "Content-Type: application/json" \
       "$KC/admin/realms/$REALM/clients/$(client_uuid "$c")" \
       -d "{\"clientId\":\"$c\",\"directAccessGrantsEnabled\":$1}" >/dev/null
@@ -60,22 +54,22 @@ trap cleanup EXIT
 
 set_password_grant true
 
-head "1. the IdP refuses scopes a client was never granted"
-for scope in todo:write todo:admin; do
-  err=$(token todo-claude-app "$scope" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("error",""))')
-  [ "$err" = "invalid_scope" ] \
-    && ok "todo-claude-app refused '$scope'" \
-    || bad "todo-claude-app got '$scope' (error=${err:-none}) — the access boundary is GONE"
-done
-granted=$(token todo-claude-app todo:capture | python3 -c 'import sys,json; print("access_token" in json.load(sys.stdin))')
-[ "$granted" = "True" ] && ok "todo-claude-app granted 'todo:capture'" || bad "todo-claude-app cannot capture"
+head "1. neither client can obtain a token for the other's surface"
+err=$(token todo-mcp todo:api | python3 -c 'import sys,json; print(json.load(sys.stdin).get("error",""))')
+[ "$err" = "invalid_scope" ] \
+  && ok "todo-mcp refused 'todo:api'" \
+  || bad "todo-mcp got 'todo:api' (error=${err:-none}) — the surface boundary is GONE"
+err=$(token todo-web todo:mcp | python3 -c 'import sys,json; print(json.load(sys.stdin).get("error",""))')
+[ "$err" = "invalid_scope" ] \
+  && ok "todo-web refused 'todo:mcp'" \
+  || bad "todo-web got 'todo:mcp' (error=${err:-none}) — the surface boundary is GONE"
 
 head "2. tokens carry this deployment as their audience"
-CODE_TOKEN=$(token todo-claude-code "todo:read todo:write" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("access_token",""))')
-APP_TOKEN=$(token todo-claude-app "todo:capture" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("access_token",""))')
+API_TOKEN=$(token todo-web "todo:api" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("access_token",""))')
+MCP_TOKEN=$(token todo-mcp "todo:mcp" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("access_token",""))')
 aud=$(python3 -c "
 import base64, json, sys
-p = '$CODE_TOKEN'.split('.')[1]
+p = '$API_TOKEN'.split('.')[1]
 print(json.loads(base64.urlsafe_b64decode(p + '=' * (-len(p) % 4))).get('aud'))
 ")
 case "$aud" in *"$APP"*) ok "aud contains $APP" ;; *) bad "aud is $aud, expected to contain $APP" ;; esac
@@ -86,7 +80,7 @@ case "$aud" in *"$APP"*) ok "aud contains $APP" ;; *) bad "aud is $aud, expected
 for claim in sub preferred_username; do
   present=$(python3 -c "
 import base64, json
-p = '$CODE_TOKEN'.split('.')[1]
+p = '$API_TOKEN'.split('.')[1]
 c = json.loads(base64.urlsafe_b64decode(p + '=' * (-len(p) % 4)))
 print('$claim' in c)
 ")
@@ -99,17 +93,21 @@ head "3. the resource server enforces the boundary"
 code=$(curl -sS -o /dev/null -w '%{http_code}' "$APP/api/tasklists")
 [ "$code" = "401" ] && ok "unauthenticated -> 401" || bad "unauthenticated -> $code, expected 401"
 
-code=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $CODE_TOKEN" "$APP/api/tasklists")
-[ "$code" = "200" ] && ok "read token lists tasklists -> 200" || bad "read token -> $code, expected 200"
+code=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $API_TOKEN" "$APP/api/tasklists")
+[ "$code" = "200" ] && ok "API token lists tasklists -> 200" || bad "API token -> $code, expected 200"
 
-# The capture-only client must be able to file a task and do nothing else.
-code=$(curl -sS -o /dev/null -w '%{http_code}' -X POST -H "Authorization: Bearer $APP_TOKEN" \
+code=$(curl -sS -o /dev/null -w '%{http_code}' -X POST -H "Authorization: Bearer $API_TOKEN" \
   -H 'Content-Type: application/json' -d '{"title":"captured by verify-auth"}' "$APP/api/tasks/capture")
-[ "$code" = "201" ] && ok "capture-only token can capture -> 201" || bad "capture -> $code, expected 201"
+[ "$code" = "201" ] && ok "API token can capture -> 201" || bad "capture -> $code, expected 201"
 
-code=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $APP_TOKEN" "$APP/api/tasklists")
-body=$(curl -sS -H "Authorization: Bearer $APP_TOKEN" "$APP/api/tasklists")
-[ "$code" = "403" ] && ok "capture-only token cannot read -> 403" || bad "capture read -> $code, expected 403"
+code=$(curl -sS -o /dev/null -w '%{http_code}' -X POST -H "Authorization: Bearer $API_TOKEN" \
+  -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' "$APP/mcp")
+[ "$code" = "403" ] && ok "API token cannot reach /mcp -> 403" || bad "API token on /mcp -> $code, expected 403"
+
+code=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $MCP_TOKEN" "$APP/api/tasklists")
+body=$(curl -sS -H "Authorization: Bearer $MCP_TOKEN" "$APP/api/tasklists")
+[ "$code" = "403" ] && ok "MCP token cannot read the API -> 403" || bad "MCP token on /api -> $code, expected 403"
 # The property is "the refusal hands over no tasks", not "the body is empty" - a 503 for an
 # unreachable IdP explains itself and is not a denial. Assert emptiness only for a real 403,
 # so this cannot cry wolf and train someone to ignore it.

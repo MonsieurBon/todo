@@ -21,15 +21,15 @@ Do not walk through resolved items or recap the control surface when nothing the
 - A pure OAuth 2.1 **resource server** (`SecurityConfig`, `IdpUnavailableFilter`). It validates tokens Keycloak mints and issues none. No password handling, no session, no cookie.
 - **Audience validation** (`spring.security.oauth2.resourceserver.jwt.audiences`) is the boundary the MCP specification requires: a token minted for another resource must be rejected.
 - `/api/**`, `/mcp` and `/mcp/**` require authentication. `/.well-known/**` (RFC 9728 protected resource metadata) and `/actuator/health/**` are deliberately public; everything else is the Angular shell.
-- Scopes are enforced with `@PreAuthorize` on the MCP tools (`SCOPE_todo:read`, `todo:write`, `todo:capture`, `todo:admin`), so a capture-only token can create tasks and nothing more.
+- A token opens one surface: `SCOPE_todo:api` for `/api/**`, `SCOPE_todo:mcp` for `/mcp`, enforced once in `SecurityConfig` and nowhere else. There are no permission tiers within a surface, so what bounds an assistant is which tools `TodoTools` exposes.
 - **Authorization is structural**: every service method taking an id also takes the user and resolves both in one scoped query (`findAccessible`, `findByIdAndOwner`). There is deliberately no load-by-id helper — the previous version had one, checked access afterwards, and leaked data on the failure path.
-- Cross-user access answers **404**, not 403 — a 403 confirms the id exists. Insufficient scope stays 403, because the caller can act on it.
+- Cross-user access answers **404**, not 403 — a 403 confirms the id exists. A token for the wrong surface stays 403, because the caller can act on it.
 - MySQL with hand-written Flyway migrations; Angular frontend with a service worker that replays only read, create and complete offline.
 
 ## What to check
 
 - **Token validation** — issuer and audience, signature, expiry, JWKS handling, clock skew. Anything that widens what a token is accepted for. This app mints nothing, so the risk is accepting a token it should not.
-- **Authorization** — missing `@PreAuthorize`, IDOR, privilege escalation, a new endpoint or MCP tool reachable by a token never scoped for it. Ownership resolved *separately* from the lookup is a finding even when the check looks correct.
+- **Authorization** — IDOR, privilege escalation, a new path the filter chain in `SecurityConfig` does not cover. Ownership resolved *separately* from the lookup is a finding even when the check looks correct.
 - **Injection** — SQL and JPQL (especially `@Query` and native queries), command, log injection.
 - **Input validation** — missing validation, unsafe deserialization, mass assignment through DTOs, path traversal.
 - **XSS** — `innerHTML`, `bypassSecurityTrust*`, unescaped user content, CSP.
@@ -41,7 +41,7 @@ Do not walk through resolved items or recap the control surface when nothing the
 - **Migrations** — dropping data unsafely, exposing a column, or weakening a NOT NULL or uniqueness constraint that an authorization query relies on.
 - **Dependencies** — newly added ones with known CVEs.
 
-**Look hardest at what is missing.** The dangerous vulnerability is usually the forgotten check, not the wrong one: the new endpoint with no authorization, the update that never verifies ownership, the tool that was never scoped.
+**Look hardest at what is missing.** The dangerous vulnerability is usually the forgotten check, not the wrong one: the new endpoint with no authorization, the update that never verifies ownership, the path outside the filter chain.
 
 ## Output
 

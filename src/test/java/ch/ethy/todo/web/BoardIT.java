@@ -13,7 +13,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -29,24 +28,17 @@ class BoardIT extends IntegrationTest {
 
   private static final AtomicLong SUBJECTS = new AtomicLong();
 
-  private static final String READ = "SCOPE_todo:read";
-  private static final String WRITE = "SCOPE_todo:write";
-  private static final String ADMIN = "SCOPE_todo:admin";
+  private static final String API = "SCOPE_todo:api";
 
   // A fresh person per test, so counts are not polluted by its neighbours.
   private static String someone() {
     return "subject-" + SUBJECTS.incrementAndGet() + "-" + System.nanoTime();
   }
 
-  private static RequestPostProcessor as(String subject, String... authorities) {
-    List<GrantedAuthority> granted =
-        java.util.Arrays.stream(authorities)
-            .map(SimpleGrantedAuthority::new)
-            .map(GrantedAuthority.class::cast)
-            .toList();
+  private static RequestPostProcessor as(String subject) {
     return jwt()
         .jwt(b -> b.subject(subject).claim("email", subject + "@example.com"))
-        .authorities(granted);
+        .authorities(new SimpleGrantedAuthority(API));
   }
 
   private MockHttpServletRequestBuilder body(MockHttpServletRequestBuilder b, Object payload) {
@@ -59,7 +51,7 @@ class BoardIT extends IntegrationTest {
   }
 
   private Long createList(String who, String name) throws Exception {
-    return perform(body(post("/api/tasklists").with(as(who, ADMIN)), Map.of("name", name)))
+    return perform(body(post("/api/tasklists").with(as(who)), Map.of("name", name)))
         .get("id")
         .asLong();
   }
@@ -68,7 +60,7 @@ class BoardIT extends IntegrationTest {
       throws Exception {
     perform(
         body(
-            post("/api/tasklists/" + list + "/tasks").with(as(who, WRITE)),
+            post("/api/tasklists/" + list + "/tasks").with(as(who)),
             Map.of("title", title, "zone", zone, "labels", labels)));
   }
 
@@ -103,15 +95,15 @@ class BoardIT extends IntegrationTest {
     }
 
     // Each list on its own looks perfectly healthy.
-    JsonNode personalOnly = perform(get("/api/board?list=" + personal).with(as(me, READ)));
-    JsonNode familyOnly = perform(get("/api/board?list=" + family).with(as(me, READ)));
+    JsonNode personalOnly = perform(get("/api/board?list=" + personal).with(as(me)));
+    JsonNode familyOnly = perform(get("/api/board?list=" + family).with(as(me)));
     assertThat(zoneCount(personalOnly, "CRITICAL_NOW")).isEqualTo(3);
     assertThat(overCap(personalOnly, "CRITICAL_NOW")).isFalse();
     assertThat(zoneCount(familyOnly, "CRITICAL_NOW")).isEqualTo(3);
     assertThat(overCap(familyOnly, "CRITICAL_NOW")).isFalse();
 
     // Together they are what you have actually committed to today: six, over the cap of five.
-    JsonNode board = perform(get("/api/board").with(as(me, READ)));
+    JsonNode board = perform(get("/api/board").with(as(me)));
     assertThat(zoneCount(board, "CRITICAL_NOW")).isEqualTo(6);
     assertThat(overCap(board, "CRITICAL_NOW")).isTrue();
     assertThat(board.get("tasks")).hasSize(6);
@@ -125,13 +117,11 @@ class BoardIT extends IntegrationTest {
     addTask(me, list, "Draft the roof motion", "OPPORTUNITY_NOW", List.of("house", "politics"));
     addTask(me, list, "Buy cement", "OPPORTUNITY_NOW", List.of("house"));
 
-    assertThat(perform(get("/api/board?label=house").with(as(me, READ))).get("tasks")).hasSize(2);
-    assertThat(perform(get("/api/board?label=politics").with(as(me, READ))).get("tasks"))
-        .hasSize(1);
-    assertThat(perform(get("/api/board?label=sports-club").with(as(me, READ))).get("tasks"))
-        .isEmpty();
+    assertThat(perform(get("/api/board?label=house").with(as(me))).get("tasks")).hasSize(2);
+    assertThat(perform(get("/api/board?label=politics").with(as(me))).get("tasks")).hasSize(1);
+    assertThat(perform(get("/api/board?label=sports-club").with(as(me))).get("tasks")).isEmpty();
 
-    JsonNode board = perform(get("/api/board?label=politics").with(as(me, READ)));
+    JsonNode board = perform(get("/api/board?label=politics").with(as(me)));
     JsonNode task = board.get("tasks").get(0);
     assertThat(task.get("labels").size()).isEqualTo(2);
     assertThat(task.get("listName").asString()).isEqualTo("Work");
@@ -146,8 +136,7 @@ class BoardIT extends IntegrationTest {
 
     // .param, not a query string: MockMvc re-encodes a URI template, so %20 arrives literally.
     for (String spelling : List.of("Project A", "project a", "project-a", "PROJECT   A")) {
-      assertThat(
-              perform(get("/api/board").param("label", spelling).with(as(me, READ))).get("tasks"))
+      assertThat(perform(get("/api/board").param("label", spelling).with(as(me))).get("tasks"))
           .as("filtering by %s", spelling)
           .hasSize(1);
     }
@@ -163,12 +152,10 @@ class BoardIT extends IntegrationTest {
     addTask(me, family, "Order the skip", "CRITICAL_NOW", List.of("house"));
     addTask(me, personal, "Write the motion", "CRITICAL_NOW", List.of("politics"));
 
-    assertThat(perform(get("/api/board?label=house").with(as(me, READ))).get("tasks")).hasSize(2);
-    assertThat(perform(get("/api/board?list=" + personal).with(as(me, READ))).get("tasks"))
-        .hasSize(2);
+    assertThat(perform(get("/api/board?label=house").with(as(me))).get("tasks")).hasSize(2);
+    assertThat(perform(get("/api/board?list=" + personal).with(as(me))).get("tasks")).hasSize(2);
     assertThat(
-            perform(get("/api/board?list=" + personal + "&label=house").with(as(me, READ)))
-                .get("tasks"))
+            perform(get("/api/board?list=" + personal + "&label=house").with(as(me))).get("tasks"))
         .hasSize(1);
   }
 
@@ -181,7 +168,7 @@ class BoardIT extends IntegrationTest {
     addTask(me, list, "Soon", "OPPORTUNITY_NOW", List.of());
     addTask(me, list, "Someday", "OVER_THE_HORIZON", List.of());
 
-    JsonNode board = perform(get("/api/board?zone=CRITICAL_NOW").with(as(me, READ)));
+    JsonNode board = perform(get("/api/board?zone=CRITICAL_NOW").with(as(me)));
     assertThat(board.get("tasks")).hasSize(1);
     assertThat(board.get("zones")).hasSize(3);
     assertThat(zoneCount(board, "OPPORTUNITY_NOW")).isEqualTo(1);
@@ -196,7 +183,7 @@ class BoardIT extends IntegrationTest {
     addTask(me, createList(me, "Mine"), "Mine", "CRITICAL_NOW", List.of("house", "politics"));
     addTask(other, createList(other, "Theirs"), "Theirs", "CRITICAL_NOW", List.of("secret-topic"));
 
-    JsonNode mine = perform(get("/api/labels").with(as(me, READ)));
+    JsonNode mine = perform(get("/api/labels").with(as(me)));
     assertThat(mine.toString()).contains("house", "politics").doesNotContain("secret-topic");
   }
 
@@ -213,7 +200,7 @@ class BoardIT extends IntegrationTest {
 
     for (String probe :
         List.of("/api/board?label=house", "/api/board?label=secret-topic", "/api/board")) {
-      String rendered = perform(get(probe).with(as(bob, READ))).toString();
+      String rendered = perform(get(probe).with(as(bob))).toString();
       assertThat(rendered)
           .as("probing %s as Bob", probe)
           .doesNotContain("Alice's private task")
@@ -221,7 +208,7 @@ class BoardIT extends IntegrationTest {
     }
 
     // And narrowing to her list id by hand returns nothing rather than her tasks.
-    JsonNode byHerListId = perform(get("/api/board?list=" + hers).with(as(bob, READ)));
+    JsonNode byHerListId = perform(get("/api/board?list=" + hers).with(as(bob)));
     assertThat(byHerListId.get("tasks")).isEmpty();
     assertThat(zoneCount(byHerListId, "CRITICAL_NOW")).isZero();
   }
@@ -232,18 +219,17 @@ class BoardIT extends IntegrationTest {
     String alice = someone();
     String bob = someone();
     // Bob has to exist before he can be shared with.
-    perform(get("/api/board").with(as(bob, READ)));
+    perform(get("/api/board").with(as(bob)));
 
     Long shared = createList(alice, "Household");
     perform(
         body(
-            post("/api/tasklists/" + shared + "/shares").with(as(alice, ADMIN)),
+            post("/api/tasklists/" + shared + "/shares").with(as(alice)),
             Map.of("email", bob + "@example.com")));
     addTask(alice, shared, "Fix the tile", "CRITICAL_NOW", List.of("house"));
 
-    assertThat(zoneCount(perform(get("/api/board").with(as(alice, READ))), "CRITICAL_NOW"))
-        .isEqualTo(1);
-    assertThat(zoneCount(perform(get("/api/board").with(as(bob, READ))), "CRITICAL_NOW"))
+    assertThat(zoneCount(perform(get("/api/board").with(as(alice))), "CRITICAL_NOW")).isEqualTo(1);
+    assertThat(zoneCount(perform(get("/api/board").with(as(bob))), "CRITICAL_NOW"))
         .as("a task on a shared list is a real commitment for the member too")
         .isEqualTo(1);
   }
@@ -257,14 +243,14 @@ class BoardIT extends IntegrationTest {
     JsonNode created =
         perform(
             body(
-                post("/api/tasklists/" + list + "/tasks").with(as(me, WRITE)),
+                post("/api/tasklists/" + list + "/tasks").with(as(me)),
                 Map.of("title", "Deferred", "zone", "CRITICAL_NOW", "labels", List.of())));
     perform(
         body(
-            post("/api/tasks/" + created.get("id").asLong() + "/defer").with(as(me, WRITE)),
+            post("/api/tasks/" + created.get("id").asLong() + "/defer").with(as(me)),
             Map.of("until", java.time.LocalDate.now().plusMonths(1).toString())));
 
-    JsonNode board = perform(get("/api/board").with(as(me, READ)));
+    JsonNode board = perform(get("/api/board").with(as(me)));
     assertThat(board.get("tasks")).hasSize(1);
     assertThat(zoneCount(board, "CRITICAL_NOW")).isEqualTo(1);
     assertThat(zoneCount(board, "OVER_THE_HORIZON")).isZero();
@@ -286,7 +272,7 @@ class BoardIT extends IntegrationTest {
     addTask(me, family, "Someday, family", "OVER_THE_HORIZON", List.of());
     addTask(me, personal, "Today", "CRITICAL_NOW", List.of());
 
-    assertThat(titles(perform(get("/api/review").with(as(me, READ)))))
+    assertThat(titles(perform(get("/api/review").with(as(me)))))
         .as("Critical Now is worked continuously, so it is never swept")
         .containsExactlyInAnyOrder("Soon, personal", "Someday, family");
   }
@@ -299,7 +285,7 @@ class BoardIT extends IntegrationTest {
     addTask(me, list, "Roof", "OPPORTUNITY_NOW", List.of("house"));
     addTask(me, list, "Taxes", "OPPORTUNITY_NOW", List.of("admin"));
 
-    assertThat(titles(perform(get("/api/review").param("label", "house").with(as(me, READ)))))
+    assertThat(titles(perform(get("/api/review").param("label", "house").with(as(me)))))
         .containsExactly("Roof");
   }
 
@@ -311,8 +297,8 @@ class BoardIT extends IntegrationTest {
     Long hers = createList(alice, "Alice's");
     addTask(alice, hers, "Alice's private task", "OPPORTUNITY_NOW", List.of("house"));
 
-    assertThat(perform(get("/api/review").with(as(bob, READ)))).isEmpty();
-    assertThat(perform(get("/api/review?list=" + hers).with(as(bob, READ)))).isEmpty();
-    assertThat(perform(get("/api/review").param("label", "house").with(as(bob, READ)))).isEmpty();
+    assertThat(perform(get("/api/review").with(as(bob)))).isEmpty();
+    assertThat(perform(get("/api/review?list=" + hers).with(as(bob)))).isEmpty();
+    assertThat(perform(get("/api/review").param("label", "house").with(as(bob)))).isEmpty();
   }
 }

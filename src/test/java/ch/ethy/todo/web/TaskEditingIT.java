@@ -8,14 +8,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import ch.ethy.todo.IntegrationTest;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -32,18 +29,12 @@ class TaskEditingIT extends IntegrationTest {
   @Autowired private MockMvc mvc;
   @Autowired private ObjectMapper json;
 
-  private static final String READ = "SCOPE_todo:read";
-  private static final String WRITE = "SCOPE_todo:write";
+  private static final String API = "SCOPE_todo:api";
 
-  private static RequestPostProcessor as(String subject, String... authorities) {
-    List<GrantedAuthority> granted =
-        Arrays.stream(authorities)
-            .map(SimpleGrantedAuthority::new)
-            .map(GrantedAuthority.class::cast)
-            .toList();
+  private static RequestPostProcessor as(String subject) {
     return jwt()
         .jwt(builder -> builder.subject(subject).claim("email", subject + "@example.com"))
-        .authorities(granted);
+        .authorities(new SimpleGrantedAuthority(API));
   }
 
   private MockHttpServletRequestBuilder withBody(
@@ -53,7 +44,7 @@ class TaskEditingIT extends IntegrationTest {
 
   private long capture(String subject, Map<String, Object> body) throws Exception {
     var response =
-        mvc.perform(withBody(post("/api/tasks/capture").with(as(subject, WRITE)), body))
+        mvc.perform(withBody(post("/api/tasks/capture").with(as(subject)), body))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()
@@ -64,7 +55,7 @@ class TaskEditingIT extends IntegrationTest {
   /** Through the API, so nothing is asserted against an entity still in hand. */
   private JsonNode reread(String subject, long id) throws Exception {
     return json.readTree(
-        mvc.perform(get("/api/tasks/" + id).with(as(subject, READ)))
+        mvc.perform(get("/api/tasks/" + id).with(as(subject)))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
@@ -79,7 +70,7 @@ class TaskEditingIT extends IntegrationTest {
 
     mvc.perform(
             withBody(
-                patch("/api/tasks/" + id).with(as(me, WRITE)),
+                patch("/api/tasks/" + id).with(as(me)),
                 Map.of(
                     "title", "Fix the ridge tile",
                     "notes", "The cracked one above the porch.",
@@ -106,9 +97,7 @@ class TaskEditingIT extends IntegrationTest {
                 "zone", "OPPORTUNITY_NOW"));
 
     mvc.perform(
-            withBody(
-                patch("/api/tasks/" + id).with(as(me, WRITE)),
-                Map.of("title", "Fix the ridge tile")))
+            withBody(patch("/api/tasks/" + id).with(as(me)), Map.of("title", "Fix the ridge tile")))
         .andExpect(status().isOk());
 
     var task = reread(me, id);

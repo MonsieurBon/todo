@@ -16,7 +16,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.TestingAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 
@@ -33,7 +32,7 @@ class McpToolInputIT extends IntegrationTest {
     SecurityContextHolder.clearContext();
   }
 
-  private static void asFullyAuthorised() {
+  private static void asSomeone() {
     String subject = "mcp-input-" + System.nanoTime();
     Jwt jwt =
         Jwt.withTokenValue("test")
@@ -41,14 +40,7 @@ class McpToolInputIT extends IntegrationTest {
             .subject(subject)
             .claim("email", subject + "@example.com")
             .build();
-    var auth =
-        new TestingAuthenticationToken(
-            jwt,
-            null,
-            List.of(
-                new SimpleGrantedAuthority("SCOPE_todo:read"),
-                new SimpleGrantedAuthority("SCOPE_todo:write"),
-                new SimpleGrantedAuthority("SCOPE_todo:admin")));
+    var auth = new TestingAuthenticationToken(jwt, null, List.of());
     auth.setAuthenticated(true);
     SecurityContextHolder.getContext().setAuthentication(auth);
   }
@@ -71,7 +63,7 @@ class McpToolInputIT extends IntegrationTest {
   @Test
   @DisplayName("create_task refuses a title longer than the column and names the limit")
   void titleTooLong() {
-    asFullyAuthorised();
+    asSomeone();
     rejectedNaming(
         Task.MAX_TITLE_LENGTH,
         () ->
@@ -82,7 +74,7 @@ class McpToolInputIT extends IntegrationTest {
   @Test
   @DisplayName("create_task refuses a label longer than the column and names the limit")
   void labelTooLong() {
-    asFullyAuthorised();
+    asSomeone();
     rejectedNaming(
         Task.MAX_LABEL_LENGTH,
         () ->
@@ -96,7 +88,7 @@ class McpToolInputIT extends IntegrationTest {
   @Test
   @DisplayName("set_task_labels refuses a label longer than the column")
   void setLabelsTooLong() {
-    asFullyAuthorised();
+    asSomeone();
     var task = tools.createTask("Fix the roof", TaskZone.OPPORTUNITY_NOW, null, null);
     rejectedNaming(
         Task.MAX_LABEL_LENGTH,
@@ -106,7 +98,7 @@ class McpToolInputIT extends IntegrationTest {
   @Test
   @DisplayName("create_tasklist refuses a name longer than the column and names the limit")
   void listNameTooLong() {
-    asFullyAuthorised();
+    asSomeone();
     rejectedNaming(
         TaskList.MAX_NAME_LENGTH,
         () -> tools.createTaskList("n".repeat(TaskList.MAX_NAME_LENGTH + 1)));
@@ -115,7 +107,7 @@ class McpToolInputIT extends IntegrationTest {
   @Test
   @DisplayName("a name at the limit is stored, slug and all")
   void listNameAtTheLimitIsStored() {
-    asFullyAuthorised();
+    asSomeone();
     String name = "Household " + "x".repeat(TaskList.MAX_NAME_LENGTH - 10);
     var created = tools.createTaskList(name);
     assertThat(created.name()).isEqualTo(name);
@@ -130,7 +122,7 @@ class McpToolInputIT extends IntegrationTest {
   @Test
   @DisplayName("a second name that shortens to the same slug gets a distinct one that still fits")
   void shortenedSlugsStayUniqueAndFit() {
-    asFullyAuthorised();
+    asSomeone();
     String name = "s".repeat(TaskList.MAX_NAME_LENGTH);
     String collides = "s".repeat(TaskList.MAX_NAME_LENGTH - 5) + " tail";
 
@@ -146,7 +138,7 @@ class McpToolInputIT extends IntegrationTest {
   @Test
   @DisplayName("input at the limit is accepted, so the check is not off by one")
   void atTheLimitIsAccepted() {
-    asFullyAuthorised();
+    asSomeone();
     assertThatCode(
             () ->
                 tools.createTask(

@@ -81,6 +81,22 @@ describe('the outbox', () => {
     expect(outbox.pending()).toHaveLength(1);
   });
 
+  it('keeps a write the token was not allowed to make', async () => {
+    // 403 is a token that does not open this surface, which signing in again resolves. Ownership
+    // answers 404 and validation 400, so nothing else reaches here to be retried forever.
+    api.capture = fails(403);
+    await outbox.enqueue({
+      kind: 'capture',
+      title: 'Filed mid-migration',
+      notes: '',
+      zone: 'CRITICAL_NOW',
+      labels: [],
+      listId: null,
+    });
+
+    expect(outbox.pending()).toHaveLength(1);
+  });
+
   it('drops a completion for a task that is no longer there', async () => {
     // Deleted while this device was offline: retrying never succeeds, and the intent is met.
     api.complete = fails(404);

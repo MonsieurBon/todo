@@ -678,43 +678,21 @@
       ]
     },
     {
-      "name": "todo:capture",
-      "description": "Create tasks. Nothing else.",
+      "name": "todo:api",
+      "description": "Opens the REST API. A default scope, so a client cannot forget to ask for it.",
       "protocol": "openid-connect",
       "attributes": {
         "include.in.token.scope": "true",
-        "display.on.consent.screen": "true",
-        "consent.screen.text": "Add new tasks to your list"
+        "display.on.consent.screen": "false"
       }
     },
     {
-      "name": "todo:read",
-      "description": "Read lists and tasks.",
+      "name": "todo:mcp",
+      "description": "Opens the MCP server. A default scope, so a client cannot forget to ask for it.",
       "protocol": "openid-connect",
       "attributes": {
         "include.in.token.scope": "true",
-        "display.on.consent.screen": "true",
-        "consent.screen.text": "See your lists and tasks"
-      }
-    },
-    {
-      "name": "todo:write",
-      "description": "Update, complete, move, defer and delete tasks.",
-      "protocol": "openid-connect",
-      "attributes": {
-        "include.in.token.scope": "true",
-        "display.on.consent.screen": "true",
-        "consent.screen.text": "Change and complete your tasks"
-      }
-    },
-    {
-      "name": "todo:admin",
-      "description": "Create, rename and delete lists, and manage sharing.",
-      "protocol": "openid-connect",
-      "attributes": {
-        "include.in.token.scope": "true",
-        "display.on.consent.screen": "true",
-        "consent.screen.text": "Manage your lists and who they are shared with"
+        "display.on.consent.screen": "false"
       }
     }
   ],
@@ -745,19 +723,17 @@
         "profile",
         "email",
         "web-origins",
-        "todo-audience"
+        "todo-audience",
+        "todo:api"
       ],
       "optionalClientScopes": [
-        "offline_access",
-        "todo:read",
-        "todo:write",
-        "todo:admin"
+        "offline_access"
       ]
     },
     {
-      "clientId": "todo-claude-code",
-      "name": "Claude Code (full access)",
-      "description": "Full read/write MCP access.",
+      "clientId": "todo-mcp",
+      "name": "AI assistants (MCP)",
+      "description": "Opens the MCP server and nothing else. The absence of todo:api here is the access boundary: Keycloak refuses to mint a scope this client was never granted, before any application code runs.",
       "enabled": true,
       "publicClient": true,
       "standardFlowEnabled": true,
@@ -779,44 +755,10 @@
         "profile",
         "email",
         "web-origins",
-        "todo-audience"
+        "todo-audience",
+        "todo:mcp"
       ],
-      "optionalClientScopes": [
-        "todo:read",
-        "todo:write",
-        "todo:admin"
-      ]
-    },
-    {
-      "clientId": "todo-claude-app",
-      "name": "Claude app (capture only)",
-      "description": "May only create tasks. The absence of todo:read here is the access boundary: Keycloak refuses to mint a scope this client was never granted, before any application code runs.",
-      "enabled": true,
-      "publicClient": true,
-      "standardFlowEnabled": true,
-      "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": false,
-      "attributes": {
-        "pkce.code.challenge.method": "S256"
-      },
-      "redirectUris": [
-        "http://localhost:*",
-        "http://127.0.0.1:*"
-      ],
-      "webOrigins": [
-        "+"
-      ],
-      "defaultClientScopes": [
-        "basic",
-        "acr",
-        "profile",
-        "email",
-        "web-origins",
-        "todo-audience"
-      ],
-      "optionalClientScopes": [
-        "todo:capture"
-      ]
+      "optionalClientScopes": []
     }
   ],
   "ssoSessionIdleTimeout": 2592000,

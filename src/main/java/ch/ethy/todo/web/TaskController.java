@@ -11,7 +11,6 @@ import ch.ethy.todo.web.dto.Responses;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -37,7 +36,6 @@ public class TaskController {
   }
 
   @GetMapping("/board")
-  @PreAuthorize("hasAuthority('SCOPE_todo:read')")
   public Responses.BoardView board(
       @RequestParam(required = false) Long list,
       @RequestParam(required = false) String label,
@@ -51,7 +49,6 @@ public class TaskController {
   }
 
   @GetMapping("/review")
-  @PreAuthorize("hasAuthority('SCOPE_todo:read')")
   public List<Responses.TaskView> review(
       @RequestParam(required = false) Long list, @RequestParam(required = false) String label) {
     var me = currentUser.current();
@@ -61,15 +58,12 @@ public class TaskController {
   }
 
   @GetMapping("/labels")
-  @PreAuthorize("hasAuthority('SCOPE_todo:read')")
   public List<String> allLabels() {
     return tasks.labelsVisibleTo(currentUser.current());
   }
 
-  /** For a capture-only client: no read scope, so it cannot discover a list id to post to. */
   @PostMapping("/tasks/capture")
   @ResponseStatus(HttpStatus.CREATED)
-  @PreAuthorize("hasAnyAuthority('SCOPE_todo:capture', 'SCOPE_todo:write')")
   public Responses.TaskView captureTask(@Valid @RequestBody Requests.CaptureTask request) {
     return Responses.TaskView.of(
         tasks.capture(
@@ -85,7 +79,6 @@ public class TaskController {
 
   @PostMapping("/tasklists/{listId}/tasks")
   @ResponseStatus(HttpStatus.CREATED)
-  @PreAuthorize("hasAnyAuthority('SCOPE_todo:capture', 'SCOPE_todo:write')")
   public Responses.TaskView addTaskToList(
       @PathVariable Long listId, @Valid @RequestBody Requests.CreateTask request) {
     return Responses.TaskView.of(
@@ -102,7 +95,6 @@ public class TaskController {
   }
 
   @GetMapping("/tasklists/{listId}/tasks")
-  @PreAuthorize("hasAuthority('SCOPE_todo:read')")
   public List<Responses.TaskView> tasksInList(@PathVariable Long listId) {
     return tasks.visibleIn(listId, currentUser.current()).stream()
         .map(Responses.TaskView::of)
@@ -111,7 +103,6 @@ public class TaskController {
 
   /** The review sweep: what this list is overdue to look at, per its zones' cadences. */
   @GetMapping("/tasklists/{listId}/review")
-  @PreAuthorize("hasAuthority('SCOPE_todo:read')")
   public List<Responses.TaskView> reviewInList(@PathVariable Long listId) {
     return tasks.reviewQueue(listId, currentUser.current()).stream()
         .map(Responses.TaskView::of)
@@ -119,13 +110,11 @@ public class TaskController {
   }
 
   @GetMapping("/tasks/{id}")
-  @PreAuthorize("hasAuthority('SCOPE_todo:read')")
   public Responses.TaskView oneTask(@PathVariable Long id) {
     return Responses.TaskView.of(tasks.accessible(id, currentUser.current()));
   }
 
   @PatchMapping("/tasks/{id}")
-  @PreAuthorize("hasAuthority('SCOPE_todo:write')")
   public Responses.TaskView updateTask(
       @PathVariable Long id, @Valid @RequestBody Requests.UpdateTask request) {
     return Responses.TaskView.of(
@@ -136,39 +125,33 @@ public class TaskController {
   }
 
   @PostMapping("/tasks/{id}/complete")
-  @PreAuthorize("hasAuthority('SCOPE_todo:write')")
   public Responses.TaskView completeTask(@PathVariable Long id) {
     return Responses.TaskView.of(tasks.complete(id, currentUser.current()));
   }
 
   @PostMapping("/tasks/{id}/reopen")
-  @PreAuthorize("hasAuthority('SCOPE_todo:write')")
   public Responses.TaskView reopenTask(@PathVariable Long id) {
     return Responses.TaskView.of(tasks.reopen(id, currentUser.current()));
   }
 
   @PostMapping("/tasks/{id}/zone")
-  @PreAuthorize("hasAuthority('SCOPE_todo:write')")
   public Responses.TaskView moveTaskZone(
       @PathVariable Long id, @Valid @RequestBody Requests.MoveZone request) {
     return Responses.TaskView.of(tasks.moveTo(id, currentUser.current(), request.zone()));
   }
 
   @PostMapping("/tasks/{id}/defer")
-  @PreAuthorize("hasAuthority('SCOPE_todo:write')")
   public Responses.TaskView deferTask(
       @PathVariable Long id, @Valid @RequestBody Requests.Defer request) {
     return Responses.TaskView.of(tasks.defer(id, currentUser.current(), request.until()));
   }
 
   @PostMapping("/tasks/{id}/reviewed")
-  @PreAuthorize("hasAuthority('SCOPE_todo:write')")
   public Responses.TaskView markTaskReviewed(@PathVariable Long id) {
     return Responses.TaskView.of(tasks.markReviewed(id, currentUser.current()));
   }
 
   @PutMapping("/tasks/{id}/labels")
-  @PreAuthorize("hasAuthority('SCOPE_todo:write')")
   public Responses.TaskView setTaskLabels(
       @PathVariable Long id, @Valid @RequestBody Requests.SetLabels request) {
     return Responses.TaskView.of(tasks.setLabels(id, currentUser.current(), request.labels()));
@@ -176,7 +159,6 @@ public class TaskController {
 
   @DeleteMapping("/tasks/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  @PreAuthorize("hasAuthority('SCOPE_todo:write')")
   public void deleteTask(@PathVariable Long id) {
     tasks.delete(id, currentUser.current());
   }

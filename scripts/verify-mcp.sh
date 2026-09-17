@@ -2,16 +2,9 @@
 #
 # Drives the MCP endpoint end to end against the running dev stack.
 #
-# Companion to verify-auth.sh, which covers the REST side. This one checks the
-# properties specific to the tool surface:
-#
-#   1. The handshake works and the negotiated protocol revision is the expected one.
-#   2. Tools are discovered, and their schemas are honest — optional parameters are not
-#      advertised as required, and read-only tools are not flagged destructive.
-#   3. A capture-only token can create a task and nothing else, and the refusal carries
-#      no task data. This is the same property the old app violated, expressed through
-#      the tool layer instead of the REST layer.
-#   4. One user's token cannot reach another user's tasks through any tool.
+# Companion to verify-auth.sh, which covers the REST side. This one checks what is
+# specific to the tool surface: the handshake, the honesty of the advertised schemas,
+# and that a task filed through a tool comes back through another.
 #
 # Uses the password grant to obtain tokens without a browser, enabling it only for the
 # duration of the run. Dev tooling only; the real clients use authorization code + PKCE.
@@ -45,7 +38,7 @@ client_uuid() {
 }
 
 set_password_grant() {
-  for c in todo-claude-code todo-claude-app; do
+  for c in todo-mcp todo-web; do
     curl -sS -X PUT -H "Authorization: Bearer $ADM" -H "Content-Type: application/json" \
       "$KC/admin/realms/$REALM/clients/$(client_uuid "$c")" \
       -d "{\"clientId\":\"$c\",\"directAccessGrantsEnabled\":$1}" >/dev/null
@@ -85,8 +78,7 @@ call() {
 }
 
 set_password_grant true
-FULL=$(token todo-claude-code "" "todo:read todo:write todo:admin")
-CAP=$(token todo-claude-app "" "todo:capture")
+FULL=$(token todo-mcp "" "todo:mcp")
 
 section "1. handshake"
 curl -sS -o "$TMP/init" -X POST "$APP/mcp" -H "Authorization: Bearer $FULL" \
@@ -133,35 +125,24 @@ grep -q "delete_ok True" "$TMP/toolcheck" \
   && ok "delete_task is flagged destructive" \
   || bad "delete_task is not flagged destructive"
 
-section "3. the capture-only client can file a task and do nothing else"
-CAP_SID=$(mcp_open "$CAP")
-mcp "$CAP" "$CAP_SID" '{"jsonrpc":"2.0","method":"notifications/initialized"}' >/dev/null || true
-
-created=$(call "$CAP" "$CAP_SID" create_task '{"title":"Captured by verify-mcp","labels":["verify"]}')
+section "3. a task filed through a tool comes back through another"
+created=$(call "$FULL" "$SID" create_task '{"title":"Captured by verify-mcp","labels":["verify"]}')
 echo "$created" | grep -q '"isError":true' \
-  && bad "capture client could not create a task: $created" \
-  || ok "capture client created a task"
+  && bad "could not create a task: $created" \
+  || ok "created a task"
 
-refused=$(call "$CAP" "$CAP_SID" get_board '{}')
-if echo "$refused" | grep -qi 'denied\|forbidden\|AccessDenied\|isError":true'; then
-  ok "capture client refused get_board"
-else
-  bad "CAPTURE CLIENT READ THE BOARD: $refused"
-fi
-echo "$refused" | grep -q "Captured by verify-mcp" \
-  && bad "REFUSAL LEAKED TASK DATA" \
-  || ok "refusal carries no task data"
-
-refused_delete=$(call "$CAP" "$CAP_SID" delete_task '{"taskId":1}')
-echo "$refused_delete" | grep -qi 'denied\|forbidden\|AccessDenied\|isError":true' \
-  && ok "capture client refused delete_task" \
-  || bad "CAPTURE CLIENT DELETED A TASK: $refused_delete"
-
-section "4. the full client can read what was captured"
 board=$(call "$FULL" "$SID" get_board '{}')
 echo "$board" | grep -q "Captured by verify-mcp" \
-  && ok "full client sees the captured task" \
-  || bad "full client cannot see the captured task"
+  && ok "the captured task is on the board" \
+  || bad "the captured task is not on the board"
+
+section "4. a token for the REST API does not open this surface"
+API=$(token todo-web "" "todo:api")
+code=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$APP/mcp" \
+  -H "Authorization: Bearer $API" -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}')
+[ "$code" = "403" ] && ok "API token -> 403" || bad "API TOKEN REACHED THE TOOL SURFACE: $code"
 
 section "$pass passed, $fail failed"
 [ "$fail" -eq 0 ]
