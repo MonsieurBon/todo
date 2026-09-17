@@ -10,14 +10,8 @@ import { BoardStore, BoardTask, asBoardTask } from '../board/board-store';
 const DAY = 24 * 60 * 60 * 1000;
 
 /**
- * The review sweep: the part of the method the old app never had.
- *
- * <p>One task at a time, with the decision made explicitly — promote, demote, defer, complete,
- * delete, or leave it where it is. Leaving it is a decision too, which is why it is a button and
- * not simply skipping: it records that the task was looked at, so the sweep can stop offering it.
- *
- * <p>Critical Now is never swept. It is worked continuously, and a zone reviewed daily that is
- * also meant to be emptied daily would just be the same list twice.
+ * The review sweep. "Leave it" is a button rather than a skip because it records that the task was
+ * looked at, which is what stops the sweep offering it again.
  */
 @Component({
   selector: 'app-review-page',

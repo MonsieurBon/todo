@@ -36,11 +36,6 @@ public class TaskController {
     this.currentUser = currentUser;
   }
 
-  /**
-   * The board: every task the user can see, in three zones, with the caps counted across the whole
-   * filtered set. This is the app's default view — lists and labels are filters on top of it, not
-   * things you navigate between.
-   */
   @GetMapping("/board")
   @PreAuthorize("hasAuthority('SCOPE_todo:read')")
   public Responses.BoardView board(
@@ -55,11 +50,6 @@ public class TaskController {
         tasks.board(me, filter).stream().map(Responses.TaskView::of).toList());
   }
 
-  /**
-   * The review sweep across everything visible: what is overdue to be looked at, per each zone's
-   * cadence. Scoped by the same filters as the board, because the caps the sweep is protecting are
-   * counted the same way.
-   */
   @GetMapping("/review")
   @PreAuthorize("hasAuthority('SCOPE_todo:read')")
   public List<Responses.TaskView> review(
@@ -70,17 +60,13 @@ public class TaskController {
         .toList();
   }
 
-  /** Every topic in use, for autocomplete and the filter menu. */
   @GetMapping("/labels")
   @PreAuthorize("hasAuthority('SCOPE_todo:read')")
   public List<String> allLabels() {
     return tasks.labelsVisibleTo(currentUser.current());
   }
 
-  /**
-   * Files a task without naming a list. This is what a capture-only client calls: it has no read
-   * scope, so it cannot discover a list id to post to.
-   */
+  /** For a capture-only client: no read scope, so it cannot discover a list id to post to. */
   @PostMapping("/tasks/capture")
   @ResponseStatus(HttpStatus.CREATED)
   @PreAuthorize("hasAnyAuthority('SCOPE_todo:capture', 'SCOPE_todo:write')")

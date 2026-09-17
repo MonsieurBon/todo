@@ -21,14 +21,7 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-/**
- * The board: every task the user can see, in three zones, with the caps counted across the whole
- * view rather than per list.
- *
- * <p>The first test here is the reason this phase exists. Counting the caps per list would let five
- * topic-shaped lists hold twenty-five Critical Now tasks with every list reporting itself healthy,
- * which removes the only thing the cap is for.
- */
+/** The board, and the caps counted across the whole view rather than per list. */
 class BoardIT extends IntegrationTest {
 
   @Autowired private MockMvc mvc;
@@ -40,7 +33,7 @@ class BoardIT extends IntegrationTest {
   private static final String WRITE = "SCOPE_todo:write";
   private static final String ADMIN = "SCOPE_todo:admin";
 
-  /** Each test gets a fresh person, so counts are not polluted by its neighbours. */
+  // A fresh person per test, so counts are not polluted by its neighbours.
   private static String someone() {
     return "subject-" + SUBJECTS.incrementAndGet() + "-" + System.nanoTime();
   }
@@ -151,8 +144,7 @@ class BoardIT extends IntegrationTest {
     Long list = createList(me, "Projects");
     addTask(me, list, "Kickoff", "CRITICAL_NOW", List.of("Project A"));
 
-    // .param rather than a query string in the URL: MockMvc re-encodes a URI template, so an
-    // embedded %20 arrives as a literal "%20" and slugifies into the label name.
+    // .param, not a query string: MockMvc re-encodes a URI template, so %20 arrives literally.
     for (String spelling : List.of("Project A", "project a", "project-a", "PROJECT   A")) {
       assertThat(
               perform(get("/api/board").param("label", spelling).with(as(me, READ))).get("tasks"))
@@ -216,8 +208,7 @@ class BoardIT extends IntegrationTest {
     Long hers = createList(alice, "Alice's");
     addTask(alice, hers, "Alice's private task", "CRITICAL_NOW", List.of("house", "secret-topic"));
 
-    // Bob has a task with the SAME label, so the filter matches something he may see —
-    // the query still must not reach across to hers.
+    // Bob's task carries the SAME label, so the filter matches something he may see.
     addTask(bob, createList(bob, "Bob's"), "Bob's own task", "CRITICAL_NOW", List.of("house"));
 
     for (String probe :

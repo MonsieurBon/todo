@@ -38,10 +38,7 @@ export class BoardPage {
   protected readonly zoneName = (zone: Zone) => ZONE_NAMES[zone];
   protected readonly zoneMeaning = (zone: Zone) => ZONE_MEANINGS[zone];
 
-  /**
-   * Over the Horizon is unbounded by design, so left open it buries the two zones that are
-   * supposed to be looked at. It opens on demand, and whenever it is the thing being filtered for.
-   */
+  /** Over the Horizon is unbounded, so left open it buries the two zones that matter. */
   private readonly horizonOpened = signal(false);
   protected readonly horizonOpen = computed(
     () => this.horizonOpened() || this.filter().zone === 'OVER_THE_HORIZON',

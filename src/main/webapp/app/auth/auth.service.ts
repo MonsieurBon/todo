@@ -1,16 +1,11 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AuthConfig, OAuthService } from 'angular-oauth2-oidc';
 
-/** Where the app remembers which authorization server to talk to, for a cold start with no signal. */
 const ISSUER_KEY = 'todo.issuer';
 
 const CLIENT_ID = 'todo-web';
 
-/**
- * The app's own scopes. {@code offline_access} is what makes this usable on a phone: without it a
- * refresh token dies with Keycloak's SSO idle timeout, and a to-do list you have to log into every
- * morning is a to-do list you stop opening.
- */
+/** `offline_access` matters: without it the refresh token dies with Keycloak's SSO idle timeout. */
 const SCOPES = 'openid profile email offline_access todo:read todo:write todo:admin';
 
 @Injectable({ providedIn: 'root' })
@@ -21,16 +16,11 @@ export class AuthService {
   private readonly session = signal(false);
   private refreshing: Promise<boolean> | null = null;
 
-  /** True once bootstrap has decided; the shell renders nothing conclusive before this. */
   readonly resolved = this.ready.asReadonly();
 
   /**
-   * Whether this device holds a session — not whether the access token is currently valid.
-   *
-   * <p>The difference is the whole point of installing this: launched with no connection, the
-   * token in storage has usually expired and cannot be renewed, but the person is still logged in
-   * and should see their board. Redirecting them to a login page they cannot reach would be the
-   * one failure that makes an offline app pointless.
+   * Whether this device holds a session, not whether the access token is valid: launched with no
+   * connection the token has usually expired, and a login page they cannot reach is a dead end.
    */
   readonly signedIn = this.session.asReadonly();
 
@@ -64,12 +54,11 @@ export class AuthService {
     return this.oauth.getAccessToken() || null;
   }
 
-  /** Sends the browser to the IdP, remembering where the person was going. */
   signIn(returnUrl: string): void {
     this.oauth.initCodeFlow(returnUrl);
   }
 
-  /** The route the login interrupted, if any. Consumed once. */
+  /** Consumed once. */
   takeReturnUrl(): string | null {
     const state = this.oauth.state;
     if (!state) {
@@ -79,10 +68,7 @@ export class AuthService {
     return decodeURIComponent(state);
   }
 
-  /**
-   * Renews the access token, collapsing concurrent attempts: a board screen fires several requests
-   * at once, and each one racing its own refresh would invalidate the others' rotated token.
-   */
+  /** Concurrent attempts are collapsed: each racing its own refresh invalidates the others. */
   tryRefresh(): Promise<boolean> {
     if (!this.oauth.getRefreshToken()) {
       return Promise.resolve(false);
@@ -95,12 +81,7 @@ export class AuthService {
     return this.refreshing;
   }
 
-  /**
-   * Ends the session everywhere it is remembered.
-   *
-   * <p>The service worker has cached board responses and the outbox may hold unsent tasks; leaving
-   * either behind would show one person's list to the next.
-   */
+  /** Caches and outbox go too: leaving either behind shows one person's list to the next. */
   async signOut(): Promise<void> {
     await this.forgetCaches();
     this.session.set(false);
@@ -116,11 +97,8 @@ export class AuthService {
   }
 
   /**
-   * Asks the API which authorization server it trusts, rather than baking one into the bundle.
-   *
-   * <p>RFC 9728 metadata is already published for the MCP clients, is unauthenticated, and is
-   * already covered by tests — so it is the one place an environment's issuer is written down.
-   * The answer is remembered, because a cold start with no connection still needs it.
+   * Asked rather than baked into the bundle: the RFC 9728 metadata published for MCP clients is
+   * the one place an environment's issuer is written down. Remembered for a cold start offline.
    */
   private async resolveIssuer(): Promise<string | null> {
     try {
@@ -147,8 +125,7 @@ export class AuthService {
       postLogoutRedirectUri: location.origin + '/',
       // Localhost is served over http in development; anything else must be TLS.
       requireHttps: 'remoteOnly',
-      // The refresh token is the mechanism, not a hidden iframe: third-party cookie policies
-      // break iframe-based silent renewal whenever the IdP is on another origin, which it is.
+      // Third-party cookie policies break iframe-based renewal when the IdP is on another origin.
       useSilentRefresh: false,
       sessionChecksEnabled: false,
       clearHashAfterLogin: true,

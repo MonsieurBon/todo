@@ -10,13 +10,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Resolves the bearer token to a local user row, creating one the first time a subject is seen.
- *
- * <p>Accounts are created at the IdP, not here, so the first request from a newly registered person
- * carries a subject this application has never encountered. Provisioning on demand avoids any
- * synchronisation job between the two.
- */
+/** Provisions on demand, so no job has to synchronise accounts with the IdP. */
 @Service
 public class CurrentUserService {
 
@@ -55,8 +49,7 @@ public class CurrentUserService {
           .orElseThrow(() -> new IllegalStateException("User vanished after a provisioning race"));
     }
 
-    // Every user needs an inbox: a capture-only client has no read scope, so it cannot
-    // list lists and therefore cannot name one to file into.
+    // Created here because nothing else can: there is no endpoint that makes an inbox.
     TaskList inbox = new TaskList(user, "Inbox", "inbox");
     inbox.markAsInbox();
     lists.save(inbox);

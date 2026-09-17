@@ -13,11 +13,8 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
- * The server has to hand a client-routed URL to the client.
- *
- * <p>Installed to a home screen there is no address bar, so a 404 on {@code /capture} — which is
- * exactly where Android sends a share — is a dead end with no way back. This is the check that the
- * app is reachable at all of its own addresses.
+ * The server has to hand a client-routed URL to the client. Installed to a home screen there is no
+ * address bar, so a 404 on {@code /capture} — where Android sends a share — is a dead end.
  */
 class WebAppHostingIT extends IntegrationTest {
 
@@ -54,8 +51,8 @@ class WebAppHostingIT extends IntegrationTest {
   @Test
   @DisplayName("a wrong server path is still a 404, not a page")
   void serverPathsDoNotFallThrough() throws Exception {
-    // Answering these with HTML would turn every typo into a JSON parse error at the caller.
-    // The bare roots matter as much as the paths beneath them: those are what a person types.
+    // HTML here would turn every typo into a JSON parse error. The bare roots matter too:
+    // those are what a person types.
     for (String path :
         new String[] {"/api", "/api/nonexistent", "/actuator", "/actuator/nope", "/v3", "/mcp"}) {
       var response = mvc.perform(get(path)).andReturn().getResponse();

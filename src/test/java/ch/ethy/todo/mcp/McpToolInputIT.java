@@ -21,13 +21,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 
 /**
- * What the MCP tools do with input the database cannot store.
- *
- * <p>The tools take their arguments straight into the domain, so the request DTOs' {@code @Size}
- * constraints never run on this path. Without a bound on the entity itself, an over-long title
- * reached the driver and came back as a truncation error quoting the insert statement — a 500 that
- * told the caller nothing it could act on and told it something about the schema it should not
- * have. These assert the boundary holds where it is actually reached.
+ * Input the database cannot store, on the path where the DTOs' {@code @Size} never runs: the tools
+ * hand their arguments straight to the domain.
  */
 class McpToolInputIT extends IntegrationTest {
 
@@ -129,10 +124,8 @@ class McpToolInputIT extends IntegrationTest {
   }
 
   /**
-   * Two different names that shorten to the same slug. This is the only way to <em>observe</em> the
-   * suffix loop for a name long enough to be shortened: the same name twice does run the loop, but
-   * the insert then fails on the unique (owner, name) constraint before the slug it computed is
-   * ever used. The loop is where the arithmetic keeping a suffixed slug inside its column lives.
+   * Two different names on purpose: the same name twice fails on the unique (owner, name)
+   * constraint before the slug it computed is ever used, so the suffix loop stays unobservable.
    */
   @Test
   @DisplayName("a second name that shortens to the same slug gets a distinct one that still fits")

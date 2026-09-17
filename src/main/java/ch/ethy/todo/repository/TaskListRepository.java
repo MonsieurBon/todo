@@ -11,35 +11,17 @@ import org.springframework.data.repository.query.Param;
 
 public interface TaskListRepository extends JpaRepository<TaskList, Long> {
 
-  // Every finder below names BOTH owner and members in its entity graph. Spring Data's
-  // @EntityGraph defaults to EntityGraphType.FETCH, which makes every attribute NOT listed
-  // lazy — overriding the fetch type declared on the entity. Omitting owner here leaves it a
-  // proxy, and with open-in-view disabled it then fails during DTO assembly.
+  // Every graph below names owner as well as members: @EntityGraph defaults to type FETCH, which
+  // makes anything unlisted lazy whatever the entity declares, and a lazy owner fails DTO assembly.
 
-  /**
-   * Resolves a slug within one user's own lists. Scoping by owner is what stops a list shared with
-   * you from shadowing your own list of the same name — the bug the previous version had.
-   */
   @EntityGraph(attributePaths = {"owner", "members"})
   Optional<TaskList> findByOwnerAndSlug(User owner, String slug);
 
-  /**
-   * Names are unique per owner in the schema. This is what lets a duplicate be refused as a client
-   * error rather than reaching the driver, whose answer quotes the insert statement.
-   */
   Optional<TaskList> findByOwnerAndName(User owner, String name);
 
   @EntityGraph(attributePaths = {"owner", "members"})
   Optional<TaskList> findByOwnerAndInboxIsTrue(User owner);
 
-  /**
-   * Loads a list only if this user may see it.
-   *
-   * <p>The access check is part of the query rather than something applied afterwards. The previous
-   * version of this app loaded by raw id and then checked, and leaked every task in the database
-   * because the failure path still returned the entity. Scoping the load makes that shape
-   * impossible to write.
-   */
   @Query(
       """
       select l from TaskList l
@@ -49,7 +31,6 @@ public interface TaskListRepository extends JpaRepository<TaskList, Long> {
   @EntityGraph(attributePaths = {"owner", "members"})
   Optional<TaskList> findAccessible(@Param("id") Long id, @Param("user") User user);
 
-  /** Loads a list only if this user owns it. Renaming, deleting and sharing are owner-only. */
   @EntityGraph(attributePaths = {"owner", "members"})
   Optional<TaskList> findByIdAndOwner(Long id, User owner);
 
@@ -63,7 +44,6 @@ public interface TaskListRepository extends JpaRepository<TaskList, Long> {
   java.util.List<TaskList> findAccessibleBySlug(
       @Param("slug") String slug, @Param("user") User user);
 
-  /** Every list the user can see: the ones they own plus the ones shared with them. */
   @Query(
       """
       select distinct l from TaskList l

@@ -8,11 +8,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-/**
- * Labels are the topic axis. Lists are the sharing axis, and the two must not be conflated: eight
- * topic-shaped lists would enforce the Critical Now cap eight separate times, which is exactly the
- * forcing function the method depends on.
- */
 class TaskLabelTest {
 
   private static Task task() {

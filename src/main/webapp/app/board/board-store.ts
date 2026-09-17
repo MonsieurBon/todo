@@ -5,13 +5,7 @@ import { BoardView, Task, TaskList, ZONES, Zone } from '../api/model';
 import { Connectivity } from '../core/connectivity';
 import { Outbox } from '../offline/outbox';
 
-/**
- * A task as the board draws it, whether or not the server has heard of it yet.
- *
- * <p>A capture made underground has no id until it syncs, so {@code id} is null and {@code
- * pendingId} identifies it in the outbox instead. Everything downstream keys off which of the two
- * is set rather than guessing from a magic id.
- */
+/** A capture that has not synced has no `id` yet; `pendingId` identifies it in the outbox. */
 export interface BoardTask {
   id: number | null;
   pendingId: string | null;
@@ -50,13 +44,6 @@ export const asBoardTask = (task: Task): BoardTask => ({
   lastReviewedAt: task.lastReviewedAt,
 });
 
-/**
- * Everything the board shows, and every way to change it.
- *
- * <p>The board is the app: lists and labels are filters on top of one view rather than places to
- * navigate between, because the zone caps are counted across everything visible. A cap counted per
- * list would be enforced once per list, which is the one thing that makes it stop meaning anything.
- */
 @Injectable({ providedIn: 'root' })
 export class BoardStore {
   private readonly api = inject(TodoApi);
@@ -72,21 +59,18 @@ export class BoardStore {
   readonly loading = this.busy.asReadonly();
   readonly online = this.connectivity.online;
 
-  /** True when what is drawn came from the cache rather than from the server just now. */
   readonly showingCached = computed(() => !this.online() && this.served() !== null);
 
   readonly pendingCount = computed(() => this.outbox.pending().length);
 
   /**
-   * The board's tasks, with the outbox folded in: queued captures appear immediately, and tasks
-   * with a queued completion disappear immediately. Both are marked, so nothing pretends to be
-   * saved that is not.
+   * The board's tasks with the outbox folded in, marked, so nothing pretends to be saved that is
+   * not.
    */
   readonly tasks = computed<BoardTask[]>(() => {
     const completing = this.outbox.completingIds();
     const fromServer = (this.served()?.tasks ?? []).filter((t) => !completing.has(t.id));
-    // A capture the server has already acknowledged is still in the outbox for a moment; the
-    // clientRef it was sent under is how the two copies are recognised as one task.
+    // An acknowledged capture lingers in the outbox; clientRef is how the two copies are one task.
     const acknowledged = new Set(fromServer.map((t) => t.clientRef).filter(Boolean));
     const queued = this.outbox
       .pendingCaptures()
@@ -106,9 +90,8 @@ export class BoardStore {
   });
 
   /**
-   * The three zones with their loads counted from what is on screen, not from what the server last
-   * said — otherwise a task captured offline would sit in Critical Now without counting towards it.
-   * The caps themselves stay the server's, so the method's numbers are defined in one place.
+   * Loads counted from what is on screen, so an offline capture counts; the caps themselves stay
+   * the server's.
    */
   readonly zones = computed<ZoneSection[]>(() => {
     const caps = new Map(this.served()?.zones.map((load) => [load.zone, load.softCap ?? null]));
@@ -128,9 +111,8 @@ export class BoardStore {
   async initialise(): Promise<void> {
     await this.outbox.load();
     this.connectivity.onReconnect(() => void this.sync());
-    // The device's own online event does not fire when it was the server that was unreachable, or
-    // behind a captive portal that never let go. Without this the app would sit there saying
-    // "offline" until someone reloaded it.
+    // The device's online event does not fire when it was the server that was unreachable, or on
+    // a captive portal — without this the app says "offline" until someone reloads it.
     setInterval(() => {
       if (!this.online()) {
         void this.sync();
@@ -139,7 +121,7 @@ export class BoardStore {
     await this.sync();
   }
 
-  /** Sends anything queued, then reloads. The order matters: reloading first would show stale rows. */
+  /** Flush before reload: the other order shows stale rows. */
   async sync(): Promise<void> {
     await this.outbox.flush();
     await this.refresh();
@@ -147,8 +129,7 @@ export class BoardStore {
 
   async refresh(): Promise<void> {
     this.busy.set(true);
-    // Probed alongside the board rather than inferred from it: a service worker serving the last
-    // board it saw returns 200 with no connection at all.
+    // Probed rather than inferred: the service worker returns 200 with no connection at all.
     void this.connectivity.probe();
     try {
       const [board, lists, labels] = await Promise.all([
@@ -160,8 +141,7 @@ export class BoardStore {
       this.lists.set(lists);
       this.labels.set(labels);
     } catch {
-      // The service worker serves the last board it saw, so this is only reached when there is
-      // nothing cached either. Keep whatever is on screen; the probe says why it is not current.
+      // Only reached when nothing is cached either. Keep what is on screen; the probe says why.
     } finally {
       this.busy.set(false);
     }
@@ -191,9 +171,8 @@ export class BoardStore {
   }
 
   /**
-   * Completing a task that has not synced yet takes the capture back instead: there is nothing on
-   * the server to complete, and sending a create only to complete it is a worse story than never
-   * having sent it.
+   * Completing a task that has not synced takes the capture back instead — there is nothing on the
+   * server to complete.
    */
   async complete(task: BoardTask): Promise<void> {
     if (task.pendingId) {

@@ -11,7 +11,6 @@ spring:
 
   jpa:
     hibernate:
-      # Flyway owns the schema. Hibernate only verifies it matches the entities.
       ddl-auto: validate
     open-in-view: false
 
@@ -22,10 +21,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          # This app never issues tokens. It validates tokens minted by the IdP.
           issuer-uri: ${OIDC_ISSUER_URI:http://localhost:8081/realms/todo}
-          # Audience validation is the security boundary the MCP spec requires:
-          # a token minted for anything else MUST be rejected.
+          # The boundary MCP requires: a token minted for anything else MUST be rejected.
           audiences: ${TODO_CANONICAL_URI:http://localhost:8080}
 
   ai:
@@ -45,24 +42,17 @@ spring:
 server:
   port: ${SERVER_PORT:8080}
 
-# Health is the only endpoint exposed, and it is reachable unauthenticated (see
-# SecurityConfig) because a container healthcheck has no credentials. That makes
-# `show-details: never` a requirement rather than a preference: with details on, an
-# anonymous caller would learn the database vendor, the disk usage and which
-# components are failing.
+# Health is unauthenticated, because a container healthcheck has no credentials — which makes
+# `show-details: never` a requirement rather than a preference.
 #
-# Note what health deliberately does NOT include: the identity provider. The app
-# starts without it, serves the web app without it, and recovers on its own when it
-# returns - so failing the healthcheck on an IdP blip would restart a container that
-# was working, and take the login page down with it.
+# It deliberately excludes the identity provider: the app starts and serves without it and
+# recovers on its own, so failing the check on an IdP blip would restart a working container.
 management:
   endpoints:
     web:
       exposure:
         include: health
-      # The links document at /actuator would otherwise be served to anyone who can reach
-      # the port - it only lists what is already exposed, but "one endpoint" should mean
-      # one endpoint. The healthcheck URL is in the README; nothing needs to discover it.
+      # "One endpoint" should mean one endpoint; the healthcheck URL is in the README.
       discovery:
         enabled: false
   endpoint:

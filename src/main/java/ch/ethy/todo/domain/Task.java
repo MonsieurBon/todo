@@ -23,14 +23,6 @@ import java.util.Set;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-/**
- * A single item on a One Minute To-Do List.
- *
- * <p>Deferral is the method's "not yet" move: it pushes an item over the horizon and hides it until
- * the chosen date, so the visible list stays honest. It is deliberately not the same thing as a due
- * date — {@code deferUntil} says when you want to see this again, {@code dueDate} says when it must
- * be finished, and most tasks have one without the other.
- */
 @Entity
 @Table(
     name = "task",
@@ -41,19 +33,10 @@ import org.hibernate.annotations.UpdateTimestamp;
             columnNames = {"task_list_id", "client_ref"}))
 public class Task {
 
-  /**
-   * The widths the schema actually has. Public because the request DTOs constrain against them: two
-   * copies of 255 in two source trees is how the API comes to accept what the table cannot hold.
-   */
   public static final int MAX_TITLE_LENGTH = 255;
-
   public static final int MAX_LABEL_LENGTH = 64;
   public static final int MAX_CLIENT_REF_LENGTH = 64;
 
-  /**
-   * Notes are stored in a {@code text} column, which holds far more than this. The limit is a
-   * policy rather than the schema's: notes are a paragraph about a task, not a document store.
-   */
   public static final int MAX_NOTES_LENGTH = 10_000;
 
   @Id
@@ -65,11 +48,8 @@ public class Task {
   private TaskList taskList;
 
   /**
-   * The client's own reference for this task, if it had one.
-   *
-   * <p>Only the web app sets it, and only for captures it made offline: a queued create is replayed
-   * on reconnect, and a replay cannot tell a lost request from a lost response. Matching on this
-   * turns the second create into a lookup instead of a duplicate.
+   * Set by the web app for offline captures. A replayed create cannot tell a lost request from a
+   * lost response; matching on this turns the second one into a lookup instead of a duplicate.
    */
   @Column(name = "client_ref", length = MAX_CLIENT_REF_LENGTH, updatable = false)
   private String clientRef;
@@ -80,8 +60,6 @@ public class Task {
   @Column(columnDefinition = "text")
   private String notes;
 
-  // Stored as a string, not an ordinal: reordering the enum must never silently
-  // reinterpret every row already in the table.
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 32)
   private TaskZone zone;
@@ -96,17 +74,7 @@ public class Task {
   @Column(name = "due_date")
   private LocalDate dueDate;
 
-  /**
-   * Topics this task belongs to.
-   *
-   * <p>Labels are the topic axis; lists are the sharing axis. Keeping them separate is what lets
-   * the zone caps stay meaningful: a cap counted per topic-shaped list would be enforced once per
-   * list, so "Critical Now at most five" would silently permit five per project.
-   *
-   * <p>Stored as plain strings rather than an entity on purpose. A label owned by a user raises a
-   * question with no clean answer on a shared list — whose labels apply, and does the other person
-   * see yours? Strings have no owner, so everyone who can see the task sees its labels.
-   */
+  /** Strings rather than an entity: a label with an owner has no clean answer on a shared list. */
   @ElementCollection(fetch = FetchType.LAZY)
   @CollectionTable(name = "task_label", joinColumns = @JoinColumn(name = "task_id"))
   @Column(name = "label", nullable = false, length = MAX_LABEL_LENGTH)
@@ -116,7 +84,6 @@ public class Task {
   @Column(name = "sort_order", nullable = false)
   private int position;
 
-  /** When this task was last looked at during a review sweep. */
   @Column(name = "last_reviewed_at")
   private Instant lastReviewedAt;
 
@@ -232,10 +199,6 @@ public class Task {
     this.state = TaskState.TODO;
   }
 
-  /**
-   * Moves the task to another zone. Any deferral is cleared: deciding a task belongs in a zone is
-   * an act of attention, which is exactly what deferring it postponed.
-   */
   public final void moveTo(TaskZone zone) {
     if (zone == null) {
       throw new IllegalArgumentException("A task needs a zone");
@@ -244,15 +207,10 @@ public class Task {
     this.deferUntil = null;
   }
 
-  /** Defers the task relative to the system clock. */
   public void deferUntil(LocalDate until) {
     deferUntil(until, LocalDate.now());
   }
 
-  /**
-   * Defers the task until {@code until}, pushing it over the horizon. Deferring into the past would
-   * be indistinguishable from not deferring at all, so it is rejected rather than silently ignored.
-   */
   public void deferUntil(LocalDate until, LocalDate today) {
     if (until == null) {
       throw new IllegalArgumentException("A deferral needs a date");
@@ -268,22 +226,14 @@ public class Task {
     this.deferUntil = null;
   }
 
-  /**
-   * A deferred task stays out of sight until the day it is due back, and is visible from then on.
-   */
   public boolean isVisibleOn(LocalDate today) {
     return deferUntil == null || !deferUntil.isAfter(today);
   }
 
-  /** The topics on this task, in the order they were added. */
   public Set<String> labels() {
     return java.util.Collections.unmodifiableSet(labels);
   }
 
-  /**
-   * Adds a topic. Normalised through {@link Slug}, so "Project A", "project a" and "project-a" are
-   * one label and filters stay URL-safe.
-   */
   public void addLabel(String label) {
     labels.add(normalise(label));
   }
@@ -296,7 +246,6 @@ public class Task {
     return labels.contains(normalise(label));
   }
 
-  /** Replaces every topic on this task. */
   public void labels(Collection<String> replacements) {
     Set<String> next = new LinkedHashSet<>();
     replacements.forEach(label -> next.add(normalise(label)));
@@ -308,27 +257,13 @@ public class Task {
     if (label == null || label.isBlank()) {
       throw new IllegalArgumentException("A label needs a name");
     }
-    // Measured after slugging, because that is the form actually stored: "Project A" and
-    // "project-a" are the same label and must be the same length.
     return Lengths.atMost(MAX_LABEL_LENGTH, "A label", Slug.of(label));
   }
 
-  /** Records that this task was considered during a review sweep. */
   public void markReviewed(Instant at) {
     this.lastReviewedAt = at;
   }
 
-  /**
-   * Whether this task is due to be swept again, per its zone's cadence. Critical Now has no cadence
-   * because it is worked continuously, so a task there is never "due for review".
-   *
-   * <p>A task that has never been reviewed is due immediately, and that is deliberate rather than
-   * an oversight to be tidied away. Capture is one line with a defaulted zone, so the zone is the
-   * least considered thing about anything filed in a hurry — handing it straight back is the two
-   * halves working as intended: capture gets it out of your head, the sweep decides where it
-   * belongs. Setting this at creation time would look tidier on a fresh board and would quietly
-   * remove the only prompt to correct a rushed guess.
-   */
   public boolean isReviewDue(Instant now) {
     return zone.reviewInterval()
         .map(interval -> lastReviewedAt == null || !lastReviewedAt.plus(interval).isAfter(now))

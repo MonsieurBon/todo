@@ -51,8 +51,7 @@ public class TaskListController {
     TaskList list = lists.accessible(id, me);
     return new Responses.TaskListDetail(
         Responses.TaskListSummary.of(list, me),
-        // Counted through the same board query, scoped to this list. These numbers are
-        // informational: the caps that matter are the ones on the board, across every list.
+        // Informational only: the caps that matter are the board's, counted across every list.
         Responses.ZoneLoad.of(tasks.zoneLoads(me, BoardFilter.forList(id))),
         tasks.visibleIn(id, me).stream().map(Responses.TaskView::of).toList());
   }

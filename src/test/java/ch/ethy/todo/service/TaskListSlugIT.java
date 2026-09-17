@@ -17,10 +17,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 
-/**
- * How a list's slug is derived — the part of naming a list that nobody types and everybody links
- * to, so it must not move on its own.
- */
+/** How a list's slug is derived. Everybody links to it, so it must not move on its own. */
 class TaskListSlugIT extends IntegrationTest {
 
   @Autowired private TaskListService lists;
@@ -75,10 +72,8 @@ class TaskListSlugIT extends IntegrationTest {
   }
 
   /**
-   * The name constraint is the one remaining way a raw insert statement reached an MCP caller:
-   * Hibernate must insert immediately for an identity key, so the driver answers before anything
-   * else can. Both entry points are checked, and the message names the list rather than the
-   * constraint.
+   * Hibernate must insert immediately for an identity key, so without an up-front check the driver
+   * answers first and its statement reaches the caller.
    */
   @Test
   @DisplayName("creating a list under a name already taken is refused, with no statement in it")
@@ -89,10 +84,8 @@ class TaskListSlugIT extends IntegrationTest {
     assertThatThrownBy(() -> lists.create(me, "Household"))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Household")
-        // No cause means the check refused it rather than the constraint. The two say different
-        // things on purpose: the check knows it was the name, the race cannot and does not claim
-        // to. This also means the driver's exception never happened, so the transaction is not
-        // left rollback-only for a case we saw coming.
+        // No cause means the check refused it, not the constraint — so no driver exception
+        // happened and the transaction is not rollback-only for a case we saw coming.
         .hasNoCause()
         .satisfies(
             e ->
@@ -124,8 +117,7 @@ class TaskListSlugIT extends IntegrationTest {
     assertThatCode(() -> lists.rename(list.id(), me, "Household")).doesNotThrowAnyException();
   }
 
-  // The slug is derived before the entity sees the name, so without a null guard in Slug the
-  // caller gets an NPE instead of the domain's message. MCP hands its argument straight here.
+  // Without the null guard in Slug, this is an NPE rather than the domain's message.
   @Test
   @DisplayName("a missing name is refused by the entity, not by a NullPointerException")
   void nullNameIsRefusedProperly() {

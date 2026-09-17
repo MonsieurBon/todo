@@ -11,10 +11,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 
-/**
- * The three urgency zones of the One Minute To-Do List, and the discipline that makes the method
- * work: the item caps and the review cadences.
- */
 class TaskZoneTest {
 
   @Nested

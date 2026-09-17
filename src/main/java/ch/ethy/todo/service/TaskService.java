@@ -13,7 +13,6 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Same rule as {@link TaskListService}: ids are always resolved together with the user. */
 @Service
 @Transactional
 public class TaskService {
@@ -34,14 +33,8 @@ public class TaskService {
   }
 
   /**
-   * The same lookup for this service's own use, without the read-only transaction.
-   *
-   * <p>Every mutator below starts by resolving the id, and each one needs the entity to stay
-   * managed so its changes are flushed. Calling the public {@link #accessible} would be safe only
-   * because a self-invocation misses the proxy and so never applies the read-only attribute — which
-   * is exactly the accident that made {@code updateTask} drop every edit once the call came from
-   * another bean. Depending on that is a trap for whoever next moves this lookup or turns on
-   * AspectJ weaving, so the mutators do not.
+   * Mutators must not lean on {@link #accessible}: it would work from inside this bean only because
+   * self-invocation misses the read-only proxy.
    */
   private Task resolve(Long id, User user) {
     return tasks.findAccessible(id, user).orElseThrow(() -> new NotFoundException("No task " + id));
@@ -52,7 +45,6 @@ public class TaskService {
     return tasks.findVisibleIn(lists.accessible(listId, user), LocalDate.now(clock));
   }
 
-  /** Every task the user can see, narrowed by the filter. The default view of the app. */
   @Transactional(readOnly = true)
   public List<Task> board(User user, BoardFilter filter) {
     return tasks.findOnBoard(
@@ -64,14 +56,6 @@ public class TaskService {
         filter.includeDone());
   }
 
-  /**
-   * How full each zone is across the filtered view, and whether that is over what the method says
-   * it should hold.
-   *
-   * <p>Counted across everything visible rather than per list. A cap counted per list would be
-   * enforced once per list, so five topic-shaped lists would permit twenty-five Critical Now tasks
-   * with every list reporting itself healthy — which removes the only thing the cap is for.
-   */
   @Transactional(readOnly = true)
   public Map<TaskZone, Long> zoneLoads(User user, BoardFilter filter) {
     Map<TaskZone, Long> counts =
@@ -83,7 +67,6 @@ public class TaskService {
         .collect(Collectors.toMap(zone -> zone, zone -> counts.getOrDefault(zone, 0L)));
   }
 
-  /** Every topic in use across the tasks this user can see. */
   @Transactional(readOnly = true)
   public List<String> labelsVisibleTo(User user) {
     return tasks.findLabelsVisibleTo(user);
@@ -95,27 +78,14 @@ public class TaskService {
     return task;
   }
 
-  /** Creates a task in a named list. */
   public Task addTo(Long listId, User user, NewTask draft) {
     return createIn(lists.accessible(listId, user), draft);
   }
 
-  /**
-   * Files a task without naming a list. This is the capture path: it needs no read scope, so it
-   * works both for a client that cannot discover a list and for a quick capture from the web app.
-   */
   public Task capture(User user, NewTask draft) {
     return createIn(lists.inboxOf(user), draft);
   }
 
-  /**
-   * Creates a task, unless the caller's reference says it already exists.
-   *
-   * <p>The web app queues captures made offline and replays them on reconnect, where a lost
-   * response is indistinguishable from a lost request. Matching the caller's own reference turns
-   * the replay into a lookup, so a create is safe to repeat. Everything else passes {@code null}
-   * and always creates.
-   */
   private Task createIn(TaskList list, NewTask draft) {
     String clientRef = draft.clientRef();
     if (clientRef != null && !clientRef.isBlank()) {
@@ -133,14 +103,6 @@ public class TaskService {
     return tasks.save(task);
   }
 
-  /**
-   * Applies an edit, inside this service's transaction.
-   *
-   * <p>It has to live here rather than in the controller: {@link #accessible} is read-only, so the
-   * entity it hands back across a bean boundary is detached, and mutating it there changes nothing
-   * a caller can read back. Like every other mutator it resolves the id through {@link #resolve}
-   * for that reason.
-   */
   public Task update(Long id, User user, TaskEdit edit) {
     Task task = resolve(id, user);
     if (edit.title() != null) {
@@ -185,28 +147,17 @@ public class TaskService {
     tasks.delete(task);
   }
 
-  /** Marks a task as considered during a review sweep. */
   public Task markReviewed(Long id, User user) {
     Task task = resolve(id, user);
     task.markReviewed(clock.instant());
     return task;
   }
 
-  /**
-   * The tasks a review sweep should present: visible, and overdue for their zone's cadence.
-   * Critical Now never appears, because it is worked continuously rather than swept.
-   */
   @Transactional(readOnly = true)
   public List<Task> reviewQueue(Long listId, User user) {
     return visibleIn(listId, user).stream().filter(t -> t.isReviewDue(clock.instant())).toList();
   }
 
-  /**
-   * The same sweep across everything the user can see, narrowed by the board's own filters.
-   *
-   * <p>The per-list sweep above predates the board. Now that urgency is counted across every list,
-   * reviewing one list at a time would leave the caps meaning one thing and the sweep another.
-   */
   @Transactional(readOnly = true)
   public List<Task> reviewQueue(User user, BoardFilter filter) {
     return board(user, filter).stream().filter(t -> t.isReviewDue(clock.instant())).toList();

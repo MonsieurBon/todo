@@ -10,7 +10,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
-/** Response bodies. Entities are never serialised directly, so nothing leaks by accident. */
 public final class Responses {
 
   private Responses() {}
@@ -38,7 +37,6 @@ public final class Responses {
       LocalDate deferUntil,
       LocalDate dueDate,
       Instant lastReviewedAt,
-      // The board spans lists, so a task has to say where it came from.
       Long listId,
       String listName,
       List<String> labels,
@@ -62,10 +60,7 @@ public final class Responses {
     }
   }
 
-  /**
-   * How full a zone is against what the method says it should hold. {@code overSoftCap} is advice,
-   * not an error — the API never refuses a write for being over a cap.
-   */
+  /** {@code overSoftCap} is advice: the API never refuses a write for being over a cap. */
   public record ZoneLoad(TaskZone zone, long open, Integer softCap, boolean overSoftCap) {
 
     public static List<ZoneLoad> of(Map<TaskZone, Long> counts) {
@@ -82,10 +77,6 @@ public final class Responses {
 
   public record TaskListDetail(TaskListSummary list, List<ZoneLoad> zones, List<TaskView> tasks) {}
 
-  /**
-   * The default view: everything visible, in three zones, with the caps counted across the whole
-   * filtered set rather than per list.
-   */
   public record BoardView(List<ZoneLoad> zones, List<TaskView> tasks) {}
 
   public record ApiError(String error, String message, Map<String, String> fields) {}

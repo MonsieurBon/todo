@@ -21,15 +21,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 
 /**
- * The scope gate on every MCP tool.
+ * The scope gate on every MCP tool, asserted in CI — scripts/verify-mcp.sh covers the same ground
+ * against a real Keycloak but does not run there.
  *
- * <p>scripts/verify-mcp.sh proves this end to end against a real Keycloak, but shell scripts do not
- * run in CI. This asserts the same invariant where it will actually be enforced on every push: a
- * capture-only assistant can file a task and do nothing else.
- *
- * <p>The tool list itself is <em>not</em> filtered per caller — the MCP SDK offers no hook for it —
- * so a restricted client sees tools it cannot call and gets Access Denied on use. Fixing that
- * properly means a second endpoint with its own tool set; until then these tests are the boundary.
+ * <p>The tool list itself is not filtered per caller (the MCP SDK offers no hook), so a restricted
+ * client sees tools it cannot call and gets Access Denied on use.
  */
 class McpToolAuthorizationIT extends IntegrationTest {
 
@@ -45,7 +41,6 @@ class McpToolAuthorizationIT extends IntegrationTest {
     SecurityContextHolder.clearContext();
   }
 
-  /** Authenticates as a person holding exactly these scopes, as the resource server would. */
   private static void as(String subject, String... authorities) {
     Jwt jwt =
         Jwt.withTokenValue("test")

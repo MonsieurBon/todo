@@ -9,15 +9,11 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.containers.MySQLContainer;
 
 /**
- * One database and one application context for every integration test.
+ * One database and one application context for every integration test — a container per class also
+ * defeats Spring's context cache, since the datasource URL differs every time.
  *
- * <p>A container per test class costs half a minute each, and — because the datasource URL differs
- * every time — defeats Spring's context cache, so the application starts again for each one too.
- * Sharing both turns the suite from minutes into seconds. The container is deliberately never
- * stopped: Testcontainers' reaper removes it when the JVM exits.
- *
- * <p>The price is that tests share a schema, so nothing here may assume an empty database. Every
- * test invents its own user instead, which is also what makes them safe to run in any order.
+ * <p>So tests share a schema and none may assume an empty database. Each invents its own user,
+ * which is also what makes them safe in any order.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -36,15 +32,9 @@ public abstract class IntegrationTest {
     registry.add("spring.datasource.url", MYSQL::getJdbcUrl);
     registry.add("spring.datasource.username", MYSQL::getUsername);
     registry.add("spring.datasource.password", MYSQL::getPassword);
-    // Flyway owns the schema; letting Hibernate verify it is the only thing that catches a
-    // hand-written migration drifting from the entities.
+    // The only thing that catches a hand-written migration drifting from the entities.
     registry.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
   }
 
-  /**
-   * No IdP in tests: every test authenticates directly, so nothing ever decodes a real token.
-   * Protected so a test that is specifically about decoding — an unreachable IdP, say — can stub
-   * it.
-   */
   @MockitoBean protected JwtDecoder jwtDecoder;
 }

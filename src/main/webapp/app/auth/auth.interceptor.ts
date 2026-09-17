@@ -5,10 +5,8 @@ import { catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 
 /**
- * Attaches the bearer token to API calls, and gives an expired one exactly one chance to renew.
- *
- * <p>Only {@code /api} requests are touched. The metadata document is deliberately anonymous, and
- * sending a token to anything else would leak it to whatever else the app happens to fetch.
+ * Only `/api` is touched: the metadata document is deliberately anonymous, and a token on anything
+ * else leaks it to whatever the app happens to fetch. An expired token gets one renewal.
  */
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   if (!request.url.startsWith('/api')) {

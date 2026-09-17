@@ -16,18 +16,15 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
     provideIcons(),
     provideOAuthClient(),
-    // Tokens survive the app being closed. sessionStorage — the library's default — would mean a
-    // login every time the phone reclaims the process, which for a task list is every time.
-    // localStorage is readable by any script that gets injected; that is the accepted cost of a
-    // personal app not asking for a password twice a day.
+    // sessionStorage, the library's default, means a login every time the phone reclaims the
+    // process. localStorage is readable by an injected script: accepted cost for a personal app.
     { provide: OAuthStorage, useFactory: () => localStorage },
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),
       // Registering immediately would compete with the first board request for the connection.
       registrationStrategy: 'registerWhenStable:30000',
     }),
-    // Blocks the first render: every route needs to know whether there is a session, and a flash
-    // of the signed-out shell before the stored token is read is worse than a moment of nothing.
+    // Blocks the first render: a flash of the signed-out shell is worse than a moment of nothing.
     provideAppInitializer(() => inject(AuthService).bootstrap()),
   ],
 };

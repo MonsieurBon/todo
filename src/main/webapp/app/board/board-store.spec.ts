@@ -6,10 +6,7 @@ import { BoardView } from '../api/model';
 import { TodoApi } from '../api/todo-api';
 import { BoardStore } from './board-store';
 
-/**
- * Folding the outbox into the board is where a captured task can go missing, appear twice, or
- * quietly not count towards the cap it belongs to. These are the three ways that goes wrong.
- */
+/** Folding the outbox in: a task going missing, appearing twice, or not counting towards its cap. */
 describe('the board', () => {
   const board = (tasks: BoardView['tasks']): BoardView => ({
     zones: [

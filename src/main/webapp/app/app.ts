@@ -36,7 +36,6 @@ export class App {
   protected readonly pending = this.board.pendingCount;
   protected readonly showingCached = this.board.showingCached;
 
-  /** One line of truth about the connection, or nothing at all when everything is normal. */
   protected readonly connectionNote = computed(() => {
     const queued = this.pending();
     const changes = `${queued} ${queued === 1 ? 'change' : 'changes'}`;
@@ -50,7 +49,6 @@ export class App {
 
   constructor() {
     if (this.signedIn()) {
-      // Loads the outbox, sends anything queued, then fetches the board.
       void this.board.initialise();
       const returnUrl = this.auth.takeReturnUrl();
       if (returnUrl) {

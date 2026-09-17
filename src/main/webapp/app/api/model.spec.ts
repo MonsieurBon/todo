@@ -11,10 +11,8 @@ import {
 } from './model';
 
 /**
- * The limits start as constants on the Java entity, reach `openapi.json` through
- * `OpenApiContractIT`, and are copied by hand into `model.ts` — a form cannot import a number out
- * of a type. This is what makes that last hop fail loudly instead of drifting: change the entity,
- * commit the regenerated contract, and this test names the constant that was left behind.
+ * The limits are copied by hand into `model.ts`, because a form cannot import a number out of a
+ * type. This is what makes that last hop fail loudly: it names the constant left behind.
  */
 describe('the limits the form enforces', () => {
   const schemas = (

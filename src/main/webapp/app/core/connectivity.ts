@@ -1,24 +1,16 @@
 import { Injectable, computed, signal } from '@angular/core';
 
 /**
- * Whether the server can actually be reached.
+ * `navigator.onLine` only knows there is an interface — true on a captive portal, true when the
+ * server is down — and a cached 200 proves nothing either, so reachability is measured against a
+ * URL the service worker does not cache.
  *
- * <p>Two signals, because neither is enough alone. {@code navigator.onLine} only knows whether
- * there is a network interface — it is true on a captive portal and true when the server is down.
- * And once a service worker is serving the board from its cache, a successful response proves
- * nothing either: offline looks exactly like online, which is how a stale board ends up on screen
- * with nothing saying so.
- *
- * <p>So reachability is measured against a URL the service worker deliberately does not cache. It
- * is a hint for the UI and a trigger for the outbox, never a precondition: every write is
- * attempted regardless and queued when it fails.
+ * <p>A hint for the UI and a trigger for the outbox, never a precondition: writes are attempted
+ * regardless and queued when they fail.
  */
 @Injectable({ providedIn: 'root' })
 export class Connectivity {
-  /**
-   * Public, uncached, and cheap — the protected resource metadata is served for the MCP clients
-   * and is not in any of the service worker's groups, so a response to it came from the network.
-   */
+  /** In none of the service worker's groups, so a response to it came from the network. */
   private static readonly PROBE = '/.well-known/oauth-protected-resource';
 
   private readonly deviceOnline = signal(navigator.onLine);
@@ -37,7 +29,6 @@ export class Connectivity {
     });
   }
 
-  /** Asks whether anything is actually answering, and remembers the answer. */
   async probe(): Promise<boolean> {
     try {
       const response = await fetch(Connectivity.PROBE, { cache: 'no-store' });
@@ -48,7 +39,6 @@ export class Connectivity {
     return this.serverReachable();
   }
 
-  /** Calls back whenever the device comes back, or the app is brought to the foreground. */
   onReconnect(handler: () => void): void {
     addEventListener('online', handler);
     document.addEventListener('visibilitychange', () => {
