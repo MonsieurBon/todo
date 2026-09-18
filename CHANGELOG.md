@@ -1,3 +1,19 @@
+# [2.0.0](https://github.com/MonsieurBon/todo/compare/v1.0.2...v2.0.0) (2026-09-18)
+
+
+### Features
+
+* bind a token to one surface rather than a capability tier ([ee636bd](https://github.com/MonsieurBon/todo/commit/ee636bdf4bfe06923d1efa9130d9aff078993c1b))
+
+
+### BREAKING CHANGES
+
+* the todo:read, todo:write, todo:admin and todo:capture
+scopes are gone and the capture-only client with them. An existing IdP must
+be re-granted by hand; the README has the steps.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
 ## [1.0.2](https://github.com/MonsieurBon/todo/compare/v1.0.1...v1.0.2) (2026-09-15)
 
 
