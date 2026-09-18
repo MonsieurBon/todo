@@ -54,6 +54,10 @@ Every variable the app reads. There are no others.
 > identity provider mints (see below) **and** the public URL people reach the app on. A mismatch
 > fails as `401` on every request with nothing in the response explaining why —
 > `LOG_LEVEL_SECURITY=DEBUG` is what tells you.
+>
+> Write it as a bare origin — `https://todo.example.com`, **no trailing slash and no path** — here
+> and in the IdP's audience alike. The app is served from the root of its host, and it appends paths
+> to this value as written.
 
 ### `OIDC_ISSUER_URI` has to satisfy two things at once
 

@@ -63,6 +63,9 @@ with `npm run build`.
 - **The tool list in `TodoTools` is the whole bound on what an assistant may do**, now that no
   scope distinguishes one tool from another. Adding a tool widens the MCP surface; the operations
   deliberately absent are renaming, deleting and unsharing a list.
+- **A public URL is built from `TODO_CANONICAL_URI`, never from the request.** TLS terminates at
+  the proxy, so the request only knows the app's own address, and forwarded headers are not
+  trusted.
 - **Entities handed back by a service are detached** (`open-in-view` off, reads are
   `@Transactional(readOnly = true)`). Mutating one outside its service writes nothing and still
   answers 200 — so writes live in the service and every mutator resolves its own id privately.
