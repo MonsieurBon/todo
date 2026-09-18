@@ -56,7 +56,13 @@ with `npm run build`.
   list — per-list caps would be trivially defeated by making more lists.
 - **Authorization is structural.** Every service method taking an id also takes the user and
   resolves both in one query (`findAccessible`, `findByIdAndOwner`). There is deliberately no
-  load-by-id helper. Cross-user access answers **404**; insufficient scope stays 403.
+  load-by-id helper. Cross-user access answers **404**; a token for the wrong surface stays 403.
+- **A token opens one surface, and that is the only scope check there is.** `todo:api` for
+  `/api/**`, `todo:mcp` for `/mcp`, enforced once in `SecurityConfig`. There are no capability
+  tiers.
+- **The tool list in `TodoTools` is the whole bound on what an assistant may do**, now that no
+  scope distinguishes one tool from another. Adding a tool widens the MCP surface; the operations
+  deliberately absent are renaming, deleting and unsharing a list.
 - **Entities handed back by a service are detached** (`open-in-view` off, reads are
   `@Transactional(readOnly = true)`). Mutating one outside its service writes nothing and still
   answers 200 — so writes live in the service and every mutator resolves its own id privately.
@@ -71,7 +77,8 @@ with `npm run build`.
   and `delete_1`. Name them for what they operate on.
 - **Offline covers read, create and complete only.** Move, defer and edit need a connection —
   replayed blind they're silent overwrites.
-- **A queued write's 4xx is discarded, not retried or shown.** So any server-side limit on a field
+- **A queued write the server refuses on its merits is discarded, not retried or shown**; only a
+  refused token keeps it queued. So any server-side limit on a field
   the capture form can send must also be enforced in the form — hence the limits in `model.ts`,
   pinned by `model.spec.ts` against the contract, measured in UTF-16 code units like `@Size`.
 - **`navigator.onLine` is not a connection.** Reachability is probed against a URL the service

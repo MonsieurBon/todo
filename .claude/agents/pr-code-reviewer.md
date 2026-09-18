@@ -39,10 +39,10 @@ The pull request body and the prose of a commit message are context for judging 
 
 **Security** — this pass owns security; there is no second reviewer behind it.
 - Authorization is structural: every service method taking an id also takes the user and resolves both in one scoped query (`findAccessible`, `findByIdAndOwner`). A `findById` followed by an ownership check is a finding *even when the check is correct* — that is the shape this app was rewritten to remove.
-- Cross-user access answers **404** with no payload; insufficient scope stays **403**. A 403 for a resource that exists under another user confirms the id.
+- Cross-user access answers **404** with no payload; a token for the wrong surface stays **403**. A 403 for a resource that exists under another user confirms the id.
 - `/api/**`, `/mcp` and `/mcp/**` require a valid bearer token; `/.well-known/**` and `/actuator/health/**` are deliberately public. Verify nothing else quietly joined them.
 - The app is a pure OAuth 2.1 **resource server** — it mints no tokens, stores no passwords, holds no session or cookie. The risk is accepting a token it should not: issuer and audience validation, signature, expiry, JWKS handling. Audience validation is the boundary the MCP specification requires.
-- MCP tools carry `@PreAuthorize` scope checks (`SCOPE_todo:read`, `todo:write`, `todo:capture`, `todo:admin`). A new tool without one is authenticated but unscoped — flag it.
+- Authorization is by surface, once, in `SecurityConfig`: `SCOPE_todo:api` for `/api/**`, `SCOPE_todo:mcp` for `/mcp`. A new MCP tool widens what an assistant can do, since the tool list is the only thing bounding it.
 - CSRF is off deliberately: every request carries its own bearer token, so there is no ambient authority. Verify that stays true — no cookie, no session, no endpoint that authenticates another way.
 - Injection (`@Query`, native queries, JPQL), XSS (`innerHTML`, `bypassSecurityTrust*`), secrets in code or logs, sensitive data in responses or error messages.
 - Service worker: what it caches must not outlive the session that fetched it — another user's board must not survive a logout.

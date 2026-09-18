@@ -5,8 +5,14 @@ const ISSUER_KEY = 'todo.issuer';
 
 const CLIENT_ID = 'todo-web';
 
-/** `offline_access` matters: without it the refresh token dies with Keycloak's SSO idle timeout. */
-const SCOPES = 'openid profile email offline_access todo:read todo:write todo:admin';
+/**
+ * No `todo:` scope is named here on purpose: the IdP grants it by default, so a bundle cached in a
+ * browser can never pin a scope name that the realm has since renamed — which would be refused at
+ * the authorization request, before there is any session to recover from.
+ *
+ * `offline_access` matters: without it the refresh token dies with Keycloak's SSO idle timeout.
+ */
+const SCOPES = 'openid profile email offline_access';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {

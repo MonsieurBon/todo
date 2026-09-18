@@ -122,10 +122,10 @@ export class Outbox {
       return 'done';
     } catch (error) {
       const status = (error as { status?: number }).status ?? 0;
-      // 0 is no network; 401 is a token that could not be renewed, which looks the same offline.
-      // Anything else is settled and repeating will not change it — the 404 of a task deleted
-      // meanwhile is exactly what this drops on purpose.
-      return status === 0 || status === 401 || status === 408 || status >= 500
+      // 0 is no network; 401 and 403 are a token that could not be renewed or does not open this
+      // surface, both of which look the same offline. Anything else is settled and repeating will
+      // not change it — the 404 of a task deleted meanwhile is exactly what this drops on purpose.
+      return status === 0 || status === 401 || status === 403 || status === 408 || status >= 500
         ? 'unreachable'
         : 'done';
     }

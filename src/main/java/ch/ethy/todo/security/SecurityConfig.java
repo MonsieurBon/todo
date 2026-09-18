@@ -3,7 +3,6 @@ package ch.ethy.todo.security;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -17,7 +16,6 @@ import org.springframework.security.web.SecurityFilterChain;
  */
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
 public class SecurityConfig {
 
   private final String issuerUri;
@@ -45,8 +43,10 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers("/actuator/health/**")
                     .permitAll()
-                    .requestMatchers("/api/**", "/mcp", "/mcp/**")
-                    .authenticated()
+                    .requestMatchers("/api/**")
+                    .hasAuthority("SCOPE_todo:api")
+                    .requestMatchers("/mcp", "/mcp/**")
+                    .hasAuthority("SCOPE_todo:mcp")
                     .anyRequest()
                     .permitAll())
         .oauth2ResourceServer(
@@ -62,10 +62,7 @@ public class SecurityConfig {
                                         .resourceName("One Minute To-Do List")
                                         // MCP requires at least one authorization server here.
                                         .authorizationServer(issuerUri)
-                                        // One scopes_supported list cannot serve two access
-                                        // levels: this is what discovery tells every client to
-                                        // ask for, and a capture-only one may not have it.
-                                        .scope("todo:read"))))
+                                        .scope("todo:mcp"))))
         .build();
   }
 }

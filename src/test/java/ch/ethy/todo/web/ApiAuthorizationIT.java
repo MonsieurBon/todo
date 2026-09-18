@@ -27,7 +27,8 @@ import tools.jackson.databind.ObjectMapper;
  * Every test here asserts a <em>denial</em>, across two boundaries:
  *
  * <ul>
- *   <li><b>Scope</b> — enforced before the controller runs; a violation is 403 and carries no body.
+ *   <li><b>Surface</b> — a token is minted for the REST API or for the MCP server, never both;
+ *       enforced before the controller runs, and a violation is 403 carrying no body.
  *   <li><b>Ownership</b> — enforced by resolving every id together with the user; a violation is
  *       404, indistinguishable from "no such id" so probing cannot confirm which ids exist.
  * </ul>
@@ -41,10 +42,8 @@ class ApiAuthorizationIT extends IntegrationTest {
   private static final String ALICE = "subject-alice";
   private static final String BOB = "subject-bob";
 
-  private static final String READ = "SCOPE_todo:read";
-  private static final String WRITE = "SCOPE_todo:write";
-  private static final String ADMIN = "SCOPE_todo:admin";
-  private static final String CAPTURE = "SCOPE_todo:capture";
+  private static final String API = "SCOPE_todo:api";
+  private static final String MCP = "SCOPE_todo:mcp";
 
   private static org.springframework.test.web.servlet.request.RequestPostProcessor as(
       String subject, String... authorities) {
@@ -75,7 +74,7 @@ class ApiAuthorizationIT extends IntegrationTest {
     MvcResult created =
         mvc.perform(
                 withBody(
-                    post("/api/tasklists").with(as(ALICE, READ, WRITE, ADMIN)),
+                    post("/api/tasklists").with(as(ALICE, API)),
                     java.util.Map.of("name", "Alice's list " + System.nanoTime())))
             .andReturn();
     aliceList = json.readTree(created.getResponse().getContentAsString()).get("id").asLong();
@@ -83,13 +82,13 @@ class ApiAuthorizationIT extends IntegrationTest {
     MvcResult task =
         mvc.perform(
                 withBody(
-                    post("/api/tasklists/" + aliceList + "/tasks").with(as(ALICE, READ, WRITE)),
+                    post("/api/tasklists/" + aliceList + "/tasks").with(as(ALICE, API)),
                     java.util.Map.of("title", "Alice's private task", "zone", "CRITICAL_NOW")))
             .andReturn();
     aliceTask = json.readTree(task.getResponse().getContentAsString()).get("id").asLong();
 
     // Bob must exist before he can be probed against, and provisioning happens on first request.
-    mvc.perform(get("/api/tasklists").with(as(BOB, READ))).andReturn();
+    mvc.perform(get("/api/tasklists").with(as(BOB, API))).andReturn();
   }
 
   @Nested
@@ -99,7 +98,7 @@ class ApiAuthorizationIT extends IntegrationTest {
     @Test
     @DisplayName("Bob cannot read Alice's list")
     void cannotReadList() throws Exception {
-      MvcResult r = mvc.perform(get("/api/tasklists/" + aliceList).with(as(BOB, READ))).andReturn();
+      MvcResult r = mvc.perform(get("/api/tasklists/" + aliceList).with(as(BOB, API))).andReturn();
       assertThat(r.getResponse().getStatus()).isEqualTo(404);
       assertThat(r.getResponse().getContentAsString()).doesNotContain("Alice");
     }
@@ -107,7 +106,7 @@ class ApiAuthorizationIT extends IntegrationTest {
     @Test
     @DisplayName("Bob cannot read Alice's task — the exact bug the old app shipped")
     void cannotReadTask() throws Exception {
-      MvcResult r = mvc.perform(get("/api/tasks/" + aliceTask).with(as(BOB, READ))).andReturn();
+      MvcResult r = mvc.perform(get("/api/tasks/" + aliceTask).with(as(BOB, API))).andReturn();
       assertThat(r.getResponse().getStatus()).isEqualTo(404);
       assertThat(r.getResponse().getContentAsString()).doesNotContain("Alice's private task");
     }
@@ -116,8 +115,7 @@ class ApiAuthorizationIT extends IntegrationTest {
     @DisplayName("Bob cannot list the tasks in Alice's list")
     void cannotListTasks() throws Exception {
       MvcResult r =
-          mvc.perform(get("/api/tasklists/" + aliceList + "/tasks").with(as(BOB, READ)))
-              .andReturn();
+          mvc.perform(get("/api/tasklists/" + aliceList + "/tasks").with(as(BOB, API))).andReturn();
       assertThat(r.getResponse().getStatus()).isEqualTo(404);
       assertThat(r.getResponse().getContentAsString()).doesNotContain("Alice's private task");
     }
@@ -128,14 +126,14 @@ class ApiAuthorizationIT extends IntegrationTest {
       for (MockHttpServletRequestBuilder request :
           List.of(
               withBody(
-                  patch("/api/tasks/" + aliceTask).with(as(BOB, WRITE)),
+                  patch("/api/tasks/" + aliceTask).with(as(BOB, API)),
                   java.util.Map.of("title", "hijacked")),
-              post("/api/tasks/" + aliceTask + "/complete").with(as(BOB, WRITE)),
-              post("/api/tasks/" + aliceTask + "/reopen").with(as(BOB, WRITE)),
+              post("/api/tasks/" + aliceTask + "/complete").with(as(BOB, API)),
+              post("/api/tasks/" + aliceTask + "/reopen").with(as(BOB, API)),
               withBody(
-                  post("/api/tasks/" + aliceTask + "/zone").with(as(BOB, WRITE)),
+                  post("/api/tasks/" + aliceTask + "/zone").with(as(BOB, API)),
                   java.util.Map.of("zone", "OVER_THE_HORIZON")),
-              delete("/api/tasks/" + aliceTask).with(as(BOB, WRITE)))) {
+              delete("/api/tasks/" + aliceTask).with(as(BOB, API)))) {
         MvcResult r = mvc.perform(request).andReturn();
         assertThat(r.getResponse().getStatus()).isEqualTo(404);
         assertThat(r.getResponse().getContentAsString()).doesNotContain("Alice's private task");
@@ -143,7 +141,7 @@ class ApiAuthorizationIT extends IntegrationTest {
 
       // and it really was not modified
       MvcResult still =
-          mvc.perform(get("/api/tasks/" + aliceTask).with(as(ALICE, READ))).andReturn();
+          mvc.perform(get("/api/tasks/" + aliceTask).with(as(ALICE, API))).andReturn();
       assertThat(still.getResponse().getContentAsString()).contains("Alice's private task");
     }
 
@@ -153,12 +151,12 @@ class ApiAuthorizationIT extends IntegrationTest {
       for (MockHttpServletRequestBuilder request :
           List.of(
               withBody(
-                  patch("/api/tasklists/" + aliceList).with(as(BOB, ADMIN)),
+                  patch("/api/tasklists/" + aliceList).with(as(BOB, API)),
                   java.util.Map.of("name", "hijacked")),
               withBody(
-                  post("/api/tasklists/" + aliceList + "/shares").with(as(BOB, ADMIN)),
+                  post("/api/tasklists/" + aliceList + "/shares").with(as(BOB, API)),
                   java.util.Map.of("email", BOB + "@example.com")),
-              delete("/api/tasklists/" + aliceList).with(as(BOB, ADMIN)))) {
+              delete("/api/tasklists/" + aliceList).with(as(BOB, API)))) {
         assertThat(mvc.perform(request).andReturn().getResponse().getStatus()).isEqualTo(404);
       }
     }
@@ -168,13 +166,13 @@ class ApiAuthorizationIT extends IntegrationTest {
     void memberIsNotOwner() throws Exception {
       mvc.perform(
               withBody(
-                  post("/api/tasklists/" + aliceList + "/shares").with(as(ALICE, ADMIN)),
+                  post("/api/tasklists/" + aliceList + "/shares").with(as(ALICE, API)),
                   java.util.Map.of("email", BOB + "@example.com")))
           .andReturn();
 
       // Bob can now see it...
       assertThat(
-              mvc.perform(get("/api/tasklists/" + aliceList).with(as(BOB, READ)))
+              mvc.perform(get("/api/tasklists/" + aliceList).with(as(BOB, API)))
                   .andReturn()
                   .getResponse()
                   .getStatus())
@@ -184,14 +182,14 @@ class ApiAuthorizationIT extends IntegrationTest {
       assertThat(
               mvc.perform(
                       withBody(
-                          patch("/api/tasklists/" + aliceList).with(as(BOB, ADMIN)),
+                          patch("/api/tasklists/" + aliceList).with(as(BOB, API)),
                           java.util.Map.of("name", "Bob's now")))
                   .andReturn()
                   .getResponse()
                   .getStatus())
           .isEqualTo(404);
       assertThat(
-              mvc.perform(delete("/api/tasklists/" + aliceList).with(as(BOB, ADMIN)))
+              mvc.perform(delete("/api/tasklists/" + aliceList).with(as(BOB, API)))
                   .andReturn()
                   .getResponse()
                   .getStatus())
@@ -200,17 +198,18 @@ class ApiAuthorizationIT extends IntegrationTest {
   }
 
   @Nested
-  @DisplayName("scope — what an AI client may do at all")
-  class Scopes {
+  @DisplayName("surface — an MCP token does not open the REST API")
+  class Surface {
 
     @Test
-    @DisplayName("a capture-only client cannot read anything, and the refusal carries no body")
-    void captureCannotRead() throws Exception {
+    @DisplayName("an MCP token cannot read, and the refusal carries no body")
+    void mcpCannotRead() throws Exception {
       for (MockHttpServletRequestBuilder request :
           List.of(
-              get("/api/tasklists").with(as(ALICE, CAPTURE)),
-              get("/api/tasklists/" + aliceList).with(as(ALICE, CAPTURE)),
-              get("/api/tasks/" + aliceTask).with(as(ALICE, CAPTURE)))) {
+              get("/api/board").with(as(ALICE, MCP)),
+              get("/api/tasklists").with(as(ALICE, MCP)),
+              get("/api/tasklists/" + aliceList).with(as(ALICE, MCP)),
+              get("/api/tasks/" + aliceTask).with(as(ALICE, MCP)))) {
         MvcResult r = mvc.perform(request).andReturn();
         assertThat(r.getResponse().getStatus()).isEqualTo(403);
         assertThat(r.getResponse().getContentAsString()).isEmpty();
@@ -218,15 +217,18 @@ class ApiAuthorizationIT extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a capture-only client cannot edit, complete or delete")
-    void captureCannotWrite() throws Exception {
+    @DisplayName("an MCP token cannot capture, edit, complete or delete")
+    void mcpCannotWrite() throws Exception {
       for (MockHttpServletRequestBuilder request :
           List.of(
-              post("/api/tasks/" + aliceTask + "/complete").with(as(ALICE, CAPTURE)),
               withBody(
-                  patch("/api/tasks/" + aliceTask).with(as(ALICE, CAPTURE)),
+                  post("/api/tasks/capture").with(as(ALICE, MCP)),
+                  java.util.Map.of("title", "through the wrong door")),
+              post("/api/tasks/" + aliceTask + "/complete").with(as(ALICE, MCP)),
+              withBody(
+                  patch("/api/tasks/" + aliceTask).with(as(ALICE, MCP)),
                   java.util.Map.of("title", "not mine to edit")),
-              delete("/api/tasks/" + aliceTask).with(as(ALICE, CAPTURE)))) {
+              delete("/api/tasks/" + aliceTask).with(as(ALICE, MCP)))) {
         MvcResult r = mvc.perform(request).andReturn();
         assertThat(r.getResponse().getStatus()).isEqualTo(403);
         assertThat(r.getResponse().getContentAsString()).isEmpty();
@@ -234,45 +236,49 @@ class ApiAuthorizationIT extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("a capture-only client CAN file a task into its inbox")
-    void captureCanCapture() throws Exception {
-      MvcResult r =
+    @DisplayName("an MCP token cannot manage lists")
+    void mcpCannotAdminister() throws Exception {
+      for (MockHttpServletRequestBuilder request :
+          List.of(
+              withBody(
+                  post("/api/tasklists").with(as(ALICE, MCP)), java.util.Map.of("name", "Sneaky")),
+              delete("/api/tasklists/" + aliceList).with(as(ALICE, MCP)))) {
+        assertThat(mvc.perform(request).andReturn().getResponse().getStatus()).isEqualTo(403);
+      }
+    }
+
+    @Test
+    @DisplayName("an API token may do all of it — the surface is the only tier there is")
+    void apiTokenIsUnrestricted() throws Exception {
+      MvcResult captured =
           mvc.perform(
                   withBody(
-                      post("/api/tasks/capture").with(as(ALICE, CAPTURE)),
+                      post("/api/tasks/capture").with(as(ALICE, API)),
                       java.util.Map.of("title", "Buy milk")))
               .andReturn();
-      assertThat(r.getResponse().getStatus()).isEqualTo(201);
-      assertThat(r.getResponse().getContentAsString()).contains("Buy milk");
-    }
+      assertThat(captured.getResponse().getStatus()).isEqualTo(201);
 
-    @Test
-    @DisplayName("a read-only client cannot write")
-    void readCannotWrite() throws Exception {
-      for (MockHttpServletRequestBuilder request :
-          List.of(
-              post("/api/tasks/" + aliceTask + "/complete").with(as(ALICE, READ)),
-              withBody(
-                  patch("/api/tasks/" + aliceTask).with(as(ALICE, READ)),
-                  java.util.Map.of("title", "not mine to edit")))) {
-        MvcResult r = mvc.perform(request).andReturn();
-        assertThat(r.getResponse().getStatus()).isEqualTo(403);
-        assertThat(r.getResponse().getContentAsString()).isEmpty();
-      }
-    }
-
-    @Test
-    @DisplayName("managing lists needs admin, which read and write do not imply")
-    void listAdminNeedsAdminScope() throws Exception {
       assertThat(
-              mvc.perform(
-                      withBody(
-                          post("/api/tasklists").with(as(ALICE, READ, WRITE)),
-                          java.util.Map.of("name", "Sneaky")))
+              mvc.perform(get("/api/board").with(as(ALICE, API)))
                   .andReturn()
                   .getResponse()
                   .getStatus())
-          .isEqualTo(403);
+          .isEqualTo(200);
+      assertThat(
+              mvc.perform(post("/api/tasks/" + aliceTask + "/complete").with(as(ALICE, API)))
+                  .andReturn()
+                  .getResponse()
+                  .getStatus())
+          .isEqualTo(200);
+      assertThat(
+              mvc.perform(
+                      withBody(
+                          post("/api/tasklists").with(as(ALICE, API)),
+                          java.util.Map.of("name", "Another " + System.nanoTime())))
+                  .andReturn()
+                  .getResponse()
+                  .getStatus())
+          .isEqualTo(201);
     }
 
     @Test
@@ -293,7 +299,7 @@ class ApiAuthorizationIT extends IntegrationTest {
       MvcResult r =
           mvc.perform(
                   withBody(
-                      post("/api/tasks/capture").with(as(ALICE, CAPTURE)),
+                      post("/api/tasks/capture").with(as(ALICE, API)),
                       java.util.Map.of("title", "   ")))
               .andReturn();
       assertThat(r.getResponse().getStatus()).isEqualTo(400);
@@ -306,7 +312,7 @@ class ApiAuthorizationIT extends IntegrationTest {
       MvcResult r =
           mvc.perform(
                   withBody(
-                      post("/api/tasks/" + aliceTask + "/defer").with(as(ALICE, WRITE)),
+                      post("/api/tasks/" + aliceTask + "/defer").with(as(ALICE, API)),
                       java.util.Map.of("until", java.time.LocalDate.now().minusDays(1).toString())))
               .andReturn();
       assertThat(r.getResponse().getStatus()).isEqualTo(400);

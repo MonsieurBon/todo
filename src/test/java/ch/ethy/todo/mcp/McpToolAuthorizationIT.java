@@ -1,153 +1,155 @@
 package ch.ethy.todo.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import ch.ethy.todo.IntegrationTest;
 import ch.ethy.todo.domain.TaskZone;
-import java.time.LocalDate;
 import java.util.List;
-import java.util.function.Consumer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.AccessDeniedException;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
- * The scope gate on every MCP tool, asserted in CI — scripts/verify-mcp.sh covers the same ground
- * against a real Keycloak but does not run there.
- *
- * <p>The tool list itself is not filtered per caller (the MCP SDK offers no hook), so a restricted
- * client sees tools it cannot call and gets Access Denied on use.
+ * The tools themselves carry no authorization: a token is minted for the MCP surface or for the
+ * REST API, and everything past that gate resolves against the calling user. scripts/verify-mcp.sh
+ * covers the same ground against a real Keycloak but does not run in CI.
  */
 class McpToolAuthorizationIT extends IntegrationTest {
 
   @Autowired private TodoTools tools;
 
-  private static final String CAPTURE = "SCOPE_todo:capture";
-  private static final String READ = "SCOPE_todo:read";
-  private static final String WRITE = "SCOPE_todo:write";
-  private static final String ADMIN = "SCOPE_todo:admin";
+  @Autowired private MockMvc mvc;
+
+  @Autowired private ObjectMapper json;
+
+  private static final String API = "SCOPE_todo:api";
+  private static final String MCP = "SCOPE_todo:mcp";
 
   @AfterEach
   void clearContext() {
     SecurityContextHolder.clearContext();
   }
 
-  private static void as(String subject, String... authorities) {
+  private static String someone() {
+    return "mcp-subject-" + System.nanoTime();
+  }
+
+  private static void as(String subject) {
     Jwt jwt =
         Jwt.withTokenValue("test")
             .header("alg", "none")
             .subject(subject)
             .claim("email", subject + "@example.com")
             .build();
-    var auth =
-        new TestingAuthenticationToken(
-            jwt,
-            null,
-            java.util.Arrays.stream(authorities).map(SimpleGrantedAuthority::new).toList());
+    var auth = new TestingAuthenticationToken(jwt, null, List.of());
     auth.setAuthenticated(true);
     SecurityContextHolder.getContext().setAuthentication(auth);
   }
 
-  private static String someone() {
-    return "mcp-subject-" + System.nanoTime();
-  }
-
-  /** Asserts a tool refuses outright rather than returning a partial or empty result. */
-  private void refused(String what, Consumer<TodoTools> call) {
-    assertThatThrownBy(() -> call.accept(tools))
-        .as("%s must be refused", what)
-        .isInstanceOf(AccessDeniedException.class);
+  private static RequestPostProcessor bearing(String authority) {
+    String subject = someone();
+    return jwt()
+        .jwt(builder -> builder.subject(subject).claim("email", subject + "@example.com"))
+        .authorities(new SimpleGrantedAuthority(authority));
   }
 
   @Nested
-  @DisplayName("a capture-only assistant")
-  class CaptureOnly {
+  @DisplayName("surface — a REST token does not open the MCP server")
+  class Surface {
+
+    /** Any JSON-RPC body will do: the gate runs before the transport sees the request. */
+    private static final String CALL =
+        """
+        {"jsonrpc":"2.0","id":1,"method":"tools/list"}""";
 
     @Test
-    @DisplayName("can file a task")
-    void canCreate() {
-      as(someone(), CAPTURE);
-      assertThatCode(() -> tools.createTask("Buy roof tiles", null, List.of("house"), null))
-          .doesNotThrowAnyException();
+    @DisplayName("an API token is refused, and the refusal carries no body")
+    void apiTokenIsRefused() throws Exception {
+      var r =
+          mvc.perform(
+                  post("/mcp")
+                      .with(bearing(API))
+                      .contentType(MediaType.APPLICATION_JSON)
+                      .accept("application/json", "text/event-stream")
+                      .content(CALL))
+              .andReturn();
+      assertThat(r.getResponse().getStatus()).isEqualTo(403);
+      assertThat(r.getResponse().getContentAsString()).isEmpty();
     }
 
     @Test
-    @DisplayName("cannot read anything")
-    void cannotRead() {
-      as(someone(), CAPTURE);
-      refused("get_board", t -> t.getBoard(null, null, null, null));
-      refused("list_labels", TodoTools::listLabels);
-      refused("list_tasklists", TodoTools::listTaskLists);
-      refused("get_review_queue", t -> t.getReviewQueue(1L));
+    @DisplayName("no token at all is 401, not 403")
+    void anonymousIsUnauthenticated() throws Exception {
+      assertThat(
+              mvc.perform(
+                      post("/mcp")
+                          .contentType(MediaType.APPLICATION_JSON)
+                          .accept("application/json", "text/event-stream")
+                          .content(CALL))
+                  .andReturn()
+                  .getResponse()
+                  .getStatus())
+          .isEqualTo(401);
     }
 
     @Test
-    @DisplayName("cannot change or delete anything")
-    void cannotWrite() {
-      as(someone(), CAPTURE);
-      refused("complete_task", t -> t.completeTask(1L));
-      refused("move_task_zone", t -> t.moveTaskZone(1L, TaskZone.CRITICAL_NOW));
-      refused("defer_task", t -> t.deferTask(1L, LocalDate.now().plusDays(1)));
-      refused("set_task_labels", t -> t.setTaskLabels(1L, List.of("x")));
-      refused("mark_task_reviewed", t -> t.markTaskReviewed(1L));
-      refused("delete_task", t -> t.deleteTask(1L));
+    @DisplayName("an MCP token reaches the transport")
+    void mcpTokenPassesTheGate() throws Exception {
+      assertThat(
+              mvc.perform(
+                      post("/mcp")
+                          .with(bearing(MCP))
+                          .contentType(MediaType.APPLICATION_JSON)
+                          .accept("application/json", "text/event-stream")
+                          .content(CALL))
+                  .andReturn()
+                  .getResponse()
+                  .getStatus())
+          .isNotIn(401, 403);
     }
 
+    /**
+     * How an assistant finds the IdP and learns what to ask for, so it is anonymous and every field
+     * is load-bearing. A scope advertised here must be one the MCP client can actually obtain: name
+     * todo:api too and a client requesting both is refused by the IdP, not by anything here.
+     */
     @Test
-    @DisplayName("cannot manage lists")
-    void cannotAdminister() {
-      as(someone(), CAPTURE);
-      refused("create_tasklist", t -> t.createTaskList("Sneaky"));
-      refused("share_tasklist", t -> t.shareTaskList(1L, "someone@example.com"));
+    @DisplayName("discovery advertises the MCP surface, anonymously, and nothing else")
+    void discoveryServesMcpClients() throws Exception {
+      var response =
+          mvc.perform(get("/.well-known/oauth-protected-resource")).andReturn().getResponse();
+      assertThat(response.getStatus()).isEqualTo(200);
+
+      var document = json.readTree(response.getContentAsString());
+      assertThat(document.get("scopes_supported").valueStream().map(JsonNode::asString))
+          .containsExactly("todo:mcp");
+      assertThat(document.get("authorization_servers")).isNotEmpty();
+      assertThat(document.get("resource").asString()).isNotBlank();
     }
   }
 
   @Nested
-  @DisplayName("scopes do not imply one another")
-  class NoImplication {
-
-    @Test
-    @DisplayName("read does not grant write")
-    void readIsNotWrite() {
-      as(someone(), READ);
-      refused("complete_task", t -> t.completeTask(1L));
-      refused("delete_task", t -> t.deleteTask(1L));
-    }
-
-    @Test
-    @DisplayName("write does not grant list administration")
-    void writeIsNotAdmin() {
-      as(someone(), READ, WRITE);
-      refused("create_tasklist", t -> t.createTaskList("Sneaky"));
-      refused("share_tasklist", t -> t.shareTaskList(1L, "someone@example.com"));
-    }
-
-    @Test
-    @DisplayName("admin alone does not grant reading")
-    void adminIsNotRead() {
-      as(someone(), ADMIN);
-      refused("get_board", t -> t.getBoard(null, null, null, null));
-    }
-  }
-
-  @Nested
-  @DisplayName("a fully authorised assistant")
+  @DisplayName("an assistant on the MCP surface")
   class FullAccess {
 
     @Test
     @DisplayName("can drive a task through its whole life")
     void endToEnd() {
-      String me = someone();
-      as(me, READ, WRITE, ADMIN);
+      as(someone());
 
       var list = tools.createTaskList("Household");
       var task =
@@ -170,8 +172,7 @@ class McpToolAuthorizationIT extends IntegrationTest {
     @Test
     @DisplayName("sees the zone loads counted across every list, not per list")
     void capsSpanLists() {
-      String me = someone();
-      as(me, READ, WRITE, ADMIN);
+      as(someone());
       var personal = tools.createTaskList("Personal " + System.nanoTime());
       var family = tools.createTaskList("Family " + System.nanoTime());
       for (int i = 0; i < 3; i++) {

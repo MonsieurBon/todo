@@ -18,7 +18,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -37,24 +36,16 @@ class OfflineCaptureIT extends IntegrationTest {
 
   private static final AtomicLong SUBJECTS = new AtomicLong();
 
-  private static final String CAPTURE = "SCOPE_todo:capture";
-  private static final String READ = "SCOPE_todo:read";
-  private static final String WRITE = "SCOPE_todo:write";
-  private static final String ADMIN = "SCOPE_todo:admin";
+  private static final String API = "SCOPE_todo:api";
 
   private static String someone() {
     return "offline-" + SUBJECTS.incrementAndGet() + "-" + System.nanoTime();
   }
 
-  private static RequestPostProcessor as(String subject, String... authorities) {
-    List<GrantedAuthority> granted =
-        java.util.Arrays.stream(authorities)
-            .map(SimpleGrantedAuthority::new)
-            .map(GrantedAuthority.class::cast)
-            .toList();
+  private static RequestPostProcessor as(String subject) {
     return jwt()
         .jwt(b -> b.subject(subject).claim("email", subject + "@example.com"))
-        .authorities(granted);
+        .authorities(new SimpleGrantedAuthority(API));
   }
 
   private JsonNode perform(MockHttpServletRequestBuilder request) throws Exception {
@@ -68,7 +59,7 @@ class OfflineCaptureIT extends IntegrationTest {
     payload.put("clientRef", clientRef);
     return perform(
         post("/api/tasks/capture")
-            .with(as(who, CAPTURE))
+            .with(as(who))
             .contentType(MediaType.APPLICATION_JSON)
             .content(json.writeValueAsString(payload)));
   }
@@ -80,14 +71,14 @@ class OfflineCaptureIT extends IntegrationTest {
     payload.put("clientRef", clientRef);
     return perform(
         post("/api/tasklists/" + list + "/tasks")
-            .with(as(who, WRITE))
+            .with(as(who))
             .contentType(MediaType.APPLICATION_JSON)
             .content(json.writeValueAsString(payload)));
   }
 
   private List<String> titlesOnBoard(String who) throws Exception {
     List<String> titles = new java.util.ArrayList<>();
-    perform(get("/api/board").with(as(who, READ)))
+    perform(get("/api/board").with(as(who)))
         .get("tasks")
         .forEach(t -> titles.add(t.get("title").asString()));
     return titles;
@@ -146,7 +137,7 @@ class OfflineCaptureIT extends IntegrationTest {
     Long list =
         perform(
                 post("/api/tasklists")
-                    .with(as(me, ADMIN))
+                    .with(as(me))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json.writeValueAsString(Map.of("name", "Household"))))
             .get("id")
@@ -190,7 +181,7 @@ class OfflineCaptureIT extends IntegrationTest {
     JsonNode created =
         perform(
             post("/api/tasks/capture")
-                .with(as(me, CAPTURE))
+                .with(as(me))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json.writeValueAsString(payload)));
 
@@ -206,7 +197,7 @@ class OfflineCaptureIT extends IntegrationTest {
     Long list =
         perform(
                 post("/api/tasklists")
-                    .with(as(me, ADMIN))
+                    .with(as(me))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json.writeValueAsString(Map.of("name", "Reading"))))
             .get("id")
@@ -220,7 +211,7 @@ class OfflineCaptureIT extends IntegrationTest {
     JsonNode created =
         perform(
             post("/api/tasklists/" + list + "/tasks")
-                .with(as(me, WRITE))
+                .with(as(me))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json.writeValueAsString(payload)));
 
@@ -236,7 +227,7 @@ class OfflineCaptureIT extends IntegrationTest {
     Long list =
         perform(
                 post("/api/tasklists")
-                    .with(as(me, ADMIN))
+                    .with(as(me))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json.writeValueAsString(Map.of("name", "Roofing"))))
             .get("id")
@@ -250,7 +241,7 @@ class OfflineCaptureIT extends IntegrationTest {
         json.readTree(
             mvc.perform(
                     post("/api/tasklists/" + list + "/tasks")
-                        .with(as(me, WRITE))
+                        .with(as(me))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json.writeValueAsString(payload)))
                 .andExpect(status().isBadRequest())
@@ -274,7 +265,7 @@ class OfflineCaptureIT extends IntegrationTest {
     String body =
         mvc.perform(
                 post("/api/tasks/capture")
-                    .with(as(me, WRITE))
+                    .with(as(me))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json.writeValueAsString(payload)))
             .andExpect(status().isBadRequest())
@@ -294,7 +285,7 @@ class OfflineCaptureIT extends IntegrationTest {
     String me = someone();
     captured(me, "Something to keep", null);
 
-    JsonNode lists = perform(get("/api/tasklists").with(as(me, READ)));
+    JsonNode lists = perform(get("/api/tasklists").with(as(me)));
     long inboxId = -1;
     for (JsonNode list : lists) {
       if (list.get("inbox").asBoolean()) {
@@ -304,7 +295,7 @@ class OfflineCaptureIT extends IntegrationTest {
     assertThat(inboxId).as("every user is provisioned with an inbox").isNotEqualTo(-1);
 
     // Nothing can create another inbox, so deleting it would break capture permanently.
-    mvc.perform(delete("/api/tasklists/" + inboxId).with(as(me, ADMIN)))
+    mvc.perform(delete("/api/tasklists/" + inboxId).with(as(me)))
         .andExpect(status().isBadRequest());
 
     assertThat(titlesOnBoard(me)).containsExactly("Something to keep");
