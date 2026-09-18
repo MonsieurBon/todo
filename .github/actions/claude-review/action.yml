@@ -133,6 +133,6 @@ runs:
         # everything and posted nothing. Set it well above what a review needs.
         claude_args: >-
           --model ${{ inputs.model }}
-          --max-turns 30
+          --max-turns 60
           --allowedTools "Read,Grep,Glob,WebFetch,Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(gh pr view:*)"
           --append-system-prompt "You run in an ephemeral CI job that terminates the moment your turn ends. Do everything yourself and synchronously: never delegate to a subagent and never start a background task, because both die with the job."
