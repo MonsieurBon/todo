@@ -1,3 +1,10 @@
+## [2.0.1](https://github.com/MonsieurBon/todo/compare/v2.0.0...v2.0.1) (2026-09-18)
+
+
+### Bug Fixes
+
+* bring back the original app icon ([3a64057](https://github.com/MonsieurBon/todo/commit/3a64057d4b27a3a585fca13bc778dc7e2a1a98d8))
+
 # [2.0.0](https://github.com/MonsieurBon/todo/compare/v1.0.2...v2.0.0) (2026-09-18)
 
 
