@@ -115,7 +115,7 @@ print("readonly_ok", by["get_board"]["annotations"]["readOnlyHint"] is True
 print("delete_ok", by["delete_task"]["annotations"]["destructiveHint"] is True)
 PY
 count=$(awk '/^count/{print $2}' "$TMP/toolcheck")
-[ "$count" -ge 13 ] && ok "$count tools discovered" || bad "only $count tools discovered"
+[ "$count" -ge 15 ] && ok "$count tools discovered" || bad "only $count tools discovered"
 grep -q "optional_ok True" "$TMP/toolcheck" \
   && ok "optional parameters are not advertised as required" \
   || bad "an optional parameter is marked required — the model will be forced to invent one"

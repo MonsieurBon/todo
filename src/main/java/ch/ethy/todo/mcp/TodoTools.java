@@ -253,6 +253,28 @@ public class TodoTools {
   }
 
   @McpTool(
+      name = "reopen_task",
+      annotations =
+          @McpTool.McpAnnotations(
+              readOnlyHint = false,
+              destructiveHint = true,
+              idempotentHint = true,
+              openWorldHint = false),
+      title = "Reopen a task",
+      description =
+          """
+          Undo complete_task: the task is open again, in the zone it was in.
+          get_board with includeDone finds completed tasks.
+
+          Afterwards, check get_board: if the task's zone is now over its cap, say so
+          and offer to move something out.
+          """)
+  public Responses.TaskView reopenTask(
+      @McpToolParam(description = "Id of the task.", required = true) Long taskId) {
+    return Responses.TaskView.of(tasks.reopen(taskId, currentUser.current()));
+  }
+
+  @McpTool(
       name = "move_task_zone",
       annotations =
           @McpTool.McpAnnotations(

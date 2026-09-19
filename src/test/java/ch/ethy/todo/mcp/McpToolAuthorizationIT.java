@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import ch.ethy.todo.IntegrationTest;
+import ch.ethy.todo.domain.TaskState;
 import ch.ethy.todo.domain.TaskZone;
 import ch.ethy.todo.service.NotFoundException;
 import java.time.LocalDate;
@@ -252,6 +253,30 @@ class McpToolAuthorizationIT extends IntegrationTest {
                 assertThat(t.title()).isEqualTo("Private");
                 assertThat(t.notes()).isEqualTo("Mine");
               });
+    }
+
+    @Test
+    @DisplayName("can reopen a task completed by mistake, but not someone else's")
+    void reopens() {
+      String owner = someone();
+      as(owner);
+      var task = tools.createTask("Water plants", TaskZone.OPPORTUNITY_NOW, null, null, null, null);
+      tools.completeTask(task.id());
+
+      as(someone());
+      assertThatThrownBy(() -> tools.reopenTask(task.id())).isInstanceOf(NotFoundException.class);
+
+      as(owner);
+      assertThat(tools.getBoard(null, null, null, true).tasks())
+          .filteredOn(t -> t.id().equals(task.id()))
+          .singleElement()
+          .as("a stranger's attempt leaves it done")
+          .satisfies(t -> assertThat(t.state()).isEqualTo(TaskState.DONE));
+
+      assertThat(tools.reopenTask(task.id()).state()).isEqualTo(TaskState.TODO);
+      assertThat(tools.getBoard(null, null, null, null).tasks())
+          .extracting(t -> t.id())
+          .contains(task.id());
     }
 
     @Test
