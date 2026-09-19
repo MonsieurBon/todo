@@ -121,7 +121,7 @@ public class TaskController {
         tasks.update(
             id,
             currentUser.current(),
-            new TaskEdit(request.title(), request.notes(), request.dueDate())));
+            new TaskEdit(request.title(), request.notes(), request.dueDate(), false)));
   }
 
   @PostMapping("/tasks/{id}/complete")

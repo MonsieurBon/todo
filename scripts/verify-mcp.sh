@@ -107,14 +107,15 @@ tools = json.load(open(sys.argv[1]))["result"]["tools"]
 by = {t["name"]: t for t in tools}
 print("count", len(tools))
 # An optional parameter listed as required forces the model to invent a value.
-print("optional_ok", "listId" not in by["create_task"]["inputSchema"].get("required", []))
+print("optional_ok", "listId" not in by["create_task"]["inputSchema"].get("required", [])
+      and by["update_task"]["inputSchema"].get("required", []) == ["taskId"])
 # A read-only tool flagged destructive trains clients to ignore the flag.
 print("readonly_ok", by["get_board"]["annotations"]["readOnlyHint"] is True
       and by["get_board"]["annotations"]["destructiveHint"] is False)
 print("delete_ok", by["delete_task"]["annotations"]["destructiveHint"] is True)
 PY
 count=$(awk '/^count/{print $2}' "$TMP/toolcheck")
-[ "$count" -ge 13 ] && ok "$count tools discovered" || bad "only $count tools discovered"
+[ "$count" -ge 15 ] && ok "$count tools discovered" || bad "only $count tools discovered"
 grep -q "optional_ok True" "$TMP/toolcheck" \
   && ok "optional parameters are not advertised as required" \
   || bad "an optional parameter is marked required — the model will be forced to invent one"

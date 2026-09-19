@@ -6,6 +6,7 @@ import ch.ethy.todo.domain.TaskZone;
 import ch.ethy.todo.service.BoardFilter;
 import ch.ethy.todo.service.CurrentUserService;
 import ch.ethy.todo.service.NewTask;
+import ch.ethy.todo.service.TaskEdit;
 import ch.ethy.todo.service.TaskListService;
 import ch.ethy.todo.service.TaskService;
 import ch.ethy.todo.web.dto.Responses;
@@ -55,6 +56,8 @@ public class TodoTools {
           If no zone is given, OPPORTUNITY_NOW is used. If no list is named the task
           goes to the user's inbox. Labels are topics such as "house" or "project-a";
           a task may carry several, and they are how tasks are grouped across lists.
+
+          Keep the title short enough to scan; anything longer goes in the notes.
           """)
   public Responses.TaskView createTask(
       @McpToolParam(
@@ -75,12 +78,68 @@ public class TodoTools {
       @McpToolParam(
               description = "Id of the list to file into. Omit to use the inbox.",
               required = false)
-          Long listId) {
+          Long listId,
+      @McpToolParam(
+              description =
+                  "Detail that does not belong in the title. At most "
+                      + Task.MAX_NOTES_LENGTH
+                      + " characters.",
+              required = false)
+          String notes,
+      @McpToolParam(
+              description =
+                  "When it must be finished, as YYYY-MM-DD. Not a deferral: it does not hide"
+                      + " the task.",
+              required = false)
+          LocalDate dueDate) {
     var me = currentUser.current();
     TaskZone target = zone == null ? TaskZone.OPPORTUNITY_NOW : zone;
-    var draft = NewTask.of(title, target, labels);
+    var draft = new NewTask(title, target, notes, dueDate, labels, null);
     return Responses.TaskView.of(
         listId == null ? tasks.capture(me, draft) : tasks.addTo(listId, me, draft));
+  }
+
+  @McpTool(
+      name = "update_task",
+      annotations =
+          @McpTool.McpAnnotations(
+              readOnlyHint = false,
+              destructiveHint = true,
+              idempotentHint = true,
+              openWorldHint = false),
+      title = "Edit a task",
+      description =
+          """
+          Change a task's title, notes or due date. Only what is passed changes;
+          anything omitted keeps its current value. Notes are replaced whole, so to add
+          to them pass the existing notes with the addition.
+
+          Zone, deferral, topics and completion have their own tools.
+          """)
+  public Responses.TaskView updateTask(
+      @McpToolParam(description = "Id of the task.", required = true) Long taskId,
+      @McpToolParam(
+              description = "New title. At most " + Task.MAX_TITLE_LENGTH + " characters.",
+              required = false)
+          String title,
+      @McpToolParam(
+              description =
+                  "New notes, replacing the old ones. At most "
+                      + Task.MAX_NOTES_LENGTH
+                      + " characters; an empty string clears them.",
+              required = false)
+          String notes,
+      @McpToolParam(description = "New due date, as YYYY-MM-DD.", required = false)
+          LocalDate dueDate,
+      @McpToolParam(
+              description = "True to remove the due date. Cannot be combined with dueDate.",
+              required = false)
+          Boolean clearDueDate) {
+    return Responses.TaskView.of(
+        tasks.update(
+            taskId,
+            currentUser.current(),
+            new TaskEdit(title, notes, dueDate, Boolean.TRUE.equals(clearDueDate))));
   }
 
   @McpTool(
@@ -183,7 +242,7 @@ public class TodoTools {
       annotations =
           @McpTool.McpAnnotations(
               readOnlyHint = false,
-              destructiveHint = false,
+              destructiveHint = true,
               idempotentHint = true,
               openWorldHint = false),
       title = "Mark a task done",
@@ -194,11 +253,33 @@ public class TodoTools {
   }
 
   @McpTool(
+      name = "reopen_task",
+      annotations =
+          @McpTool.McpAnnotations(
+              readOnlyHint = false,
+              destructiveHint = true,
+              idempotentHint = true,
+              openWorldHint = false),
+      title = "Reopen a task",
+      description =
+          """
+          Undo complete_task: the task is open again, in the zone it was in.
+          get_board with includeDone finds completed tasks.
+
+          Afterwards, check get_board: if the task's zone is now over its cap, say so
+          and offer to move something out.
+          """)
+  public Responses.TaskView reopenTask(
+      @McpToolParam(description = "Id of the task.", required = true) Long taskId) {
+    return Responses.TaskView.of(tasks.reopen(taskId, currentUser.current()));
+  }
+
+  @McpTool(
       name = "move_task_zone",
       annotations =
           @McpTool.McpAnnotations(
               readOnlyHint = false,
-              destructiveHint = false,
+              destructiveHint = true,
               idempotentHint = true,
               openWorldHint = false),
       title = "Change a task's urgency",
@@ -221,7 +302,7 @@ public class TodoTools {
       annotations =
           @McpTool.McpAnnotations(
               readOnlyHint = false,
-              destructiveHint = false,
+              destructiveHint = true,
               idempotentHint = true,
               openWorldHint = false),
       title = "Hide a task until a date",
@@ -244,7 +325,7 @@ public class TodoTools {
       annotations =
           @McpTool.McpAnnotations(
               readOnlyHint = false,
-              destructiveHint = false,
+              destructiveHint = true,
               idempotentHint = true,
               openWorldHint = false),
       title = "Set a task's topics",
@@ -268,7 +349,7 @@ public class TodoTools {
       annotations =
           @McpTool.McpAnnotations(
               readOnlyHint = false,
-              destructiveHint = false,
+              destructiveHint = true,
               idempotentHint = true,
               openWorldHint = false),
       title = "Record a review",

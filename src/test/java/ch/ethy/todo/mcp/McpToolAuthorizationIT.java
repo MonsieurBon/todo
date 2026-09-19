@@ -1,12 +1,16 @@
 package ch.ethy.todo.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import ch.ethy.todo.IntegrationTest;
+import ch.ethy.todo.domain.TaskState;
 import ch.ethy.todo.domain.TaskZone;
+import ch.ethy.todo.service.NotFoundException;
+import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -174,7 +178,15 @@ class McpToolAuthorizationIT extends IntegrationTest {
 
       var list = tools.createTaskList("Household");
       var task =
-          tools.createTask("Fix the tile", TaskZone.OPPORTUNITY_NOW, List.of("house"), list.id());
+          tools.createTask(
+              "Fix the tile",
+              TaskZone.OPPORTUNITY_NOW,
+              List.of("house"),
+              list.id(),
+              "The loose one by the shower",
+              LocalDate.of(2030, 3, 1));
+      assertThat(task.notes()).isEqualTo("The loose one by the shower");
+      assertThat(task.dueDate()).isEqualTo(LocalDate.of(2030, 3, 1));
 
       assertThat(tools.listLabels()).contains("house");
 
@@ -191,14 +203,91 @@ class McpToolAuthorizationIT extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("can rewrite a task's title, notes and due date, and clear them")
+    void editsEveryField() {
+      as(someone());
+      var task =
+          tools.createTask(
+              "Tile", TaskZone.OPPORTUNITY_NOW, null, null, "Old", LocalDate.of(2030, 3, 1));
+
+      var edited =
+          tools.updateTask(
+              task.id(), "Fix the tile", "By the shower", LocalDate.of(2030, 4, 1), null);
+      assertThat(edited.title()).isEqualTo("Fix the tile");
+      assertThat(edited.notes()).isEqualTo("By the shower");
+      assertThat(edited.dueDate()).isEqualTo(LocalDate.of(2030, 4, 1));
+
+      var notesOnly = tools.updateTask(task.id(), null, "Grout too", null, null);
+      assertThat(notesOnly.title()).as("an omitted field is left alone").isEqualTo("Fix the tile");
+      assertThat(notesOnly.dueDate()).isEqualTo(LocalDate.of(2030, 4, 1));
+
+      tools.updateTask(task.id(), null, "", null, true);
+      assertThat(tools.getBoard(null, null, null, null).tasks())
+          .filteredOn(t -> t.id().equals(task.id()))
+          .singleElement()
+          .satisfies(
+              t -> {
+                assertThat(t.notes()).isEmpty();
+                assertThat(t.dueDate()).isNull();
+              });
+    }
+
+    @Test
+    @DisplayName("cannot edit someone else's task, and learns nothing about it")
+    void cannotEditForeignTask() {
+      String owner = someone();
+      as(owner);
+      var task = tools.createTask("Private", TaskZone.OPPORTUNITY_NOW, null, null, "Mine", null);
+
+      as(someone());
+      assertThatThrownBy(() -> tools.updateTask(task.id(), "Taken", "Theirs", null, null))
+          .isInstanceOf(NotFoundException.class)
+          .satisfies(e -> assertThat(e.getMessage()).doesNotContain("Private", "Mine"));
+
+      as(owner);
+      assertThat(tools.getBoard(null, null, null, null).tasks())
+          .filteredOn(t -> t.id().equals(task.id()))
+          .singleElement()
+          .satisfies(
+              t -> {
+                assertThat(t.title()).isEqualTo("Private");
+                assertThat(t.notes()).isEqualTo("Mine");
+              });
+    }
+
+    @Test
+    @DisplayName("can reopen a task completed by mistake, but not someone else's")
+    void reopens() {
+      String owner = someone();
+      as(owner);
+      var task = tools.createTask("Water plants", TaskZone.OPPORTUNITY_NOW, null, null, null, null);
+      tools.completeTask(task.id());
+
+      as(someone());
+      assertThatThrownBy(() -> tools.reopenTask(task.id())).isInstanceOf(NotFoundException.class);
+
+      as(owner);
+      assertThat(tools.getBoard(null, null, null, true).tasks())
+          .filteredOn(t -> t.id().equals(task.id()))
+          .singleElement()
+          .as("a stranger's attempt leaves it done")
+          .satisfies(t -> assertThat(t.state()).isEqualTo(TaskState.DONE));
+
+      assertThat(tools.reopenTask(task.id()).state()).isEqualTo(TaskState.TODO);
+      assertThat(tools.getBoard(null, null, null, null).tasks())
+          .extracting(t -> t.id())
+          .contains(task.id());
+    }
+
+    @Test
     @DisplayName("sees the zone loads counted across every list, not per list")
     void capsSpanLists() {
       as(someone());
       var personal = tools.createTaskList("Personal " + System.nanoTime());
       var family = tools.createTaskList("Family " + System.nanoTime());
       for (int i = 0; i < 3; i++) {
-        tools.createTask("P" + i, TaskZone.CRITICAL_NOW, List.of(), personal.id());
-        tools.createTask("F" + i, TaskZone.CRITICAL_NOW, List.of(), family.id());
+        tools.createTask("P" + i, TaskZone.CRITICAL_NOW, List.of(), personal.id(), null, null);
+        tools.createTask("F" + i, TaskZone.CRITICAL_NOW, List.of(), family.id(), null, null);
       }
 
       var criticalOnBoard =

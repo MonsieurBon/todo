@@ -8,6 +8,7 @@ import ch.ethy.todo.IntegrationTest;
 import ch.ethy.todo.domain.Task;
 import ch.ethy.todo.domain.TaskList;
 import ch.ethy.todo.domain.TaskZone;
+import java.time.LocalDate;
 import java.util.List;
 import org.assertj.core.api.AbstractThrowableAssert;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
@@ -68,7 +69,12 @@ class McpToolInputIT extends IntegrationTest {
         Task.MAX_TITLE_LENGTH,
         () ->
             tools.createTask(
-                "t".repeat(Task.MAX_TITLE_LENGTH + 1), TaskZone.OPPORTUNITY_NOW, null, null));
+                "t".repeat(Task.MAX_TITLE_LENGTH + 1),
+                TaskZone.OPPORTUNITY_NOW,
+                null,
+                null,
+                null,
+                null));
   }
 
   @Test
@@ -82,14 +88,77 @@ class McpToolInputIT extends IntegrationTest {
                 "Fix the roof",
                 TaskZone.OPPORTUNITY_NOW,
                 List.of("l".repeat(Task.MAX_LABEL_LENGTH + 1)),
+                null,
+                null,
                 null));
+  }
+
+  @Test
+  @DisplayName("create_task refuses notes longer than the column and names the limit")
+  void notesTooLong() {
+    asSomeone();
+    rejectedNaming(
+        Task.MAX_NOTES_LENGTH,
+        () ->
+            tools.createTask(
+                "Fix the roof",
+                TaskZone.OPPORTUNITY_NOW,
+                null,
+                null,
+                "n".repeat(Task.MAX_NOTES_LENGTH + 1),
+                null));
+  }
+
+  @Test
+  @DisplayName("update_task refuses a title or notes longer than the column")
+  void updateTooLong() {
+    asSomeone();
+    var task = tools.createTask("Fix the roof", TaskZone.OPPORTUNITY_NOW, null, null, null, null);
+    rejectedNaming(
+        Task.MAX_TITLE_LENGTH,
+        () -> tools.updateTask(task.id(), "t".repeat(Task.MAX_TITLE_LENGTH + 1), null, null, null));
+    rejectedNaming(
+        Task.MAX_NOTES_LENGTH,
+        () -> tools.updateTask(task.id(), null, "n".repeat(Task.MAX_NOTES_LENGTH + 1), null, null));
+  }
+
+  @Test
+  @DisplayName("a refused update_task applies none of its fields, so a retry starts clean")
+  void refusedUpdateAppliesNothing() {
+    asSomeone();
+    var task = tools.createTask("Fix the roof", TaskZone.OPPORTUNITY_NOW, null, null, null, null);
+    rejectedNaming(
+        Task.MAX_NOTES_LENGTH,
+        () ->
+            tools.updateTask(
+                task.id(),
+                "Fix the ridge tile",
+                "n".repeat(Task.MAX_NOTES_LENGTH + 1),
+                null,
+                null));
+    assertThat(tools.getBoard(null, null, null, null).tasks())
+        .filteredOn(t -> t.id().equals(task.id()))
+        .singleElement()
+        .satisfies(t -> assertThat(t.title()).isEqualTo("Fix the roof"));
+  }
+
+  @Test
+  @DisplayName("update_task refuses a blank title, and a due date together with clearing it")
+  void updateContradictions() {
+    asSomeone();
+    var task = tools.createTask("Fix the roof", TaskZone.OPPORTUNITY_NOW, null, null, null, null);
+    assertThatThrownBy(() -> tools.updateTask(task.id(), " ", null, null, null))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(
+            () -> tools.updateTask(task.id(), null, null, LocalDate.of(2030, 1, 1), true))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
   @DisplayName("set_task_labels refuses a label longer than the column")
   void setLabelsTooLong() {
     asSomeone();
-    var task = tools.createTask("Fix the roof", TaskZone.OPPORTUNITY_NOW, null, null);
+    var task = tools.createTask("Fix the roof", TaskZone.OPPORTUNITY_NOW, null, null, null, null);
     rejectedNaming(
         Task.MAX_LABEL_LENGTH,
         () -> tools.setTaskLabels(task.id(), List.of("l".repeat(Task.MAX_LABEL_LENGTH + 1))));
@@ -145,6 +214,8 @@ class McpToolInputIT extends IntegrationTest {
                     "t".repeat(Task.MAX_TITLE_LENGTH),
                     TaskZone.OPPORTUNITY_NOW,
                     List.of("l".repeat(Task.MAX_LABEL_LENGTH)),
+                    null,
+                    "n".repeat(Task.MAX_NOTES_LENGTH),
                     null))
         .doesNotThrowAnyException();
   }
