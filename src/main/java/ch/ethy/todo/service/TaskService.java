@@ -111,7 +111,9 @@ public class TaskService {
     if (edit.notes() != null) {
       task.notes(edit.notes());
     }
-    if (edit.dueDate() != null) {
+    if (edit.clearDueDate()) {
+      task.dueDate(null);
+    } else if (edit.dueDate() != null) {
       task.dueDate(edit.dueDate());
     }
     return task;

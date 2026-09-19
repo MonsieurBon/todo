@@ -107,7 +107,8 @@ tools = json.load(open(sys.argv[1]))["result"]["tools"]
 by = {t["name"]: t for t in tools}
 print("count", len(tools))
 # An optional parameter listed as required forces the model to invent a value.
-print("optional_ok", "listId" not in by["create_task"]["inputSchema"].get("required", []))
+print("optional_ok", "listId" not in by["create_task"]["inputSchema"].get("required", [])
+      and by["update_task"]["inputSchema"].get("required", []) == ["taskId"])
 # A read-only tool flagged destructive trains clients to ignore the flag.
 print("readonly_ok", by["get_board"]["annotations"]["readOnlyHint"] is True
       and by["get_board"]["annotations"]["destructiveHint"] is False)

@@ -6,6 +6,7 @@ import ch.ethy.todo.domain.TaskZone;
 import ch.ethy.todo.service.BoardFilter;
 import ch.ethy.todo.service.CurrentUserService;
 import ch.ethy.todo.service.NewTask;
+import ch.ethy.todo.service.TaskEdit;
 import ch.ethy.todo.service.TaskListService;
 import ch.ethy.todo.service.TaskService;
 import ch.ethy.todo.web.dto.Responses;
@@ -96,6 +97,49 @@ public class TodoTools {
     var draft = new NewTask(title, target, notes, dueDate, labels, null);
     return Responses.TaskView.of(
         listId == null ? tasks.capture(me, draft) : tasks.addTo(listId, me, draft));
+  }
+
+  @McpTool(
+      name = "update_task",
+      annotations =
+          @McpTool.McpAnnotations(
+              readOnlyHint = false,
+              destructiveHint = true,
+              idempotentHint = true,
+              openWorldHint = false),
+      title = "Edit a task",
+      description =
+          """
+          Change a task's title, notes or due date. Only what is passed changes;
+          anything omitted keeps its current value. Notes are replaced whole, so to add
+          to them pass the existing notes with the addition.
+
+          Zone, deferral, topics and completion have their own tools.
+          """)
+  public Responses.TaskView updateTask(
+      @McpToolParam(description = "Id of the task.", required = true) Long taskId,
+      @McpToolParam(
+              description = "New title. At most " + Task.MAX_TITLE_LENGTH + " characters.",
+              required = false)
+          String title,
+      @McpToolParam(
+              description =
+                  "New notes, replacing the old ones. At most "
+                      + Task.MAX_NOTES_LENGTH
+                      + " characters; an empty string clears them.",
+              required = false)
+          String notes,
+      @McpToolParam(description = "New due date, as YYYY-MM-DD.", required = false)
+          LocalDate dueDate,
+      @McpToolParam(
+              description = "True to remove the due date. Cannot be combined with dueDate.",
+              required = false)
+          Boolean clearDueDate) {
+    return Responses.TaskView.of(
+        tasks.update(
+            taskId,
+            currentUser.current(),
+            new TaskEdit(title, notes, dueDate, Boolean.TRUE.equals(clearDueDate))));
   }
 
   @McpTool(

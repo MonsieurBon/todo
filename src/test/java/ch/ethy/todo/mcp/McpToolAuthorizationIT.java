@@ -1,12 +1,14 @@
 package ch.ethy.todo.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import ch.ethy.todo.IntegrationTest;
 import ch.ethy.todo.domain.TaskZone;
+import ch.ethy.todo.service.NotFoundException;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
@@ -197,6 +199,59 @@ class McpToolAuthorizationIT extends IntegrationTest {
       assertThat(tools.getBoard("house", null, null, null).tasks())
           .extracting(t -> t.title())
           .doesNotContain("Fix the tile");
+    }
+
+    @Test
+    @DisplayName("can rewrite a task's title, notes and due date, and clear them")
+    void editsEveryField() {
+      as(someone());
+      var task =
+          tools.createTask(
+              "Tile", TaskZone.OPPORTUNITY_NOW, null, null, "Old", LocalDate.of(2030, 3, 1));
+
+      var edited =
+          tools.updateTask(
+              task.id(), "Fix the tile", "By the shower", LocalDate.of(2030, 4, 1), null);
+      assertThat(edited.title()).isEqualTo("Fix the tile");
+      assertThat(edited.notes()).isEqualTo("By the shower");
+      assertThat(edited.dueDate()).isEqualTo(LocalDate.of(2030, 4, 1));
+
+      var notesOnly = tools.updateTask(task.id(), null, "Grout too", null, null);
+      assertThat(notesOnly.title()).as("an omitted field is left alone").isEqualTo("Fix the tile");
+      assertThat(notesOnly.dueDate()).isEqualTo(LocalDate.of(2030, 4, 1));
+
+      tools.updateTask(task.id(), null, "", null, true);
+      assertThat(tools.getBoard(null, null, null, null).tasks())
+          .filteredOn(t -> t.id().equals(task.id()))
+          .singleElement()
+          .satisfies(
+              t -> {
+                assertThat(t.notes()).isEmpty();
+                assertThat(t.dueDate()).isNull();
+              });
+    }
+
+    @Test
+    @DisplayName("cannot edit someone else's task, and learns nothing about it")
+    void cannotEditForeignTask() {
+      String owner = someone();
+      as(owner);
+      var task = tools.createTask("Private", TaskZone.OPPORTUNITY_NOW, null, null, "Mine", null);
+
+      as(someone());
+      assertThatThrownBy(() -> tools.updateTask(task.id(), "Taken", "Theirs", null, null))
+          .isInstanceOf(NotFoundException.class)
+          .satisfies(e -> assertThat(e.getMessage()).doesNotContain("Private", "Mine"));
+
+      as(owner);
+      assertThat(tools.getBoard(null, null, null, null).tasks())
+          .filteredOn(t -> t.id().equals(task.id()))
+          .singleElement()
+          .satisfies(
+              t -> {
+                assertThat(t.title()).isEqualTo("Private");
+                assertThat(t.notes()).isEqualTo("Mine");
+              });
     }
 
     @Test
