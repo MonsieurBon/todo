@@ -242,7 +242,7 @@ public class TodoTools {
       annotations =
           @McpTool.McpAnnotations(
               readOnlyHint = false,
-              destructiveHint = false,
+              destructiveHint = true,
               idempotentHint = true,
               openWorldHint = false),
       title = "Mark a task done",
@@ -279,7 +279,7 @@ public class TodoTools {
       annotations =
           @McpTool.McpAnnotations(
               readOnlyHint = false,
-              destructiveHint = false,
+              destructiveHint = true,
               idempotentHint = true,
               openWorldHint = false),
       title = "Change a task's urgency",
@@ -302,7 +302,7 @@ public class TodoTools {
       annotations =
           @McpTool.McpAnnotations(
               readOnlyHint = false,
-              destructiveHint = false,
+              destructiveHint = true,
               idempotentHint = true,
               openWorldHint = false),
       title = "Hide a task until a date",
@@ -325,7 +325,7 @@ public class TodoTools {
       annotations =
           @McpTool.McpAnnotations(
               readOnlyHint = false,
-              destructiveHint = false,
+              destructiveHint = true,
               idempotentHint = true,
               openWorldHint = false),
       title = "Set a task's topics",
@@ -349,7 +349,7 @@ public class TodoTools {
       annotations =
           @McpTool.McpAnnotations(
               readOnlyHint = false,
-              destructiveHint = false,
+              destructiveHint = true,
               idempotentHint = true,
               openWorldHint = false),
       title = "Record a review",
