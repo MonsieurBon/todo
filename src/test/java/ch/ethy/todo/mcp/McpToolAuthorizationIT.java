@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 import ch.ethy.todo.IntegrationTest;
 import ch.ethy.todo.domain.TaskZone;
+import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -174,7 +175,15 @@ class McpToolAuthorizationIT extends IntegrationTest {
 
       var list = tools.createTaskList("Household");
       var task =
-          tools.createTask("Fix the tile", TaskZone.OPPORTUNITY_NOW, List.of("house"), list.id());
+          tools.createTask(
+              "Fix the tile",
+              TaskZone.OPPORTUNITY_NOW,
+              List.of("house"),
+              list.id(),
+              "The loose one by the shower",
+              LocalDate.of(2030, 3, 1));
+      assertThat(task.notes()).isEqualTo("The loose one by the shower");
+      assertThat(task.dueDate()).isEqualTo(LocalDate.of(2030, 3, 1));
 
       assertThat(tools.listLabels()).contains("house");
 
@@ -197,8 +206,8 @@ class McpToolAuthorizationIT extends IntegrationTest {
       var personal = tools.createTaskList("Personal " + System.nanoTime());
       var family = tools.createTaskList("Family " + System.nanoTime());
       for (int i = 0; i < 3; i++) {
-        tools.createTask("P" + i, TaskZone.CRITICAL_NOW, List.of(), personal.id());
-        tools.createTask("F" + i, TaskZone.CRITICAL_NOW, List.of(), family.id());
+        tools.createTask("P" + i, TaskZone.CRITICAL_NOW, List.of(), personal.id(), null, null);
+        tools.createTask("F" + i, TaskZone.CRITICAL_NOW, List.of(), family.id(), null, null);
       }
 
       var criticalOnBoard =

@@ -68,7 +68,12 @@ class McpToolInputIT extends IntegrationTest {
         Task.MAX_TITLE_LENGTH,
         () ->
             tools.createTask(
-                "t".repeat(Task.MAX_TITLE_LENGTH + 1), TaskZone.OPPORTUNITY_NOW, null, null));
+                "t".repeat(Task.MAX_TITLE_LENGTH + 1),
+                TaskZone.OPPORTUNITY_NOW,
+                null,
+                null,
+                null,
+                null));
   }
 
   @Test
@@ -82,6 +87,24 @@ class McpToolInputIT extends IntegrationTest {
                 "Fix the roof",
                 TaskZone.OPPORTUNITY_NOW,
                 List.of("l".repeat(Task.MAX_LABEL_LENGTH + 1)),
+                null,
+                null,
+                null));
+  }
+
+  @Test
+  @DisplayName("create_task refuses notes longer than the column and names the limit")
+  void notesTooLong() {
+    asSomeone();
+    rejectedNaming(
+        Task.MAX_NOTES_LENGTH,
+        () ->
+            tools.createTask(
+                "Fix the roof",
+                TaskZone.OPPORTUNITY_NOW,
+                null,
+                null,
+                "n".repeat(Task.MAX_NOTES_LENGTH + 1),
                 null));
   }
 
@@ -89,7 +112,7 @@ class McpToolInputIT extends IntegrationTest {
   @DisplayName("set_task_labels refuses a label longer than the column")
   void setLabelsTooLong() {
     asSomeone();
-    var task = tools.createTask("Fix the roof", TaskZone.OPPORTUNITY_NOW, null, null);
+    var task = tools.createTask("Fix the roof", TaskZone.OPPORTUNITY_NOW, null, null, null, null);
     rejectedNaming(
         Task.MAX_LABEL_LENGTH,
         () -> tools.setTaskLabels(task.id(), List.of("l".repeat(Task.MAX_LABEL_LENGTH + 1))));
@@ -145,6 +168,8 @@ class McpToolInputIT extends IntegrationTest {
                     "t".repeat(Task.MAX_TITLE_LENGTH),
                     TaskZone.OPPORTUNITY_NOW,
                     List.of("l".repeat(Task.MAX_LABEL_LENGTH)),
+                    null,
+                    "n".repeat(Task.MAX_NOTES_LENGTH),
                     null))
         .doesNotThrowAnyException();
   }

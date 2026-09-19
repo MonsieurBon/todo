@@ -55,6 +55,8 @@ public class TodoTools {
           If no zone is given, OPPORTUNITY_NOW is used. If no list is named the task
           goes to the user's inbox. Labels are topics such as "house" or "project-a";
           a task may carry several, and they are how tasks are grouped across lists.
+
+          Keep the title short enough to scan; anything longer goes in the notes.
           """)
   public Responses.TaskView createTask(
       @McpToolParam(
@@ -75,10 +77,23 @@ public class TodoTools {
       @McpToolParam(
               description = "Id of the list to file into. Omit to use the inbox.",
               required = false)
-          Long listId) {
+          Long listId,
+      @McpToolParam(
+              description =
+                  "Detail that does not belong in the title. At most "
+                      + Task.MAX_NOTES_LENGTH
+                      + " characters.",
+              required = false)
+          String notes,
+      @McpToolParam(
+              description =
+                  "When it must be finished, as YYYY-MM-DD. Not a deferral: it does not hide"
+                      + " the task.",
+              required = false)
+          LocalDate dueDate) {
     var me = currentUser.current();
     TaskZone target = zone == null ? TaskZone.OPPORTUNITY_NOW : zone;
-    var draft = NewTask.of(title, target, labels);
+    var draft = new NewTask(title, target, notes, dueDate, labels, null);
     return Responses.TaskView.of(
         listId == null ? tasks.capture(me, draft) : tasks.addTo(listId, me, draft));
   }
