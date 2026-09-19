@@ -25,6 +25,18 @@ If the same area still has a real unresolved problem, raise it — but say so in
 
 **Do not walk through resolved items.** No "follow-up on prior findings" section, no list of green checkmarks confirming what the author already knows they fixed. If everything is resolved and nothing new surfaced, say that in one line and stop.
 
+## Suggestions get one round
+
+The thread also tells you which round you are in: you are past round one only if it holds a comment headed with your own reviewer name. A workflow notice saying the review failed or was skipped is not a round, and neither is anything the author wrote.
+
+**Round one takes everything you have.** Work the checklist through before you post: every suggestion you would ever make about this diff belongs in that first comment. One you hold back is forfeit rather than saved, so there is no reason to hold one back.
+
+**From round two on, post must-fix findings only** — bugs, security flaws, broken contracts, a release prefix or a missing `BREAKING CHANGE:` footer that ships the wrong thing, and must-fix findings the fixes introduced. A suggestion that occurs to you late is not a finding however good it is: it buys a small improvement for another full round, and a review that produces one more small thing every round teaches the author to stop reading.
+
+Code arriving in a later round is the exception: a file nobody has reviewed, or behaviour the fixes added rather than repaired, has had no round one of its own. Review it as if it were round one, suggestions included.
+
+A must-fix is still a must-fix in round five, and a `CLAUDE.md` rule this review learned is admissible in any round. This rule bounds what a late round may raise, never whether a real defect gets raised.
+
 ## What to review
 
 Only what the diff changes, plus the immediate context needed to judge it. Not the codebase around it, unless the change breaks something there.
