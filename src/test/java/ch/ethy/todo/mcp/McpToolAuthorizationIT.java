@@ -13,6 +13,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -35,6 +36,9 @@ class McpToolAuthorizationIT extends IntegrationTest {
   @Autowired private MockMvc mvc;
 
   @Autowired private ObjectMapper json;
+
+  @Value("${spring.security.oauth2.resourceserver.jwt.audiences}")
+  private String canonicalUri;
 
   private static final String API = "SCOPE_todo:api";
   private static final String MCP = "SCOPE_todo:mcp";
@@ -138,7 +142,24 @@ class McpToolAuthorizationIT extends IntegrationTest {
       assertThat(document.get("scopes_supported").valueStream().map(JsonNode::asString))
           .containsExactly("todo:mcp");
       assertThat(document.get("authorization_servers")).isNotEmpty();
-      assertThat(document.get("resource").asString()).isNotBlank();
+      assertThat(document.get("resource").asString()).isEqualTo(canonicalUri);
+    }
+
+    @Test
+    @DisplayName(
+        "the refusal points at discovery on the canonical URI, whatever the request claims")
+    void refusalPointsAtCanonicalDiscovery() throws Exception {
+      var response =
+          mvc.perform(
+                  post("https://todo.example.com/mcp")
+                      .contentType(MediaType.APPLICATION_JSON)
+                      .accept("application/json", "text/event-stream")
+                      .content(CALL))
+              .andReturn()
+              .getResponse();
+      assertThat(response.getHeader("WWW-Authenticate"))
+          .contains(
+              "resource_metadata=\"" + canonicalUri + "/.well-known/oauth-protected-resource\"");
     }
   }
 

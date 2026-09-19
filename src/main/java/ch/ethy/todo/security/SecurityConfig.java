@@ -7,6 +7,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationEntryPoint;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -30,6 +31,11 @@ public class SecurityConfig {
 
   @Bean
   SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    var entryPoint = new BearerTokenAuthenticationEntryPoint();
+    // Behind the proxy the request only knows the app's own address.
+    entryPoint.setResourceMetadataParameterResolver(
+        request -> canonicalUri + "/.well-known/oauth-protected-resource");
+
     return http.addFilterBefore(new IdpUnavailableFilter(), BearerTokenAuthenticationFilter.class)
         // Safe to disable: bearer tokens only, so there is no ambient authority to exploit.
         .csrf(AbstractHttpConfigurer::disable)
@@ -52,6 +58,7 @@ public class SecurityConfig {
         .oauth2ResourceServer(
             oauth2 ->
                 oauth2
+                    .authenticationEntryPoint(entryPoint)
                     .jwt(jwt -> {})
                     .protectedResourceMetadata(
                         metadata ->
