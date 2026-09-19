@@ -1,3 +1,10 @@
+## [2.0.2](https://github.com/MonsieurBon/todo/compare/v2.0.1...v2.0.2) (2026-09-19)
+
+
+### Bug Fixes
+
+* point the MCP refusal at discovery on the canonical URI, not the request's origin ([fed6beb](https://github.com/MonsieurBon/todo/commit/fed6bebc4a8020c7e485f08162c69fdbc772d674))
+
 ## [2.0.1](https://github.com/MonsieurBon/todo/compare/v2.0.0...v2.0.1) (2026-09-18)
 
 
