@@ -1,3 +1,17 @@
+# [2.1.0](https://github.com/MonsieurBon/todo/compare/v2.0.2...v2.1.0) (2026-09-19)
+
+
+### Bug Fixes
+
+* **mcp:** flag every tool that is not purely additive as destructive ([8f4fda5](https://github.com/MonsieurBon/todo/commit/8f4fda5d3b53f226afa29a496355282cc2f7a5ab))
+
+
+### Features
+
+* **mcp:** create_task takes notes and a due date ([b4fd061](https://github.com/MonsieurBon/todo/commit/b4fd0617079cf5b4c6ccd03916f28198c0741df4))
+* **mcp:** reopen_task undoes a completion ([e7bf54d](https://github.com/MonsieurBon/todo/commit/e7bf54d6df8ab02e7ac5f0ef8d8236ea982fa2cd))
+* **mcp:** update_task edits a task's title, notes and due date ([e5c7d5b](https://github.com/MonsieurBon/todo/commit/e5c7d5be2ea1ffc17f8ff2d1c4ae78ad1e3f1f4f))
+
 ## [2.0.2](https://github.com/MonsieurBon/todo/compare/v2.0.1...v2.0.2) (2026-09-19)
 
 
