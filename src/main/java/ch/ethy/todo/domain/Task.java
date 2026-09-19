@@ -193,6 +193,7 @@ public class Task {
 
   public void complete() {
     this.state = TaskState.DONE;
+    this.deferUntil = null;
   }
 
   public void reopen() {
