@@ -113,6 +113,18 @@ class TaskTest {
     }
 
     @Test
+    @DisplayName("completing a deferred task clears the deferral, so reopening shows it again")
+    void completingClearsDeferral() {
+      Task task = task();
+      task.deferUntil(TODAY.plusWeeks(2), TODAY);
+      task.complete();
+
+      assertThat(task.deferUntil()).isNull();
+      task.reopen();
+      assertThat(task.isVisibleOn(TODAY)).isTrue();
+    }
+
+    @Test
     @DisplayName("completing twice is harmless")
     void completeIsIdempotent() {
       Task task = task();

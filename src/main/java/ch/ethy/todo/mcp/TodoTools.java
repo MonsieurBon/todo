@@ -246,7 +246,11 @@ public class TodoTools {
               idempotentHint = true,
               openWorldHint = false),
       title = "Mark a task done",
-      description = "Mark a task as completed. It drops off the list immediately.")
+      description =
+          """
+          Mark a task as completed. It drops off the list immediately.
+          Completing clears any deferral, so a reopened task comes straight back.
+          """)
   public Responses.TaskView completeTask(
       @McpToolParam(description = "Id of the task.", required = true) Long taskId) {
     return Responses.TaskView.of(tasks.complete(taskId, currentUser.current()));
