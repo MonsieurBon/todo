@@ -1,3 +1,10 @@
+## [2.1.1](https://github.com/MonsieurBon/todo/compare/v2.1.0...v2.1.1) (2026-09-19)
+
+
+### Bug Fixes
+
+* completing a task clears its deferral ([8afae72](https://github.com/MonsieurBon/todo/commit/8afae721c89ee0d37af992cefe06915c609f6fc7))
+
 # [2.1.0](https://github.com/MonsieurBon/todo/compare/v2.0.2...v2.1.0) (2026-09-19)
 
 
