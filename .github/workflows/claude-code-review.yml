@@ -1,20 +1,9 @@
 name: Claude Code Review
 
-# pull_request_target, not pull_request, so the reviewer is main's reviewer.
-# On a pull_request event GitHub runs the workflow, the composite action, the
-# agent definition and CLAUDE.md all from the branch — so a pull request that
-# weakens the review gets judged by the weakened review. Here every one of those
-# comes from the base branch and only the diff comes from the branch, which is
-# what lets a change to the review machinery be reviewed by the machinery it is
-# changing. CLAUDE.md is the one exception, for the reason on the second
-# checkout below.
 on:
-  pull_request_target:
+  pull_request:
     types: [ opened, synchronize, ready_for_review, reopened ]
 
-# Keyed on the pull request number rather than github.ref: under
-# pull_request_target the ref is the base branch, so a ref-keyed group would be
-# the same value for every open pull request and they would cancel each other.
 # Without this a second push while a review is in flight produces two complete
 # reviews and two sets of comments — the diff-hash cache below cannot help,
 # because neither run has finished to write an entry when the other starts.
@@ -24,51 +13,22 @@ concurrency:
 
 jobs:
   claude-review:
-    # Both conditions are security controls here, not optimisations.
-    # pull_request_target runs in the base context with access to secrets, so:
-    #   - a fork's pull request must never reach it;
-    #   - neither must Dependabot's. Under pull_request GitHub itself withheld
-    #     secrets from Dependabot; under pull_request_target nothing does but
-    #     this line. (Dependabot branches live in this repository, so the fork
-    #     check above does not cover them.)
+    # GitHub withholds secrets from both, so the review could only fail there.
     if: >-
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.event.pull_request.user.login != 'dependabot[bot]'
 
     name: Claude review
     runs-on: ubuntu-latest
-    # Exactly what the review does: read the branch and the pull request, and
-    # post one comment. It writes nothing to the repository.
     permissions:
       contents: read
       pull-requests: write
       issues: read
 
     steps:
-      # No `ref:` — under pull_request_target checkout defaults to the base
-      # branch. This tree is what the review *is*: the agent definition, the
-      # composite action, CLAUDE.md.
-      - name: Check out the base branch (the reviewer)
+      - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 1
-
-      # The branch under review, as something to read. Nothing is executed from
-      # this tree — no install, no build, no test — so a hostile diff has no
-      # foothold here; it is fetched by sha rather than by branch name so it
-      # cannot move between the event and the checkout, and it carries no
-      # credentials.
-      #
-      # One thing does cross the line: Claude Code loads the CLAUDE.md above
-      # whatever it reads, so checking the branch out in full puts the branch's
-      # copy into the reviewer's context unasked. The prompt is what tells it
-      # that copy is a proposal rather than a rule — see the prompt in
-      # .github/actions/claude-review/action.yml.
-      - name: Check out the branch under review (the subject)
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          path: pr-head
           fetch-depth: 1
           persist-credentials: false
 
@@ -103,12 +63,6 @@ jobs:
           model: opus
           reviewer: pr-code-reviewer
           oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          # Given a token, claude-code-action uses it; given none, it trades the
-          # job's OIDC token for a GitHub App one. That trade is refused for a
-          # pull_request_target run — the endpoint answers 401 Invalid OIDC
-          # token — which is why supplying this is what makes the job work at
-          # all rather than a preference. The job's own token carries less than
-          # the App's would, and carries everything the review needs.
           github_token: ${{ secrets.GITHUB_TOKEN }}
           repo: ${{ github.repository }}
           pr: ${{ github.event.pull_request.number }}
