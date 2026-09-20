@@ -1,3 +1,10 @@
+## [2.1.2](https://github.com/MonsieurBon/todo/compare/v2.1.1...v2.1.2) (2026-09-20)
+
+
+### Bug Fixes
+
+* a completed task is read-only until it is reopened ([c785ac1](https://github.com/MonsieurBon/todo/commit/c785ac1bd7516da57578781c269be63a370295d9))
+
 ## [2.1.1](https://github.com/MonsieurBon/todo/compare/v2.1.0...v2.1.1) (2026-09-19)
 
 
