@@ -5,6 +5,8 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import ch.ethy.todo.IntegrationTest;
@@ -81,6 +83,62 @@ class TaskEditingIT extends IntegrationTest {
     assertThat(task.get("title").asString()).isEqualTo("Fix the ridge tile");
     assertThat(task.get("notes").asString()).isEqualTo("The cracked one above the porch.");
     assertThat(task.get("dueDate").asString()).isEqualTo("2026-10-01");
+  }
+
+  @Test
+  @DisplayName("a completed task refuses every change until it is reopened")
+  void completedIsReadOnly() throws Exception {
+    String me = "subject-done-" + System.nanoTime();
+    long id =
+        capture(
+            me,
+            Map.of(
+                "title", "Fix the tile",
+                "labels", java.util.List.of("house"),
+                "zone", "OPPORTUNITY_NOW"));
+    mvc.perform(post("/api/tasks/" + id + "/complete").with(as(me))).andExpect(status().isOk());
+
+    mvc.perform(withBody(patch("/api/tasks/" + id).with(as(me)), Map.of("title", "Fix the ridge")))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.error").value("task_completed"));
+    mvc.perform(
+            withBody(
+                post("/api/tasks/" + id + "/zone").with(as(me)), Map.of("zone", "CRITICAL_NOW")))
+        .andExpect(status().isConflict());
+    mvc.perform(post("/api/tasks/" + id + "/reviewed").with(as(me)))
+        .andExpect(status().isConflict());
+    mvc.perform(
+            withBody(
+                post("/api/tasks/" + id + "/defer").with(as(me)), Map.of("until", "2030-01-01")))
+        .andExpect(status().isConflict());
+    mvc.perform(
+            withBody(
+                put("/api/tasks/" + id + "/labels").with(as(me)),
+                Map.of("labels", java.util.List.of("garden"))))
+        .andExpect(status().isConflict());
+
+    var refused = reread(me, id);
+    assertThat(refused.get("title").asString()).isEqualTo("Fix the tile");
+    assertThat(refused.get("zone").asString()).isEqualTo("OPPORTUNITY_NOW");
+    assertThat(refused.get("deferUntil").isNull())
+        .as("a deferral slipped onto a done task would still hide it after reopening")
+        .isTrue();
+    assertThat(refused.get("labels").valueStream().map(JsonNode::asString))
+        .containsExactly("house");
+  }
+
+  @Test
+  @DisplayName("reopening a task makes it editable again")
+  void reopeningRestoresEditing() throws Exception {
+    String me = "subject-reopen-" + System.nanoTime();
+    long id = capture(me, Map.of("title", "Fix the tile", "zone", "OPPORTUNITY_NOW"));
+    mvc.perform(post("/api/tasks/" + id + "/complete").with(as(me))).andExpect(status().isOk());
+    mvc.perform(post("/api/tasks/" + id + "/reopen").with(as(me))).andExpect(status().isOk());
+
+    mvc.perform(withBody(patch("/api/tasks/" + id).with(as(me)), Map.of("title", "Fix the ridge")))
+        .andExpect(status().isOk());
+
+    assertThat(reread(me, id).get("title").asString()).isEqualTo("Fix the ridge");
   }
 
   @Test

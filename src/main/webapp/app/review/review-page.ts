@@ -95,7 +95,18 @@ export class ReviewPage {
     if (!task) {
       return;
     }
-    await action(task);
+    try {
+      await action(task);
+    } catch (error) {
+      // 409 means this card was settled elsewhere, so it is the card that is stale, not the
+      // decision that failed. Dropping it keeps the position and the count; anything else leaves
+      // it, because nothing was decided.
+      if ((error as { status?: number }).status === 409) {
+        this.queue.update((cards) => cards.filter((card) => card.id !== task.id));
+        return;
+      }
+      throw error;
+    }
     this.index.update((at) => at + 1);
   }
 }

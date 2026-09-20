@@ -72,6 +72,10 @@ with `npm run build`.
 - **Length limits belong on the entity**, because MCP tools hand arguments straight to the domain.
   The entity holds the constant and measures `codePointCount` (utf8mb4); the DTO's `@Size`
   constrains against that constant.
+- **A completed task is read-only**, for the same reason: every public mutator on `Task` starts
+  with `mustBeOpen()`, `complete` and `reopen` excepted. No test enumerates them, so a new one has to
+  remember. `TaskCompletedException` answers 409 — reuse it for the next state refusal rather than
+  inventing a 400.
 - **Test the deny path** — that the refused thing returns no payload.
 - **The API contract is checked in and generated from.** `OpenApiContractIT` rewrites
   `openapi.json` and fails once when a DTO changes; review the diff and commit it. `npm run
