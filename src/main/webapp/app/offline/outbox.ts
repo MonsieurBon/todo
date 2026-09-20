@@ -41,6 +41,7 @@ export class Outbox {
   private readonly entries = signal<OutboxEntry[]>([]);
   private db: Promise<IDBPDatabase> | null = null;
   private flushing = false;
+  private lastAt = 0;
 
   readonly pending = this.entries.asReadonly();
   readonly pendingCaptures = computed(
@@ -64,16 +65,25 @@ export class Outbox {
   }
 
   async enqueue(entry: OutboxDraft): Promise<string> {
+    // Strictly increasing: order is recovered from the store, whose keys are random, so two
+    // entries in the same millisecond would otherwise sort either way round.
+    this.lastAt = Math.max(Date.now(), this.lastAt + 1);
     const stored = {
       ...entry,
       // Doubles as the clientRef the server deduplicates on, so a retry resolves to the same task.
       id: crypto.randomUUID(),
-      createdAt: Date.now(),
+      createdAt: this.lastAt,
     } as OutboxEntry;
     await (await this.open()).put(STORE, stored);
     this.entries.update((current) => [...current, stored]);
     await this.flush();
     return stored.id;
+  }
+
+  /** Everything queued goes unsent — for when the device may have changed hands. */
+  async clear(): Promise<void> {
+    await (await this.open()).clear(STORE);
+    this.entries.set([]);
   }
 
   async discard(id: string): Promise<void> {
@@ -91,7 +101,11 @@ export class Outbox {
     }
     this.flushing = true;
     try {
-      for (const entry of [...this.entries()].sort((a, b) => a.createdAt - b.createdAt)) {
+      // From the store, not the signal: another tab may have emptied it, and each tab holds its
+      // own copy that nothing tells.
+      const queued = await this.readAll();
+      this.entries.set(queued);
+      for (const entry of queued) {
         const outcome = await this.send(entry);
         if (outcome === 'unreachable') {
           return;
@@ -131,8 +145,14 @@ export class Outbox {
     }
   }
 
+  /** The one place the order is established, so `load` and `flush` cannot disagree about it. */
   private async readAll(): Promise<OutboxEntry[]> {
-    return (await (await this.open()).getAll(STORE)) as OutboxEntry[];
+    const entries = ((await (await this.open()).getAll(STORE)) as OutboxEntry[]).sort(
+      (a, b) => a.createdAt - b.createdAt,
+    );
+    // Seeded from what is already queued: a clock that steps back must not undercut it.
+    this.lastAt = Math.max(this.lastAt, entries.at(-1)?.createdAt ?? 0);
+    return entries;
   }
 
   private open(): Promise<IDBPDatabase> {

@@ -90,6 +90,17 @@ with `npm run build`.
   pinned by `model.spec.ts` against the contract, measured in UTF-16 code units like `@Size`.
 - **`navigator.onLine` is not a connection.** Reachability is probed against a URL the service
   worker deliberately does not cache.
+- **Only the IdP can end a session.** A token-endpoint answer of 400 or 401 *naming an OAuth error*
+  is a refusal: the tokens go and the device signs in again. Every other failure is a connection
+  problem and must leave the session, the cached board and the outbox alone — offline everything
+  fails, and a wrong guess deletes the offline board and then strands the device at an IdP it
+  cannot reach. Guessing the other way only restores the dead end, so lean that way.
+- **A recovered session may not be the same person.** Signing in again hands the device to whoever
+  answers the login form, so anything queued under the old session is dropped unless the subject
+  that comes back matches the one that left. The answer waits for a session to actually resolve:
+  abandoning the login form is ordinary, and deciding before anyone has claimed the device would
+  destroy the user's own unsynced writes. Nothing can leak while it waits, because flushing needs
+  a board and the board needs a session.
 
 ## Tests
 

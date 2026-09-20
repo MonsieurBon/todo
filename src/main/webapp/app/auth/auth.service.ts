@@ -1,7 +1,20 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { AuthConfig, OAuthService } from 'angular-oauth2-oidc';
+import { AuthConfig, OAuthErrorEvent, OAuthService } from 'angular-oauth2-oidc';
+import { Outbox } from '../offline/outbox';
 
 const ISSUER_KEY = 'todo.issuer';
+
+/**
+ * In `localStorage`, not `sessionStorage`: the tab being closed at the login form is the very case
+ * this catches, and the outbox it guards is origin-wide.
+ */
+const RECOVERING_FROM_KEY = 'todo.recovering-from';
+
+/** Tab-scoped on purpose: one burst of redirects, not an identity. */
+const LAST_RECOVERY_KEY = 'todo.recovered-at';
+
+/** Long enough for a refusal that reproduces on the new token, short enough to retry much later. */
+const RECOVERY_COOLDOWN_MS = 30_000;
 
 const CLIENT_ID = 'todo-web';
 
@@ -17,10 +30,12 @@ const SCOPES = 'openid profile email offline_access';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly oauth = inject(OAuthService);
+  private readonly outbox = inject(Outbox);
 
   private readonly ready = signal(false);
   private readonly session = signal(false);
   private refreshing: Promise<boolean> | null = null;
+  private startingOver = false;
 
   readonly resolved = this.ready.asReadonly();
 
@@ -42,15 +57,23 @@ export class AuthService {
       return;
     }
     this.oauth.configure(this.config(issuer));
+    this.watchForRefusal();
     try {
       await this.oauth.loadDiscoveryDocumentAndTryLogin();
       if (!this.oauth.hasValidAccessToken() && this.oauth.getRefreshToken()) {
-        await this.oauth.refreshToken().catch(() => undefined);
+        await this.renew();
       }
       this.oauth.setupAutomaticSilentRefresh();
     } catch {
       // Launched with no connection. Whatever is in storage still identifies the user, and the
       // board renders from the service worker's cache; the first write goes to the outbox.
+    }
+    try {
+      await this.settleOutboxOwnership();
+    } catch {
+      // Not the offline path above: the queue could not be proven safe to send, so this load gets
+      // no board to flush it from. The marker stays and the next start settles it.
+      this.oauth.logOut(true);
     }
     this.session.set(this.oauth.hasValidAccessToken() || !!this.oauth.getRefreshToken());
     this.ready.set(true);
@@ -77,14 +100,111 @@ export class AuthService {
   /** Concurrent attempts are collapsed: each racing its own refresh invalidates the others. */
   tryRefresh(): Promise<boolean> {
     if (!this.oauth.getRefreshToken()) {
-      return Promise.resolve(false);
+      return this.startOver().then(() => false);
     }
-    this.refreshing ??= this.oauth
-      .refreshToken()
-      .then(() => true)
-      .catch(() => false)
-      .finally(() => setTimeout(() => (this.refreshing = null)));
+    this.refreshing ??= this.renew().finally(() => setTimeout(() => (this.refreshing = null)));
     return this.refreshing;
+  }
+
+  /**
+   * The expiry timer renews inside the library, never through {@link renew}, so without this an
+   * idle tab only discovers a dead session when the user acts. Our own failures raise it too; the
+   * second recovery is a no-op.
+   */
+  private watchForRefusal(): void {
+    this.oauth.events.subscribe((event) => {
+      if (
+        event.type === 'token_refresh_error' &&
+        AuthService.refused((event as OAuthErrorEvent).reason)
+      ) {
+        void this.startOver();
+      }
+    });
+  }
+
+  /** A refusal ends the session here, rather than asking again with the same dead token for ever. */
+  private async renew(): Promise<boolean> {
+    try {
+      await this.oauth.refreshToken();
+      return true;
+    } catch (error) {
+      if (AuthService.refused(error)) {
+        await this.startOver();
+      }
+      return false;
+    }
+  }
+
+  /**
+   * Both halves matter: a proxy in front of the IdP answers 400 and 401 too, but without an OAuth
+   * error code. Mistaking one of those for a refusal deletes the offline board and then strands
+   * the device at an IdP it cannot reach.
+   */
+  private static refused(error: unknown): boolean {
+    const answer = error as { status?: number; error?: { error?: string } } | null;
+    const named = typeof answer?.error?.error === 'string' && answer.error.error.length > 0;
+    return (answer?.status === 400 || answer?.status === 401) && named;
+  }
+
+  /**
+   * The IdP's own session is left alone deliberately: ending it would need the session that is
+   * gone, and leaving it is what lets a merely revoked token come back without a login form.
+   */
+  private async startOver(): Promise<void> {
+    if (this.startingOver) {
+      return;
+    }
+    this.startingOver = true;
+    // A cache that will not drop must not strand the sign-in; some private modes throw here.
+    await this.forgetCaches().catch(() => undefined);
+    this.session.set(false);
+    // Read before logOut, which takes the claims with it.
+    localStorage.setItem(RECOVERING_FROM_KEY, this.subject() ?? '');
+    this.oauth.logOut(true);
+    if (this.loopingOnRecovery()) {
+      return;
+    }
+    this.signIn(location.pathname + location.search);
+  }
+
+  /**
+   * The in-memory guard cannot see past the navigation it performs, so a refusal that reproduces
+   * on the fresh token would redirect for ever. Stopping leaves the signed-out state and its Sign
+   * in button: a dead end someone can act on beats a loop they cannot.
+   */
+  private loopingOnRecovery(): boolean {
+    const previous = Number(sessionStorage.getItem(LAST_RECOVERY_KEY) ?? 0);
+    sessionStorage.setItem(LAST_RECOVERY_KEY, String(Date.now()));
+    return Date.now() - previous < RECOVERY_COOLDOWN_MS;
+  }
+
+  /**
+   * Whoever answers the login form gets the device, so queued writes go unless the subject that
+   * comes back is the one that left.
+   *
+   * <p>The answer waits for a session to resolve rather than being taken on the first start back:
+   * abandoning the form is ordinary, and deciding there would destroy the user's own unsynced
+   * writes. Nothing can leak meanwhile — flushing needs a board, and the board needs a session.
+   */
+  private async settleOutboxOwnership(): Promise<void> {
+    const before = localStorage.getItem(RECOVERING_FROM_KEY);
+    if (before === null) {
+      return;
+    }
+    if (!this.oauth.hasValidAccessToken() && !this.oauth.getRefreshToken()) {
+      return;
+    }
+    const after = this.subject();
+    if (!before || !after || before !== after) {
+      await this.outbox.clear();
+    }
+    // Last, so a queue that could not be dropped is settled again on the next start.
+    localStorage.removeItem(RECOVERING_FROM_KEY);
+  }
+
+  private subject(): string | null {
+    const claims = this.oauth.getIdentityClaims() as Record<string, string> | null;
+    return claims?.['sub'] ?? null;
   }
 
   /** Caches and outbox go too: leaving either behind shows one person's list to the next. */
