@@ -115,6 +115,8 @@ public class TodoTools {
           to them pass the existing notes with the addition.
 
           Zone, deferral, topics and completion have their own tools.
+
+          A completed task is read-only; call reopen_task first if it needs changing.
           """)
   public Responses.TaskView updateTask(
       @McpToolParam(description = "Id of the task.", required = true) Long taskId,
@@ -228,7 +230,11 @@ public class TodoTools {
           continuously rather than reviewed.
 
           Walk these one at a time with the user and for each one promote, demote,
-          complete, defer or delete it, then call mark_task_reviewed.
+          defer, complete, delete or leave it as it is.
+
+          Then call mark_task_reviewed, but only for a task that stays on the list:
+          completing or deleting one takes it out of the queue by itself, and there is
+          nothing left to record.
           """)
   public List<Responses.TaskView> getReviewQueue(
       @McpToolParam(description = "The list to sweep.", required = true) Long listId) {
@@ -294,6 +300,8 @@ public class TodoTools {
 
           Before promoting into CRITICAL_NOW, check get_board: if that zone is already
           at its cap, something should come out before anything else goes in.
+
+          A completed task is read-only; call reopen_task first if it needs moving.
           """)
   public Responses.TaskView moveTaskZone(
       @McpToolParam(description = "Id of the task.", required = true) Long taskId,
@@ -316,6 +324,9 @@ public class TodoTools {
           back by itself. This is for "not yet", and is different from a due date:
           deferring says when the user wants to see it again, a due date says when it
           must be finished. The date cannot be in the past.
+
+          A completed task is read-only, and does not need hiding — it is already off
+          the list.
           """)
   public Responses.TaskView deferTask(
       @McpToolParam(description = "Id of the task.", required = true) Long taskId,
@@ -335,7 +346,8 @@ public class TodoTools {
       title = "Set a task's topics",
       description =
           "Replace every topic on a task. Pass the complete set, not just the additions. "
-              + "Call list_labels first so existing topics are reused rather than duplicated.")
+              + "Call list_labels first so existing topics are reused rather than duplicated. "
+              + "A completed task is read-only; call reopen_task first if it needs relabelling.")
   public Responses.TaskView setTaskLabels(
       @McpToolParam(description = "Id of the task.", required = true) Long taskId,
       @McpToolParam(
@@ -359,7 +371,9 @@ public class TodoTools {
       title = "Record a review",
       description =
           "Record that a task was considered during a review sweep, so it drops out of "
-              + "the review queue until its zone's cadence comes round again.")
+              + "the review queue until its zone's cadence comes round again. Only for a task "
+              + "that stays on the list: a completed one has left the queue already and is "
+              + "read-only, so it needs no record and must not be reopened to get one.")
   public Responses.TaskView markTaskReviewed(
       @McpToolParam(description = "Id of the task.", required = true) Long taskId) {
     return Responses.TaskView.of(tasks.markReviewed(taskId, currentUser.current()));

@@ -1,5 +1,6 @@
 package ch.ethy.todo.web;
 
+import ch.ethy.todo.domain.TaskCompletedException;
 import ch.ethy.todo.service.NotFoundException;
 import ch.ethy.todo.web.dto.Responses;
 import java.util.LinkedHashMap;
@@ -18,6 +19,13 @@ public class ApiExceptionHandler {
   public ResponseEntity<Responses.ApiError> notFound(NotFoundException e) {
     return ResponseEntity.status(HttpStatus.NOT_FOUND)
         .body(new Responses.ApiError("not_found", e.getMessage(), Map.of()));
+  }
+
+  /** 409, not 400: the request is well formed, it is the task's state that refuses it. */
+  @ExceptionHandler(TaskCompletedException.class)
+  public ResponseEntity<Responses.ApiError> completed(TaskCompletedException e) {
+    return ResponseEntity.status(HttpStatus.CONFLICT)
+        .body(new Responses.ApiError("task_completed", e.getMessage(), Map.of()));
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)

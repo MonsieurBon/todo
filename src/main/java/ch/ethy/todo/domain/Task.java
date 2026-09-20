@@ -122,6 +122,7 @@ public class Task {
 
   /** Blank is treated as absent: an empty string would deduplicate every task against itself. */
   public void clientRef(String clientRef) {
+    mustBeOpen();
     this.clientRef =
         clientRef == null || clientRef.isBlank()
             ? null
@@ -133,6 +134,7 @@ public class Task {
   }
 
   public void position(int position) {
+    mustBeOpen();
     this.position = position;
   }
 
@@ -153,6 +155,7 @@ public class Task {
   }
 
   public final void title(String title) {
+    mustBeOpen();
     if (title == null || title.isBlank()) {
       throw new IllegalArgumentException("A task needs a title");
     }
@@ -164,6 +167,7 @@ public class Task {
   }
 
   public void notes(String notes) {
+    mustBeOpen();
     this.notes = notes == null ? null : Lengths.atMost(MAX_NOTES_LENGTH, "Notes", notes);
   }
 
@@ -184,11 +188,20 @@ public class Task {
   }
 
   public void dueDate(LocalDate dueDate) {
+    mustBeOpen();
     this.dueDate = dueDate;
   }
 
   public boolean isOpen() {
     return state == TaskState.TODO;
+  }
+
+  /** Refuses any change to a completed task; {@link #reopen()} is the way back. */
+  private void mustBeOpen() {
+    if (!isOpen()) {
+      throw new TaskCompletedException(
+          "Task " + id + " is completed; reopen it before changing it");
+    }
   }
 
   public void complete() {
@@ -201,6 +214,7 @@ public class Task {
   }
 
   public final void moveTo(TaskZone zone) {
+    mustBeOpen();
     if (zone == null) {
       throw new IllegalArgumentException("A task needs a zone");
     }
@@ -213,6 +227,7 @@ public class Task {
   }
 
   public void deferUntil(LocalDate until, LocalDate today) {
+    mustBeOpen();
     if (until == null) {
       throw new IllegalArgumentException("A deferral needs a date");
     }
@@ -224,6 +239,7 @@ public class Task {
   }
 
   public void clearDeferral() {
+    mustBeOpen();
     this.deferUntil = null;
   }
 
@@ -236,10 +252,12 @@ public class Task {
   }
 
   public void addLabel(String label) {
+    mustBeOpen();
     labels.add(normalise(label));
   }
 
   public void removeLabel(String label) {
+    mustBeOpen();
     labels.remove(normalise(label));
   }
 
@@ -248,6 +266,7 @@ public class Task {
   }
 
   public void labels(Collection<String> replacements) {
+    mustBeOpen();
     Set<String> next = new LinkedHashSet<>();
     replacements.forEach(label -> next.add(normalise(label)));
     labels.clear();
@@ -262,6 +281,7 @@ public class Task {
   }
 
   public void markReviewed(Instant at) {
+    mustBeOpen();
     this.lastReviewedAt = at;
   }
 

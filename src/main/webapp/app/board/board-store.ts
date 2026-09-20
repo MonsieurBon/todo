@@ -219,10 +219,17 @@ export class BoardStore {
   /**
    * Runs a change that has no offline story and reloads afterwards. It throws when there is no
    * connection, and the caller says so — quietly dropping it would be the worst of both worlds.
+   *
+   * The reload happens even when the change was refused, because a refusal usually means this board
+   * is stale — the task was completed or deleted on another device. Without it the row stays as it
+   * was and the click looks like it did nothing.
    */
   private async online_(change: () => Promise<unknown>): Promise<void> {
-    await change();
-    await this.refresh();
+    try {
+      await change();
+    } finally {
+      await this.refresh();
+    }
   }
 
   private matchesFilter(listId: number | null, labels: string[], zone: Zone): boolean {

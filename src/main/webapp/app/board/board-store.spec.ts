@@ -88,6 +88,21 @@ describe('the board', () => {
     expect(store.tasks().filter((t) => t.title === 'Fix the tile')).toHaveLength(1);
   });
 
+  it('reloads after a refused write, so a row the server has moved on from corrects itself', async () => {
+    await load([task(1), task(2)]);
+    // Completed on another device: this board has not heard, and the move is refused.
+    api['moveZone'] = vi.fn(() => {
+      throw { status: 409 };
+    });
+    api['board'] = vi.fn(() => of(board([task(2)])));
+
+    await expect(store.moveZone(store.tasks()[0], 'OPPORTUNITY_NOW')).rejects.toMatchObject({
+      status: 409,
+    });
+
+    expect(store.tasks().map((t) => t.id)).toEqual([2]);
+  });
+
   it('takes a task off the board the moment its completion is queued', async () => {
     api['complete'] = vi.fn(() => {
       throw { status: 0 };

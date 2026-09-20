@@ -3,7 +3,9 @@ package ch.ethy.todo.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -131,6 +133,102 @@ class TaskTest {
       task.complete();
       task.complete();
       assertThat(task.state()).isEqualTo(TaskState.DONE);
+    }
+  }
+
+  @Nested
+  @DisplayName("a completed task is read-only")
+  class CompletedIsReadOnly {
+
+    private static Task completed() {
+      Task task = task();
+      task.complete();
+      return task;
+    }
+
+    @Test
+    @DisplayName("it cannot be retitled, renoted or given a due date")
+    void noEditing() {
+      assertThatThrownBy(() -> completed().title("Renew passport urgently"))
+          .isInstanceOf(TaskCompletedException.class);
+      assertThatThrownBy(() -> completed().notes("Booked an appointment"))
+          .isInstanceOf(TaskCompletedException.class);
+      assertThatThrownBy(() -> completed().dueDate(TODAY.plusDays(7)))
+          .isInstanceOf(TaskCompletedException.class);
+    }
+
+    @Test
+    @DisplayName("it cannot be moved to another zone")
+    void noMoving() {
+      assertThatThrownBy(() -> completed().moveTo(TaskZone.CRITICAL_NOW))
+          .isInstanceOf(TaskCompletedException.class);
+    }
+
+    @Test
+    @DisplayName("it cannot be deferred")
+    void noDeferring() {
+      assertThatThrownBy(() -> completed().deferUntil(TODAY.plusWeeks(2), TODAY))
+          .isInstanceOf(TaskCompletedException.class);
+    }
+
+    @Test
+    @DisplayName(
+        "it cannot be marked reviewed: the queue excludes it, but the endpoints take any id")
+    void noReviewing() {
+      assertThatThrownBy(() -> completed().markReviewed(Instant.parse("2026-09-03T10:00:00Z")))
+          .isInstanceOf(TaskCompletedException.class);
+    }
+
+    @Test
+    @DisplayName("every other setter refuses too, so a new one is not judged case by case")
+    void noOtherChanges() {
+      assertThatThrownBy(() -> completed().position(3)).isInstanceOf(TaskCompletedException.class);
+      assertThatThrownBy(() -> completed().clientRef("abc"))
+          .isInstanceOf(TaskCompletedException.class);
+      assertThatThrownBy(() -> completed().clearDeferral())
+          .isInstanceOf(TaskCompletedException.class);
+    }
+
+    @Test
+    @DisplayName("it cannot be relabelled")
+    void noRelabelling() {
+      assertThatThrownBy(() -> completed().labels(List.of("passport")))
+          .isInstanceOf(TaskCompletedException.class);
+      assertThatThrownBy(() -> completed().addLabel("passport"))
+          .isInstanceOf(TaskCompletedException.class);
+      assertThatThrownBy(() -> completed().removeLabel("passport"))
+          .isInstanceOf(TaskCompletedException.class);
+    }
+
+    @Test
+    @DisplayName("a refused deferral leaves the task where it was, hiding nothing")
+    void refusedDeferralChangesNothing() {
+      Task task = task();
+      task.moveTo(TaskZone.CRITICAL_NOW);
+      task.complete();
+
+      assertThatThrownBy(() -> task.deferUntil(TODAY.plusWeeks(2), TODAY))
+          .isInstanceOf(TaskCompletedException.class);
+
+      assertThat(task.zone()).isEqualTo(TaskZone.CRITICAL_NOW);
+      assertThat(task.deferUntil()).isNull();
+      task.reopen();
+      assertThat(task.isVisibleOn(TODAY)).isTrue();
+    }
+
+    @Test
+    @DisplayName("reopening is the way back: afterwards it takes changes again")
+    void reopeningRestoresIt() {
+      Task task = completed();
+      task.reopen();
+
+      task.title("Renew passport urgently");
+      task.moveTo(TaskZone.CRITICAL_NOW);
+      task.labels(List.of("passport"));
+
+      assertThat(task.title()).isEqualTo("Renew passport urgently");
+      assertThat(task.zone()).isEqualTo(TaskZone.CRITICAL_NOW);
+      assertThat(task.labels()).containsExactly("passport");
     }
   }
 

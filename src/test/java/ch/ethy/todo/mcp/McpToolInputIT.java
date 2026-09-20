@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import ch.ethy.todo.IntegrationTest;
 import ch.ethy.todo.domain.Task;
+import ch.ethy.todo.domain.TaskCompletedException;
 import ch.ethy.todo.domain.TaskList;
 import ch.ethy.todo.domain.TaskZone;
 import java.time.LocalDate;
@@ -162,6 +163,54 @@ class McpToolInputIT extends IntegrationTest {
     rejectedNaming(
         Task.MAX_LABEL_LENGTH,
         () -> tools.setTaskLabels(task.id(), List.of("l".repeat(Task.MAX_LABEL_LENGTH + 1))));
+  }
+
+  @Test
+  @DisplayName("every tool that changes a task refuses a completed one, and points at reopen_task")
+  void completedTasksAreReadOnly() {
+    asSomeone();
+    var task =
+        tools.createTask(
+            "Fix the roof", TaskZone.OPPORTUNITY_NOW, List.of("house"), null, null, null);
+    tools.completeTask(task.id());
+
+    assertThat(
+            List.<ThrowingCallable>of(
+                () -> tools.updateTask(task.id(), "Fix the ridge", null, null, null),
+                () -> tools.moveTaskZone(task.id(), TaskZone.CRITICAL_NOW),
+                () -> tools.deferTask(task.id(), LocalDate.of(2030, 1, 1)),
+                () -> tools.setTaskLabels(task.id(), List.of("garden")),
+                () -> tools.markTaskReviewed(task.id())))
+        .allSatisfy(
+            call ->
+                assertThatThrownBy(call)
+                    .isInstanceOf(TaskCompletedException.class)
+                    .hasMessageContaining("reopen"));
+
+    assertThat(tools.getBoard(null, null, null, true).tasks())
+        .filteredOn(t -> t.id().equals(task.id()))
+        .singleElement()
+        .satisfies(
+            t -> {
+              assertThat(t.title()).isEqualTo("Fix the roof");
+              assertThat(t.zone()).isEqualTo(TaskZone.OPPORTUNITY_NOW);
+              assertThat(t.deferUntil())
+                  .as("a deferral slipped onto a done task would still hide it after reopening")
+                  .isNull();
+              assertThat(t.labels()).containsExactly("house");
+            });
+  }
+
+  @Test
+  @DisplayName("reopen_task is the way back: afterwards the tools take the task again")
+  void reopeningRestoresTheTools() {
+    asSomeone();
+    var task = tools.createTask("Fix the roof", TaskZone.OPPORTUNITY_NOW, null, null, null, null);
+    tools.completeTask(task.id());
+    tools.reopenTask(task.id());
+
+    assertThatCode(() -> tools.updateTask(task.id(), "Fix the ridge tile", null, null, null))
+        .doesNotThrowAnyException();
   }
 
   @Test
