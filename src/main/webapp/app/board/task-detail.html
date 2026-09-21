@@ -1,0 +1,15 @@
+<h2 mat-dialog-title class="title">{{ task.title }}</h2>
+
+<!-- Outside the scrolling notes: where the task sits has to stay readable while reading them. -->
+<app-task-chips class="meta" [task]="task" [showZone]="true" />
+
+<mat-dialog-content class="detail">
+  @if (task.notes) {
+    <p class="notes">{{ task.notes }}</p>
+  } @else {
+    <p class="notes muted">No notes.</p>
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" mat-dialog-close>Close</button>
+</mat-dialog-actions>

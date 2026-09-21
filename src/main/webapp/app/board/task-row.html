@@ -9,23 +9,13 @@
     <mat-icon svgIcon="box" />
   </button>
 
-  <div class="grow">
-    <div class="title truncate">{{ task().title }}</div>
-    <div class="meta row">
-      @if (pending()) {
-        <span class="chip waiting">waiting to sync</span>
-      }
-      @if (showList() && task().listName) {
-        <span class="chip">{{ task().listName }}</span>
-      }
-      @for (label of task().labels; track label) {
-        <span class="chip topic">{{ label }}</span>
-      }
-      @if (task().dueDate) {
-        <span class="chip due">due {{ task().dueDate }}</span>
-      }
-    </div>
-  </div>
+  <!-- Named by its own content, so a screen reader gets the topics and the due date too; the
+       hidden word is what says the name is a thing to open. -->
+  <button type="button" class="grow body" (click)="details()">
+    <span class="cdk-visually-hidden">Open</span>
+    <span class="title truncate">{{ task().title }}</span>
+    <app-task-chips class="meta" [task]="task()" />
+  </button>
 
   <button
     matIconButton

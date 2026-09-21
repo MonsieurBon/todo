@@ -1,0 +1,16 @@
+:host {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+// A task with nothing to say must not leave its caller's margin behind.
+:host:empty {
+  display: none;
+}
+
+.chip.zone {
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}

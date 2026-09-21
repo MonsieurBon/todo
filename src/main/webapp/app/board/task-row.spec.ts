@@ -4,6 +4,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BoardStore, BoardTask } from './board-store';
+import { TaskDetail } from './task-detail';
 import { TaskEdit } from './task-editor';
 import { TaskRow } from './task-row';
 
@@ -22,12 +23,19 @@ describe('a task row', () => {
 
   let edit: ReturnType<typeof vi.fn>;
   let setLabels: ReturnType<typeof vi.fn>;
+  let open: ReturnType<typeof vi.fn>;
   let closedWith: TaskEdit;
 
-  const edited = async () => {
+  const rendered = async () => {
     const fixture = TestBed.createComponent(TaskRow);
     fixture.componentRef.setInput('task', task);
     await fixture.whenStable();
+    fixture.detectChanges();
+    return fixture;
+  };
+
+  const edited = async () => {
+    const fixture = await rendered();
     await (fixture.componentInstance as unknown as { edit(): Promise<void> }).edit();
   };
 
@@ -35,20 +43,24 @@ describe('a task row', () => {
     edit = vi.fn(async () => 'done');
     setLabels = vi.fn(async () => 'done');
     closedWith = { title: 'Fix it', notes: '', dueDate: '2026-10-01', labels: ['diy'] };
+    open = vi.fn(() => ({ afterClosed: () => of(closedWith) }));
     TestBed.configureTestingModule({
       providers: [
-        {
-          provide: MatDialog,
-          useValue: {
-            open: () => ({ afterClosed: () => of(closedWith) }),
-          },
-        },
+        { provide: MatDialog, useValue: { open } },
         {
           provide: BoardStore,
           useValue: { online: signal(true), lists: signal([]), edit, setLabels },
         },
       ],
     });
+  });
+
+  it('opens the task in a detail dialog when its body is clicked', async () => {
+    const fixture = await rendered();
+
+    fixture.nativeElement.querySelector('button.body').click();
+
+    expect(open).toHaveBeenCalledWith(TaskDetail, { data: task });
   });
 
   it('relabels once the edit itself has landed', async () => {

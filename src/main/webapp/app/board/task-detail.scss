@@ -1,0 +1,20 @@
+.title {
+  // A title can be long with no space to break at, and the dialog has to stay on the screen.
+  overflow-wrap: anywhere;
+}
+
+.detail {
+  min-width: min(90vw, 26rem);
+}
+
+.meta {
+  // Material's own dialog padding, which the title and the notes get from it and this row cannot:
+  // its token is a shorthand, so it will not divide into one side.
+  padding: 0 24px 0.5rem;
+}
+
+.notes {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

@@ -1,4 +1,8 @@
+@use '@angular/cdk' as cdk;
 @use '@angular/material' as mat;
+
+// Emits .cdk-visually-hidden, for text that names a control without appearing beside it.
+@include cdk.a11y-visually-hidden();
 
 html {
   height: 100%;
@@ -80,4 +84,27 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+// Every chip in the app shares this skin; the variants carry their own container colour.
+.chip {
+  font: var(--mat-sys-label-small);
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface-variant);
+  // A label is one word as far as CSS knows, and a flex item will not shrink below it — so a
+  // long one would push out of the dialog and be clipped rather than wrap.
+  overflow-wrap: anywhere;
+
+  &.topic {
+    background: var(--mat-sys-secondary-container);
+    color: var(--mat-sys-on-secondary-container);
+  }
+
+  &.waiting,
+  &.due {
+    background: var(--mat-sys-tertiary-container);
+    color: var(--mat-sys-on-tertiary-container);
+  }
 }

@@ -1,0 +1,15 @@
+@if (showZone()) {
+  <span class="chip zone">{{ zoneName() }}</span>
+}
+@if (pending()) {
+  <span class="chip waiting">waiting to sync</span>
+}
+@if (showList() && task().listName) {
+  <span class="chip">{{ task().listName }}</span>
+}
+@for (label of task().labels; track label) {
+  <span class="chip topic">{{ label }}</span>
+}
+@if (task().dueDate) {
+  <span class="chip due">due {{ task().dueDate }}</span>
+}
