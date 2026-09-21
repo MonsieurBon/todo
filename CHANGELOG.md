@@ -1,3 +1,10 @@
+## [2.1.3](https://github.com/MonsieurBon/todo/compare/v2.1.2...v2.1.3) (2026-09-21)
+
+
+### Bug Fixes
+
+* a session the IdP refuses signs in fresh instead of dead-ending ([3baccb5](https://github.com/MonsieurBon/todo/commit/3baccb548a1d17fdb43e312ec3cfed983e5500ea))
+
 ## [2.1.2](https://github.com/MonsieurBon/todo/compare/v2.1.1...v2.1.2) (2026-09-20)
 
 
