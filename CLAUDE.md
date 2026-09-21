@@ -6,13 +6,20 @@ in one jar, plus an MCP server.
 ## How we work
 
 - Fabian is the PO, the agent is the Developer. *What* gets built is his call; *how* is yours.
+- Owning the *how* means judging the approach, not just doing the ticket. When filing an item, when
+  starting one, and while implementing one, ask whether it still fits the app's shape. The third
+  change to the same mechanism is the signal that the mechanism is what's wrong — counting review
+  rounds and PRs alike, since three rounds patching one thing says as much as three PRs. Raise it
+  and we plan; closing a PR and starting over is a normal outcome, not a failure, including when
+  the review asks for it: the raise is yours, the call to close is his.
 - The backlog is in the todo app under the label `todo-app`, over the `todo` MCP server — not
   GitHub issues. No MCP server? Ask him; don't fall back to issues.
 - One thing at a time, one PR at a time. Dependabot's PRs don't count, but should ideally be merged
   before starting the next item.
 - TDD: failing test first. The test and the code that passes it land in the same commit.
 - Every change goes through a PR that Claude reviews. The review is one comment; answer it point by
-  point — fix it or say why not. Silence is not an answer.
+  point — fix it or say why not. Silence is not an answer. The review may reject the approach, not
+  only the diff.
 - Read your own diff before every push — the first one and every round of review fixes alike.
   Nothing reaches the remote that you haven't reviewed yourself.
 - First round: implement, review your own diff, push, open the PR.

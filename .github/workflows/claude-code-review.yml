@@ -29,7 +29,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 1
+          # Full history: judging an approach means seeing what a mechanism has already been
+          # changed for, and at depth 1 there is nothing for `git log` to answer with.
+          fetch-depth: 0
           persist-credentials: false
 
       # Skip the review when the diff is identical to one already reviewed (e.g.
