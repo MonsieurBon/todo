@@ -3,9 +3,10 @@ import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { MatToolbar } from '@angular/material/toolbar';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './auth/auth.service';
 import { BoardStore } from './board/board-store';
+import { Writes } from './core/writes';
 
 @Component({
   selector: 'app-root',
@@ -29,12 +30,14 @@ export class App {
   private readonly auth = inject(AuthService);
   private readonly board = inject(BoardStore);
   private readonly router = inject(Router);
+  private readonly writes = inject(Writes);
 
   protected readonly signedIn = this.auth.signedIn;
   protected readonly account = this.auth.displayName;
   protected readonly online = this.board.online;
   protected readonly pending = this.board.pendingCount;
   protected readonly showingCached = this.board.showingCached;
+  protected readonly problem = this.writes.problem;
 
   protected readonly connectionNote = computed(() => {
     const queued = this.pending();
@@ -48,6 +51,12 @@ export class App {
   });
 
   constructor() {
+    // The complaint belongs to the screen that caused it; leaving that screen answers it.
+    this.router.events.subscribe((event) => {
+      if (event instanceof NavigationEnd) {
+        this.writes.dismiss();
+      }
+    });
     if (this.signedIn()) {
       void this.board.initialise();
       const returnUrl = this.auth.takeReturnUrl();
@@ -67,5 +76,9 @@ export class App {
 
   protected sync(): void {
     void this.board.sync();
+  }
+
+  protected dismissProblem(): void {
+    this.writes.dismiss();
   }
 }

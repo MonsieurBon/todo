@@ -3,6 +3,7 @@ import { firstValueFrom } from 'rxjs';
 import { BoardFilter, TodoApi } from '../api/todo-api';
 import { BoardView, Task, TaskList, ZONES, Zone } from '../api/model';
 import { Connectivity } from '../core/connectivity';
+import { WriteResult, Writes } from '../core/writes';
 import { Outbox } from '../offline/outbox';
 
 /** A capture that has not synced has no `id` yet; `pendingId` identifies it in the outbox. */
@@ -30,6 +31,8 @@ export interface ZoneSection {
 
 const RECOVERY_CHECK_MS = 20_000;
 
+const GONE = 'That task was completed or deleted elsewhere.';
+
 export const asBoardTask = (task: Task): BoardTask => ({
   id: task.id,
   pendingId: null,
@@ -49,6 +52,7 @@ export class BoardStore {
   private readonly api = inject(TodoApi);
   private readonly outbox = inject(Outbox);
   private readonly connectivity = inject(Connectivity);
+  private readonly writes = inject(Writes);
 
   private readonly served = signal<BoardView | null>(null);
   private readonly busy = signal(false);
@@ -174,59 +178,57 @@ export class BoardStore {
    * Completing a task that has not synced takes the capture back instead — there is nothing on the
    * server to complete.
    */
-  async complete(task: BoardTask): Promise<void> {
+  async complete(task: BoardTask): Promise<WriteResult> {
     if (task.pendingId) {
       await this.outbox.discard(task.pendingId);
-      return;
+      return 'done';
     }
     await this.outbox.enqueue({ kind: 'complete', taskId: task.id! });
     await this.refresh();
+    return 'done';
   }
 
   // ------------------------------------------------------------- writes that need a connection
 
-  async moveZone(task: BoardTask, zone: Zone): Promise<void> {
-    await this.online_(() => firstValueFrom(this.api.moveZone(task.id!, zone)));
+  async moveZone(task: BoardTask, zone: Zone): Promise<WriteResult> {
+    return this.online_(() => firstValueFrom(this.api.moveZone(task.id!, zone)));
   }
 
-  async defer(task: BoardTask, until: string): Promise<void> {
-    await this.online_(() => firstValueFrom(this.api.defer(task.id!, until)));
+  async defer(task: BoardTask, until: string): Promise<WriteResult> {
+    return this.online_(() => firstValueFrom(this.api.defer(task.id!, until)));
   }
 
   async edit(
     task: BoardTask,
     patch: { title?: string; notes?: string; dueDate?: string },
-  ): Promise<void> {
-    await this.online_(() => firstValueFrom(this.api.update(task.id!, patch)));
+  ): Promise<WriteResult> {
+    return this.online_(() => firstValueFrom(this.api.update(task.id!, patch)));
   }
 
-  async setLabels(task: BoardTask, labels: string[]): Promise<void> {
-    await this.online_(() => firstValueFrom(this.api.setLabels(task.id!, labels)));
+  async setLabels(task: BoardTask, labels: string[]): Promise<WriteResult> {
+    return this.online_(() => firstValueFrom(this.api.setLabels(task.id!, labels)));
   }
 
-  async markReviewed(task: BoardTask): Promise<void> {
-    await this.online_(() => firstValueFrom(this.api.markReviewed(task.id!)));
+  async markReviewed(task: BoardTask): Promise<WriteResult> {
+    return this.online_(() => firstValueFrom(this.api.markReviewed(task.id!)));
   }
 
-  async remove(task: BoardTask): Promise<void> {
+  async remove(task: BoardTask): Promise<WriteResult> {
     if (task.pendingId) {
       await this.outbox.discard(task.pendingId);
-      return;
+      return 'done';
     }
-    await this.online_(() => firstValueFrom(this.api.delete(task.id!)));
+    return this.online_(() => firstValueFrom(this.api.delete(task.id!)));
   }
 
   /**
-   * Runs a change that has no offline story and reloads afterwards. It throws when there is no
-   * connection, and the caller says so — quietly dropping it would be the worst of both worlds.
-   *
-   * The reload happens even when the change was refused, because a refusal usually means this board
-   * is stale — the task was completed or deleted on another device. Without it the row stays as it
-   * was and the click looks like it did nothing.
+   * Runs a change that has no offline story and reloads afterwards. The reload happens even when
+   * the change was refused, because a refusal usually means this board is stale — the task was
+   * completed or deleted on another device.
    */
-  private async online_(change: () => Promise<unknown>): Promise<void> {
+  private async online_(change: () => Promise<unknown>): Promise<WriteResult> {
     try {
-      await change();
+      return await this.writes.attempt(change, GONE);
     } finally {
       await this.refresh();
     }

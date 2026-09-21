@@ -3,10 +3,15 @@
   min-height: 100dvh;
 }
 
-.bar {
+/* The board scrolls the document, so anything that has to be read has to come with it. */
+.header {
   position: sticky;
   top: 0;
   z-index: 2;
+  background: var(--mat-sys-surface-container);
+}
+
+.bar {
   background: var(--mat-sys-surface-container);
   font: var(--mat-sys-title-medium);
 }
@@ -16,6 +21,15 @@
   padding: 0.4rem 0.9rem;
   background: var(--mat-sys-tertiary-container);
   color: var(--mat-sys-on-tertiary-container);
+  font: var(--mat-sys-label-large);
+}
+
+.problem {
+  align-items: center;
+  margin: 0;
+  padding: 0.1rem 0.4rem 0.1rem 0.9rem;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
   font: var(--mat-sys-label-large);
 }
 

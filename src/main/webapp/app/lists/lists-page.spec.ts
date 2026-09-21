@@ -4,14 +4,17 @@ import { throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TodoApi } from '../api/todo-api';
 import { BoardStore } from '../board/board-store';
+import { Writes } from '../core/writes';
 import { ListsPage } from './lists-page';
 
 /**
- * What the screen says when the server refuses a list name. Rendered rather than unit-tested for
- * the reason capture-page.spec.ts gives: a right message can never reach the DOM.
+ * What the screen says when the server refuses a list name. Still driven through the rendered form
+ * for the reason capture-page.spec.ts gives — a right message can never reach the DOM — but the
+ * message itself now lands in the shell, so app.spec.ts is what proves it is shown.
  */
 describe('the lists screen', () => {
   let createList: ReturnType<typeof vi.fn>;
+  let writes: Writes;
 
   const failWith = (status: number, body: unknown) => {
     createList.mockReturnValue(throwError(() => ({ status, error: body })));
@@ -33,7 +36,7 @@ describe('the lists screen', () => {
     add.click();
     await fixture.whenStable();
     fixture.detectChanges();
-    return fixture.nativeElement.textContent as string;
+    return writes.problem() ?? '';
   };
 
   const render = async (): Promise<ComponentFixture<ListsPage>> => {
@@ -60,6 +63,7 @@ describe('the lists screen', () => {
         },
       ],
     });
+    writes = TestBed.inject(Writes);
   });
 
   it('shows the server’s own sentence for a name already taken', async () => {

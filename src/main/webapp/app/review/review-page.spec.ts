@@ -46,8 +46,8 @@ describe('the review sweep', () => {
     reviewQueue = vi.fn(() =>
       of([card(1, 'Fix the tile'), card(2, 'Renew passport'), card(3, 'Book the dentist')]),
     );
-    markReviewed = vi.fn(async () => undefined);
-    moveZone = vi.fn(async () => undefined);
+    markReviewed = vi.fn(async () => 'done');
+    moveZone = vi.fn(async () => 'done');
     TestBed.configureTestingModule({
       providers: [
         { provide: TodoApi, useValue: { reviewQueue } },
@@ -59,9 +59,9 @@ describe('the review sweep', () => {
             lists: signal([]),
             markReviewed,
             moveZone,
-            defer: vi.fn(async () => undefined),
-            complete: vi.fn(async () => undefined),
-            remove: vi.fn(async () => undefined),
+            defer: vi.fn(async () => 'done'),
+            complete: vi.fn(async () => 'done'),
+            remove: vi.fn(async () => 'done'),
           },
         },
       ],
@@ -79,7 +79,7 @@ describe('the review sweep', () => {
    */
   it('drops a card settled elsewhere rather than sticking, and does not count it', async () => {
     // Completed on another device mid-sweep, so the server refuses every change to it.
-    markReviewed.mockRejectedValue({ status: 409 });
+    markReviewed.mockResolvedValue('settled');
     const fixture = await render();
 
     const shown = await press(fixture, 'Leave it');
@@ -91,7 +91,7 @@ describe('the review sweep', () => {
   });
 
   it('drops it for a refused promote too, not only for the simplest decision', async () => {
-    moveZone.mockRejectedValue({ status: 409 });
+    moveZone.mockResolvedValue('settled');
     const fixture = await render();
 
     const shown = await press(fixture, 'Critical Now');
@@ -101,16 +101,13 @@ describe('the review sweep', () => {
     expect(markReviewed).not.toHaveBeenCalled();
   });
 
-  // Awaited rather than clicked: the rejection escapes to the caller, which is the gap the board
-  // has too, and an unclaimed one would fail the suite instead of the assertion.
   it('keeps the card when the decision never reached the server, since nothing was decided', async () => {
-    markReviewed.mockRejectedValue({ status: 0 });
+    markReviewed.mockResolvedValue('refused');
     const fixture = await render();
-    const page = fixture.componentInstance as unknown as { keep(): Promise<void> };
 
-    await expect(page.keep()).rejects.toMatchObject({ status: 0 });
-    fixture.detectChanges();
+    const shown = await press(fixture, 'Leave it');
 
-    expect(fixture.nativeElement.textContent).toContain('Fix the tile');
+    expect(shown).toContain('Fix the tile');
+    expect(shown).toContain('1 of 3');
   });
 });

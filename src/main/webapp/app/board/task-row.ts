@@ -64,11 +64,15 @@ export class TaskRow {
     if (!change) {
       return;
     }
-    await this.board.edit(task, {
+    // Two requests for one edit: labels are a separate endpoint. Sending the second after the
+    // first was refused would relabel a task whose edit never landed.
+    const edited = await this.board.edit(task, {
       title: change.title,
       notes: change.notes,
       ...(change.dueDate ? { dueDate: change.dueDate } : {}),
     });
-    await this.board.setLabels(task, change.labels);
+    if (edited === 'done') {
+      await this.board.setLabels(task, change.labels);
+    }
   }
 }

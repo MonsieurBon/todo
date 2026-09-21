@@ -95,6 +95,12 @@ with `npm run build`.
   and `delete_1`. Name them for what they operate on.
 - **Offline covers read, create and complete only.** Move, defer and edit need a connection —
   replayed blind they're silent overwrites.
+- **A write returns `done`, `settled` or `refused`; it does not throw.** Everything goes through
+  `Writes.attempt`, which keeps the reason in the one banner the shell renders. `settled` means the
+  server has moved past the thing being changed, so a caller holding its own copy of it — a review
+  card — must drop that copy; a caller that ignores the result is back to a click that looks like
+  it did nothing. Staleness is the 404, and the 409 that names a completed task: the 409 answers
+  any state refusal, so the code in the body is what distinguishes them.
 - **A queued write the server refuses on its merits is discarded, not retried or shown**; only a
   refused token keeps it queued. So any server-side limit on a field
   the capture form can send must also be enforced in the form — hence the limits in `model.ts`,
