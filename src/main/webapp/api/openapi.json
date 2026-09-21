@@ -259,6 +259,9 @@
       },
       "UpdateTask" : {
         "properties" : {
+          "clearDueDate" : {
+            "type" : "boolean"
+          },
           "dueDate" : {
             "format" : "date",
             "type" : "string"

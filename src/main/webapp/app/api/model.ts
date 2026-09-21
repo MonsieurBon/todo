@@ -34,6 +34,7 @@ export type TaskList = Sent<Schemas['TaskListSummary'], never>;
 
 export type CaptureTask = Schemas['CaptureTask'];
 export type CreateTask = Schemas['CreateTask'];
+export type UpdateTask = Schemas['UpdateTask'];
 
 /** Declaration order is urgency order, and every screen relies on it. */
 export const ZONES: readonly Zone[] = ['CRITICAL_NOW', 'OPPORTUNITY_NOW', 'OVER_THE_HORIZON'];

@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { BoardView, CaptureTask, CreateTask, Task, TaskList, Zone } from './model';
+import { BoardView, CaptureTask, CreateTask, Task, TaskList, UpdateTask, Zone } from './model';
 
 export interface BoardFilter {
   list?: number | null;
@@ -95,10 +95,7 @@ export class TodoApi {
     return this.http.post<Task>(`/api/tasks/${id}/reviewed`, {});
   }
 
-  update(
-    id: number,
-    patch: { title?: string; notes?: string; dueDate?: string },
-  ): Observable<Task> {
+  update(id: number, patch: UpdateTask): Observable<Task> {
     return this.http.patch<Task>(`/api/tasks/${id}`, patch);
   }
 

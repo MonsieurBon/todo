@@ -69,7 +69,7 @@ export class TaskRow {
     const edited = await this.board.edit(task, {
       title: change.title,
       notes: change.notes,
-      ...(change.dueDate ? { dueDate: change.dueDate } : {}),
+      ...(change.dueDate ? { dueDate: change.dueDate } : { clearDueDate: true }),
     });
     if (edited === 'done') {
       await this.board.setLabels(task, change.labels);

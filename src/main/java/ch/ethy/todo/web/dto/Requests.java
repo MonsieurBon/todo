@@ -47,7 +47,8 @@ public final class Requests {
   public record UpdateTask(
       @Size(max = Task.MAX_TITLE_LENGTH) String title,
       @Size(max = Task.MAX_NOTES_LENGTH) String notes,
-      LocalDate dueDate) {}
+      LocalDate dueDate,
+      Boolean clearDueDate) {}
 
   public record MoveZone(@NotNull TaskZone zone) {}
 

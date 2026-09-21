@@ -165,4 +165,44 @@ class TaskEditingIT extends IntegrationTest {
         .isEqualTo("The cracked one above the porch.");
     assertThat(task.get("dueDate").asString()).isEqualTo("2026-10-01");
   }
+
+  @Test
+  @DisplayName("clearing the due date removes it, where a null one would have left it alone")
+  void clearDueDate() throws Exception {
+    String me = "subject-clearer-" + System.nanoTime();
+    long id =
+        capture(
+            me,
+            Map.of(
+                "title", "Fix the tile",
+                "dueDate", "2026-10-01",
+                "zone", "OPPORTUNITY_NOW"));
+
+    mvc.perform(withBody(patch("/api/tasks/" + id).with(as(me)), Map.of("clearDueDate", true)))
+        .andExpect(status().isOk());
+
+    assertThat(reread(me, id).get("dueDate").isNull()).isTrue();
+  }
+
+  @Test
+  @DisplayName("setting a due date and clearing it in one request is refused, and changes nothing")
+  void dueDateSetAndClearedAtOnce() throws Exception {
+    String me = "subject-indecisive-" + System.nanoTime();
+    long id =
+        capture(
+            me,
+            Map.of(
+                "title", "Fix the tile",
+                "dueDate", "2026-10-01",
+                "zone", "OPPORTUNITY_NOW"));
+
+    mvc.perform(
+            withBody(
+                patch("/api/tasks/" + id).with(as(me)),
+                Map.of("dueDate", "2026-11-01", "clearDueDate", true)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error").value("invalid_request"));
+
+    assertThat(reread(me, id).get("dueDate").asString()).isEqualTo("2026-10-01");
+  }
 }

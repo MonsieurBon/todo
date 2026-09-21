@@ -121,7 +121,11 @@ public class TaskController {
         tasks.update(
             id,
             currentUser.current(),
-            new TaskEdit(request.title(), request.notes(), request.dueDate(), false)));
+            new TaskEdit(
+                request.title(),
+                request.notes(),
+                request.dueDate(),
+                Boolean.TRUE.equals(request.clearDueDate()))));
   }
 
   @PostMapping("/tasks/{id}/complete")
