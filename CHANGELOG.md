@@ -1,3 +1,10 @@
+## [2.1.4](https://github.com/MonsieurBon/todo/compare/v2.1.3...v2.1.4) (2026-09-21)
+
+
+### Bug Fixes
+
+* sign out throws away what the outbox still holds ([8dd6f77](https://github.com/MonsieurBon/todo/commit/8dd6f77be03397ad6ede6847e35e5a168eca1ca2))
+
 ## [2.1.3](https://github.com/MonsieurBon/todo/compare/v2.1.2...v2.1.3) (2026-09-21)
 
 
