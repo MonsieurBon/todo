@@ -5,6 +5,64 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Outbox } from '../offline/outbox';
 import { AuthService } from './auth.service';
 
+/** Enough of the library to boot, logging out the way the real one does: every stored token goes. */
+const oauthDouble = (events: Subject<unknown>) => {
+  const oauth: Record<string, ReturnType<typeof vi.fn>> = {
+    events: events as unknown as ReturnType<typeof vi.fn>,
+    configure: vi.fn(),
+    loadDiscoveryDocumentAndTryLogin: vi.fn(() => Promise.resolve(true)),
+    setupAutomaticSilentRefresh: vi.fn(),
+    hasValidAccessToken: vi.fn(() => false),
+    getRefreshToken: vi.fn(() => 'stored'),
+    getAccessToken: vi.fn(() => 'stale'),
+    getIdentityClaims: vi.fn(() => null),
+    refreshToken: vi.fn(() => Promise.resolve({})),
+    initCodeFlow: vi.fn(),
+    logOut: vi.fn(() => {
+      oauth['getRefreshToken'] = vi.fn(() => null);
+      oauth['hasValidAccessToken'] = vi.fn(() => false);
+    }),
+  };
+  return oauth;
+};
+
+/** jsdom has no `caches`, and a test that stubs one or spies on storage must not leave it behind. */
+const freshBrowser = () => {
+  sessionStorage.clear();
+  localStorage.clear();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ authorization_servers: ['https://idp.example/realms/t'] }),
+      }),
+    ),
+  );
+};
+
+/**
+ * Refuses the marker write and nothing else. It has to go through `Storage.prototype`, because
+ * jsdom proxies the storage objects themselves and an own property on one becomes a stored item
+ * rather than a replaced method — so the key is what narrows it, keeping `sessionStorage` working
+ * and the recovery cooldown out of what these tests exercise.
+ */
+const markerWriteRefused = () => {
+  const write = Storage.prototype.setItem;
+  return vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (
+    this: Storage,
+    key: string,
+    value: string,
+  ) {
+    if (key === 'todo.recovering-from') {
+      throw new DOMException('the quota has been exceeded', 'QuotaExceededError');
+    }
+    write.call(this, key, value);
+  });
+};
+
 /**
  * The way back from a dead session. A token the IdP refuses must not leave the device on a board
  * that answers 401 for ever; a token that merely could not be sent must not sign the device out,
@@ -31,37 +89,9 @@ describe('a session whose token is refused', () => {
   };
 
   beforeEach(() => {
-    sessionStorage.clear();
-    localStorage.clear();
-    // jsdom has no `caches`, and a test that stubs one must not leave it for the next.
-    vi.unstubAllGlobals();
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(() =>
-        Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ authorization_servers: ['https://idp.example/realms/t'] }),
-        }),
-      ),
-    );
+    freshBrowser();
     events = new Subject<unknown>();
-    oauth = {
-      events: events as unknown as ReturnType<typeof vi.fn>,
-      configure: vi.fn(),
-      loadDiscoveryDocumentAndTryLogin: vi.fn(() => Promise.resolve(true)),
-      setupAutomaticSilentRefresh: vi.fn(),
-      hasValidAccessToken: vi.fn(() => false),
-      getRefreshToken: vi.fn(() => 'stored'),
-      getAccessToken: vi.fn(() => 'stale'),
-      getIdentityClaims: vi.fn(() => null),
-      refreshToken: vi.fn(() => Promise.resolve({})),
-      initCodeFlow: vi.fn(),
-      // As the real one does: every stored token goes, so nothing is left to look signed in with.
-      logOut: vi.fn(() => {
-        oauth['getRefreshToken'] = vi.fn(() => null);
-        oauth['hasValidAccessToken'] = vi.fn(() => false);
-      }),
-    };
+    oauth = oauthDouble(events);
     outbox = { clear: vi.fn(() => Promise.resolve()) };
     auth = configure();
   });
@@ -120,6 +150,19 @@ describe('a session whose token is refused', () => {
 
     await expect(auth.tryRefresh()).resolves.toBe(false);
 
+    expect(oauth['initCodeFlow']).toHaveBeenCalled();
+  });
+
+  it('signs in anyway when the marker cannot be written', async () => {
+    await signedInDevice();
+    oauth['refreshToken'] = vi.fn(() => Promise.reject(invalidGrant));
+    markerWriteRefused();
+
+    await expect(auth.tryRefresh()).resolves.toBe(false);
+
+    // Without the tokens going and the form coming up, the device is stranded signed-out with a
+    // live access token and no later refusal able to retry.
+    expect(oauth['logOut']).toHaveBeenCalledWith(true);
     expect(oauth['initCodeFlow']).toHaveBeenCalled();
   });
 
@@ -289,5 +332,97 @@ describe('a session whose token is refused', () => {
 
     expect(auth.signedIn()).toBe(true);
     expect(oauth['initCodeFlow']).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * Handing the device back, which recovery is not: sign-out drops the queue outright where recovery
+ * weighs subjects first. What it could not drop is marked, so the next start weighs that one too.
+ */
+describe('signing out', () => {
+  let oauth: Record<string, ReturnType<typeof vi.fn>>;
+  let outbox: Record<string, ReturnType<typeof vi.fn>>;
+  let auth: AuthService;
+  let order: string[];
+
+  const recording = (step: string, outcome: () => Promise<unknown>) =>
+    vi.fn(() => {
+      order.push(step);
+      return outcome();
+    });
+
+  const dropped = () => Promise.resolve();
+  const refused = () => Promise.reject(new Error('storage is not available in this mode'));
+
+  /** Alice's device, signed in and holding her claims. */
+  beforeEach(async () => {
+    freshBrowser();
+    order = [];
+    oauth = oauthDouble(new Subject<unknown>());
+    oauth['hasValidAccessToken'] = vi.fn(() => true);
+    oauth['getIdentityClaims'] = vi.fn(() => ({ sub: 'alice' }));
+    outbox = { clear: recording('outbox', dropped) };
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: OAuthService, useValue: oauth },
+        { provide: Outbox, useValue: outbox },
+      ],
+    });
+    auth = TestBed.inject(AuthService);
+    await auth.bootstrap();
+    expect(auth.signedIn()).toBe(true);
+
+    // Stubbed past the bootstrap, so the order records the sign-out alone.
+    vi.stubGlobal('caches', { keys: recording('caches', () => Promise.resolve([])) });
+    oauth['logOut'] = recording('logOut', dropped);
+  });
+
+  it('drops the caches and the queue before the redirect that ends the page', async () => {
+    await auth.signOut();
+
+    // The end-session redirect leaves nothing running, so anything not awaited before it never runs.
+    expect(order).toEqual(['caches', 'outbox', 'logOut']);
+    expect(auth.signedIn()).toBe(false);
+  });
+
+  it('settles nothing when the queue went, because there is nothing left to weigh', async () => {
+    await auth.signOut();
+
+    expect(localStorage.getItem('todo.recovering-from')).toBeNull();
+  });
+
+  it.each([
+    ['the caches cannot be dropped', () => vi.stubGlobal('caches', { keys: refused })],
+    ['the queue cannot be dropped', () => (outbox['clear'] = vi.fn(refused))],
+  ])('ends the session anyway when %s', async (_which, refuse) => {
+    refuse();
+
+    await auth.signOut();
+
+    // Guarding the two as a pair would skip this whenever the caches throw, which is the shape
+    // that once made the fix fix nothing.
+    expect(outbox['clear']).toHaveBeenCalled();
+    // Worse than a queue left behind: the next person would get the session itself.
+    expect(oauth['logOut']).toHaveBeenCalled();
+    expect(auth.signedIn()).toBe(false);
+  });
+
+  it('leaves a queue it could not drop for the next start to settle', async () => {
+    outbox['clear'] = vi.fn(refused);
+
+    await auth.signOut();
+
+    // Whoever answers the login form is compared against her, rather than flushing her writes.
+    expect(localStorage.getItem('todo.recovering-from')).toBe('alice');
+  });
+
+  it('ends the session even when the marker cannot be written either', async () => {
+    outbox['clear'] = vi.fn(refused);
+    markerWriteRefused();
+
+    await auth.signOut();
+
+    expect(oauth['logOut']).toHaveBeenCalled();
+    expect(auth.signedIn()).toBe(false);
   });
 });
