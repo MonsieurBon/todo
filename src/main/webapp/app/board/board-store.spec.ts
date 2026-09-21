@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BoardView } from '../api/model';
 import { TodoApi } from '../api/todo-api';
+import { Writes } from '../core/writes';
 import { Outbox } from '../offline/outbox';
 import { BoardStore } from './board-store';
 
@@ -31,6 +32,7 @@ describe('the board', () => {
 
   let api: Record<string, ReturnType<typeof vi.fn>>;
   let store: BoardStore;
+  let writes: Writes;
 
   const load = async (tasks: BoardView['tasks']) => {
     api['board'] = vi.fn(() => of(board(tasks)));
@@ -47,6 +49,7 @@ describe('the board', () => {
     };
     TestBed.configureTestingModule({ providers: [{ provide: TodoApi, useValue: api }] });
     store = TestBed.inject(BoardStore);
+    writes = TestBed.inject(Writes);
     // Shared with the previous test, and flush() reads it rather than this instance's signal.
     await TestBed.inject(Outbox).clear();
   });
@@ -95,15 +98,73 @@ describe('the board', () => {
     await load([task(1), task(2)]);
     // Completed on another device: this board has not heard, and the move is refused.
     api['moveZone'] = vi.fn(() => {
-      throw { status: 409 };
+      throw { status: 409, error: { error: 'task_completed' } };
     });
     api['board'] = vi.fn(() => of(board([task(2)])));
 
-    await expect(store.moveZone(store.tasks()[0], 'OPPORTUNITY_NOW')).rejects.toMatchObject({
-      status: 409,
+    const result = await store.moveZone(store.tasks()[0], 'OPPORTUNITY_NOW');
+
+    expect(result).toBe('settled');
+    expect(store.tasks().map((t) => t.id)).toEqual([2]);
+  });
+
+  /** The row correcting itself is not an answer: it looks the same as the click doing nothing. */
+  it('says so when a write is refused because the task is gone', async () => {
+    await load([task(1)]);
+    api['moveZone'] = vi.fn(() => {
+      throw { status: 404 };
     });
 
-    expect(store.tasks().map((t) => t.id)).toEqual([2]);
+    const result = await store.moveZone(store.tasks()[0], 'OPPORTUNITY_NOW');
+
+    expect(result).toBe('settled');
+    expect(writes.problem()).toMatch(/completed or deleted/i);
+  });
+
+  it('leaves a write that never reached the server alone, and says that instead', async () => {
+    await load([task(1)]);
+    api['defer'] = vi.fn(() => {
+      throw { status: 0 };
+    });
+
+    const result = await store.defer(store.tasks()[0], '2026-10-01');
+
+    expect(result).toBe('refused');
+    expect(writes.problem()).toMatch(/connection/i);
+    expect(store.tasks().map((t) => t.id)).toEqual([1]);
+  });
+
+  it('clears the last complaint when the next write works, so it cannot outlive its cause', async () => {
+    await load([task(1)]);
+    api['defer'] = vi.fn(() => {
+      throw { status: 0 };
+    });
+    await store.defer(store.tasks()[0], '2026-10-01');
+
+    api['defer'] = vi.fn(() => of({}));
+    await store.defer(store.tasks()[0], '2026-10-01');
+
+    expect(writes.problem()).toBeNull();
+  });
+
+  /**
+   * CLAUDE.md invites the next state refusal to reuse the 409, so the status alone cannot mean
+   * "completed or deleted" — saying so would be false, and dropping the review card would lose a
+   * decision nobody made.
+   */
+  it('treats a 409 that is not a completed task as a refusal, not as settled', async () => {
+    await load([task(1)]);
+    api['moveZone'] = vi.fn(() => {
+      throw {
+        status: 409,
+        error: { error: 'zone_full', message: 'Critical Now is full; finish something first' },
+      };
+    });
+
+    const result = await store.moveZone(store.tasks()[0], 'OPPORTUNITY_NOW');
+
+    expect(result).toBe('refused');
+    expect(writes.problem()).toBe('Critical Now is full; finish something first');
   });
 
   it('takes a task off the board the moment its completion is queued', async () => {

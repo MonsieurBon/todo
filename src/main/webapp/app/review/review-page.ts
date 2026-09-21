@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { ZONE_NAMES, Zone, zoneAfter } from '../api/model';
 import { TodoApi } from '../api/todo-api';
 import { BoardStore, BoardTask, asBoardTask } from '../board/board-store';
+import { WriteResult } from '../core/writes';
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -68,8 +69,8 @@ export class ReviewPage {
   protected async move(zone: Zone | null): Promise<void> {
     if (zone) {
       await this.decide(async (task) => {
-        await this.board.moveZone(task, zone);
-        await this.board.markReviewed(task);
+        const moved = await this.board.moveZone(task, zone);
+        return moved === 'done' ? this.board.markReviewed(task) : moved;
       });
     }
   }
@@ -77,8 +78,8 @@ export class ReviewPage {
   protected async defer(days: number): Promise<void> {
     const until = new Date(Date.now() + days * DAY).toISOString().slice(0, 10);
     await this.decide(async (task) => {
-      await this.board.defer(task, until);
-      await this.board.markReviewed(task);
+      const deferred = await this.board.defer(task, until);
+      return deferred === 'done' ? this.board.markReviewed(task) : deferred;
     });
   }
 
@@ -90,23 +91,21 @@ export class ReviewPage {
     await this.decide((task) => this.board.remove(task));
   }
 
-  private async decide(action: (task: BoardTask) => Promise<void>): Promise<void> {
+  /**
+   * A card settled elsewhere is the card being stale, not the decision failing, so it is dropped —
+   * that keeps the position and the count honest. A refusal leaves it, because nothing was decided;
+   * the store says why.
+   */
+  private async decide(action: (task: BoardTask) => Promise<WriteResult>): Promise<void> {
     const task = this.current();
     if (!task) {
       return;
     }
-    try {
-      await action(task);
-    } catch (error) {
-      // 409 means this card was settled elsewhere, so it is the card that is stale, not the
-      // decision that failed. Dropping it keeps the position and the count; anything else leaves
-      // it, because nothing was decided.
-      if ((error as { status?: number }).status === 409) {
-        this.queue.update((cards) => cards.filter((card) => card.id !== task.id));
-        return;
-      }
-      throw error;
+    const result = await action(task);
+    if (result === 'settled') {
+      this.queue.update((cards) => cards.filter((card) => card.id !== task.id));
+    } else if (result === 'done') {
+      this.index.update((at) => at + 1);
     }
-    this.index.update((at) => at + 1);
   }
 }

@@ -9,6 +9,7 @@ import { firstValueFrom } from 'rxjs';
 import { TaskList } from '../api/model';
 import { TodoApi } from '../api/todo-api';
 import { BoardStore } from '../board/board-store';
+import { Writes } from '../core/writes';
 
 /** Only sharing can 404 on a person; every other call on this screen 404s on the list. */
 const NO_ACCOUNT =
@@ -35,13 +36,13 @@ const NO_ACCOUNT =
 export class ListsPage {
   private readonly api = inject(TodoApi);
   private readonly board = inject(BoardStore);
+  private readonly writes = inject(Writes);
 
   protected readonly lists = this.board.lists;
   protected readonly online = this.board.online;
   protected readonly newName = signal('');
   protected readonly sharingWith = signal<number | null>(null);
   protected readonly shareEmail = signal('');
-  protected readonly problem = signal<string | null>(null);
 
   protected async create(): Promise<void> {
     const name = this.newName().trim();
@@ -87,48 +88,14 @@ export class ListsPage {
     await this.run(() => firstValueFrom(this.api.unshareList(list.id, email)), NO_ACCOUNT);
   }
 
-  /**
-   * A 400's own sentence is shown as it stands: the fallback tells the reader to wait for a
-   * connection, which is wrong for every 400 and points away from the one thing that would work.
-   */
   private async run(
     change: () => Promise<unknown>,
     missing = 'That list is no longer there.',
   ): Promise<boolean> {
-    this.problem.set(null);
-    try {
-      await change();
-      await this.board.refresh();
-      return true;
-    } catch (error) {
-      this.problem.set(this.reasonFor(error, missing));
+    if ((await this.writes.attempt(change, missing)) !== 'done') {
       return false;
     }
-  }
-
-  /**
-   * A 404 is either no such list or no such account and the status cannot say which, so the caller
-   * names what it asked for. A 400 carries two shapes: `invalid_request` is a sentence for a
-   * person; `validation_failed` says only "Request body is invalid", so its fields are read out.
-   */
-  private reasonFor(error: unknown, missing: string): string {
-    const failure = error as {
-      status?: number;
-      error?: { error?: string; message?: string; fields?: Record<string, string> };
-    };
-    if (failure.status === 404) {
-      return missing;
-    }
-    if (failure.status === 400) {
-      const body = failure.error;
-      const fields = Object.values(body?.fields ?? {});
-      return (
-        (body?.error === 'validation_failed' ? fields.join(' ') : body?.message) ||
-        fields.join(' ') ||
-        body?.message ||
-        'The server would not accept that.'
-      );
-    }
-    return 'That did not work. Try again when you have a connection.';
+    await this.board.refresh();
+    return true;
   }
 }

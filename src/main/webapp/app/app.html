@@ -1,28 +1,39 @@
-<mat-toolbar class="bar">
-  <span class="grow truncate">One Minute To-Do List</span>
+<header class="header">
+  <mat-toolbar class="bar">
+    <span class="grow truncate">One Minute To-Do List</span>
 
-  @if (signedIn()) {
-    <!-- Never disabled: trying is how you find out the connection is back, and disabling the
-         one control that would tell you is how an app gets stuck saying "offline" forever. -->
-    <button matIconButton type="button" aria-label="Sync now" (click)="sync()">
-      <mat-icon [svgIcon]="online() ? 'sync' : 'offline'" />
-    </button>
-    <button matIconButton type="button" aria-label="Account" [matMenuTriggerFor]="accountMenu">
-      <mat-icon svgIcon="account" />
-    </button>
-    <mat-menu #accountMenu="matMenu">
-      <div class="account-name muted">{{ account() ?? 'Signed in' }}</div>
-      <button mat-menu-item type="button" (click)="signOut()">
-        <mat-icon svgIcon="logout" />
-        <span>Sign out</span>
+    @if (signedIn()) {
+      <!-- Never disabled: trying is how you find out the connection is back, and disabling the
+           one control that would tell you is how an app gets stuck saying "offline" forever. -->
+      <button matIconButton type="button" aria-label="Sync now" (click)="sync()">
+        <mat-icon [svgIcon]="online() ? 'sync' : 'offline'" />
       </button>
-    </mat-menu>
-  }
-</mat-toolbar>
+      <button matIconButton type="button" aria-label="Account" [matMenuTriggerFor]="accountMenu">
+        <mat-icon svgIcon="account" />
+      </button>
+      <mat-menu #accountMenu="matMenu">
+        <div class="account-name muted">{{ account() ?? 'Signed in' }}</div>
+        <button mat-menu-item type="button" (click)="signOut()">
+          <mat-icon svgIcon="logout" />
+          <span>Sign out</span>
+        </button>
+      </mat-menu>
+    }
+  </mat-toolbar>
 
-@if (connectionNote(); as note) {
-  <p class="connection" role="status">{{ note }}</p>
-}
+  @if (connectionNote(); as note) {
+    <p class="connection" role="status">{{ note }}</p>
+  }
+
+  @if (problem(); as note) {
+    <p class="problem row" role="alert">
+      <span class="grow">{{ note }}</span>
+      <button matIconButton type="button" aria-label="Dismiss" (click)="dismissProblem()">
+        <mat-icon svgIcon="close" />
+      </button>
+    </p>
+  }
+</header>
 
 @if (signedIn()) {
   <main>
