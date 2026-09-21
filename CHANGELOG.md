@@ -1,3 +1,10 @@
+## [2.1.5](https://github.com/MonsieurBon/todo/compare/v2.1.4...v2.1.5) (2026-09-21)
+
+
+### Bug Fixes
+
+* say when a write on the board failed ([92bbde6](https://github.com/MonsieurBon/todo/commit/92bbde66ec325b6e32a1d71517446c1eb7d6a10f))
+
 ## [2.1.4](https://github.com/MonsieurBon/todo/compare/v2.1.3...v2.1.4) (2026-09-21)
 
 
