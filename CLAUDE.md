@@ -13,8 +13,12 @@ in one jar, plus an MCP server.
 - TDD: failing test first. The test and the code that passes it land in the same commit.
 - Every change goes through a PR that Claude reviews. The review is one comment; answer it point by
   point — fix it or say why not. Silence is not an answer.
-- Reply to a review round *before* pushing the commits that address it; the push triggers the next
-  review, which reads the existing comments.
+- Read your own diff before every push — the first one and every round of review fixes alike.
+  Nothing reaches the remote that you haven't reviewed yourself.
+- First round: implement, review your own diff, push, open the PR.
+- Every round after: summarise the review's points and discuss them with Fabian *before* touching
+  code — the fix is not yours to choose alone. Then implement, review your own diff, reply to the
+  review, and push last; the push triggers the next review, which reads the existing comments.
 - During review, a fix is its own commit (`git commit --fixup`). Rebase and squash once, at the end,
   then merge as soon as it's green — a no-op rebase doesn't trigger a fresh review.
 - Commits are vertical slices: migration + service + controller + UI for one behaviour, never one
