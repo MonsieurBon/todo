@@ -1,3 +1,10 @@
+# [2.2.0](https://github.com/MonsieurBon/todo/compare/v2.1.6...v2.2.0) (2026-09-21)
+
+
+### Features
+
+* open a task in full from the board ([fa10268](https://github.com/MonsieurBon/todo/commit/fa1026859f463eb8266206b8811cf3cc8195088c))
+
 ## [2.1.6](https://github.com/MonsieurBon/todo/compare/v2.1.5...v2.1.6) (2026-09-21)
 
 
