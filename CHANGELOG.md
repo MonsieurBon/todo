@@ -1,3 +1,10 @@
+# [2.3.0](https://github.com/MonsieurBon/todo/compare/v2.2.0...v2.3.0) (2026-09-21)
+
+
+### Features
+
+* read task notes as markdown ([5d0862b](https://github.com/MonsieurBon/todo/commit/5d0862bb78971aa7bc7820aa86c727b9373fa050))
+
 # [2.2.0](https://github.com/MonsieurBon/todo/compare/v2.1.6...v2.2.0) (2026-09-21)
 
 
