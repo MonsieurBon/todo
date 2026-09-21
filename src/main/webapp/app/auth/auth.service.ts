@@ -158,8 +158,7 @@ export class AuthService {
     // A cache that will not drop must not strand the sign-in; some private modes throw here.
     await this.forgetCaches().catch(() => undefined);
     this.session.set(false);
-    // Read before logOut, which takes the claims with it.
-    localStorage.setItem(RECOVERING_FROM_KEY, this.subject() ?? '');
+    this.markRecoveringFrom();
     this.oauth.logOut(true);
     if (this.loopingOnRecovery()) {
       return;
@@ -209,9 +208,30 @@ export class AuthService {
 
   /** Caches and outbox go too: leaving either behind shows one person's list to the next. */
   async signOut(): Promise<void> {
-    await this.forgetCaches();
-    this.session.set(false);
-    this.oauth.logOut();
+    try {
+      // Guarded one by one, never as a pair: a cache that will not drop must still reach the queue.
+      await this.forgetCaches().catch(() => undefined);
+      // Unsettled rather than unsent: the next start weighs it against whoever comes back.
+      await this.outbox.clear().catch(() => this.markRecoveringFrom());
+    } finally {
+      // Whatever storage does, and whatever a later step here adds: the session is the larger leak.
+      this.session.set(false);
+      this.oauth.logOut();
+    }
+  }
+
+  /**
+   * Reads the subject, so it has to run before the logOut that takes the claims with it.
+   *
+   * <p>A marker that cannot be written is not worth stranding a sign-out or a recovery over: the
+   * next start has none to misread either, which is where this stood before there was a marker.
+   */
+  private markRecoveringFrom(): void {
+    try {
+      localStorage.setItem(RECOVERING_FROM_KEY, this.subject() ?? '');
+    } catch {
+      // Full, or blocked. Nothing here can do anything about it.
+    }
   }
 
   private async forgetCaches(): Promise<void> {
