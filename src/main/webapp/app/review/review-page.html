@@ -21,17 +21,7 @@
       @if (task.notes) {
         <p class="notes">{{ task.notes }}</p>
       }
-      <div class="row meta">
-        @if (task.listName) {
-          <span class="chip">{{ task.listName }}</span>
-        }
-        @for (label of task.labels; track label) {
-          <span class="chip topic">{{ label }}</span>
-        }
-        @if (task.dueDate) {
-          <span class="chip due">due {{ task.dueDate }}</span>
-        }
-      </div>
+      <app-task-chips class="meta" [task]="task" />
     </article>
 
     <div class="decisions">

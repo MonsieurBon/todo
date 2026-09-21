@@ -14,37 +14,26 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
+// The row's body is a button so a tap anywhere on the task opens it, but it has to read as text.
+.body {
+  appearance: none;
+  background: none;
+  border: 0;
+  margin: 0;
+  padding: 0.35rem 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
 .title {
+  display: block;
   font: var(--mat-sys-body-large);
 }
 
 .meta {
-  flex-wrap: wrap;
-  gap: 0.3rem;
   margin-top: 0.1rem;
-
-  &:empty {
-    display: none;
-  }
-}
-
-.chip {
-  font: var(--mat-sys-label-small);
-  padding: 0.05rem 0.4rem;
-  border-radius: 999px;
-  background: var(--mat-sys-surface-container-high);
-  color: var(--mat-sys-on-surface-variant);
-
-  &.topic {
-    background: var(--mat-sys-secondary-container);
-    color: var(--mat-sys-on-secondary-container);
-  }
-
-  &.waiting,
-  &.due {
-    background: var(--mat-sys-tertiary-container);
-    color: var(--mat-sys-on-tertiary-container);
-  }
 }
 
 .hint {

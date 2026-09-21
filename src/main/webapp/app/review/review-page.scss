@@ -38,31 +38,7 @@
 }
 
 .meta {
-  flex-wrap: wrap;
-  gap: 0.3rem;
   margin-top: 0.75rem;
-
-  &:empty {
-    display: none;
-  }
-}
-
-.chip {
-  font: var(--mat-sys-label-small);
-  padding: 0.05rem 0.4rem;
-  border-radius: 999px;
-  background: var(--mat-sys-surface-container-highest);
-  color: var(--mat-sys-on-surface-variant);
-
-  &.topic {
-    background: var(--mat-sys-secondary-container);
-    color: var(--mat-sys-on-secondary-container);
-  }
-
-  &.due {
-    background: var(--mat-sys-tertiary-container);
-    color: var(--mat-sys-on-tertiary-container);
-  }
 }
 
 // One decision per row on a phone: these are deliberate choices, not a toolbar to swipe past.

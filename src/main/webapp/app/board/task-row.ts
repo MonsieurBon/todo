@@ -5,6 +5,8 @@ import { MatIcon } from '@angular/material/icon';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { ZONE_NAMES, Zone, zoneAfter } from '../api/model';
 import { BoardStore, BoardTask } from './board-store';
+import { TaskChips } from './task-chips';
+import { TaskDetail } from './task-detail';
 import { TaskEdit, TaskEditor } from './task-editor';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -13,7 +15,7 @@ const isoDate = (inDays: number) => new Date(Date.now() + inDays * DAY).toISOStr
 
 @Component({
   selector: 'app-task-row',
-  imports: [MatIcon, MatIconButton, MatMenu, MatMenuItem, MatMenuTrigger],
+  imports: [MatIcon, MatIconButton, MatMenu, MatMenuItem, MatMenuTrigger, TaskChips],
   templateUrl: './task-row.html',
   styleUrl: './task-row.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -26,14 +28,16 @@ export class TaskRow {
 
   protected readonly online = this.board.online;
 
-  protected readonly showList = computed(() => this.board.lists().length > 1);
-
   /** A queued capture has no server id, so everything but completing it is out of reach. */
   protected readonly pending = computed(() => this.task().pendingId !== null);
 
   protected readonly promoteTo = computed(() => zoneAfter(this.task().zone, -1));
   protected readonly demoteTo = computed(() => zoneAfter(this.task().zone, 1));
   protected readonly zoneName = (zone: Zone) => ZONE_NAMES[zone];
+
+  protected details(): void {
+    this.dialog.open(TaskDetail, { data: this.task() });
+  }
 
   protected complete(): void {
     void this.board.complete(this.task());
