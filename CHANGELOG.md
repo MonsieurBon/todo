@@ -1,3 +1,10 @@
+## [2.1.6](https://github.com/MonsieurBon/todo/compare/v2.1.5...v2.1.6) (2026-09-21)
+
+
+### Bug Fixes
+
+* let the board editor clear a due date ([ba7710b](https://github.com/MonsieurBon/todo/commit/ba7710b9d088cfb19f7b13aabc577df74a8459d8))
+
 ## [2.1.5](https://github.com/MonsieurBon/todo/compare/v2.1.4...v2.1.5) (2026-09-21)
 
 
