@@ -18,8 +18,8 @@
     <article class="card">
       <h1>{{ task.title }}</h1>
       <p class="muted zone">{{ zoneName(task.zone) }}</p>
-      @if (task.notes) {
-        <p class="notes">{{ task.notes }}</p>
+      @if (task.notes; as notes) {
+        <app-task-notes class="notes" [notes]="notes" />
       }
       <app-task-chips class="meta" [task]="task" />
     </article>

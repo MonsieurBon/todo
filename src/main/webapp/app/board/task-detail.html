@@ -4,8 +4,8 @@
 <app-task-chips class="meta" [task]="task" [showZone]="true" />
 
 <mat-dialog-content class="detail">
-  @if (task.notes) {
-    <p class="notes">{{ task.notes }}</p>
+  @if (task.notes; as notes) {
+    <app-task-notes [notes]="notes" />
   } @else {
     <p class="notes muted">No notes.</p>
   }

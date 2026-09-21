@@ -19,7 +19,7 @@ describe('the task detail dialog', () => {
     dueDate: '2026-10-01',
   };
 
-  const shown = async (detail: BoardTask): Promise<string> => {
+  const shown = async (detail: BoardTask): Promise<HTMLElement> => {
     TestBed.configureTestingModule({
       providers: [
         { provide: MAT_DIALOG_DATA, useValue: detail },
@@ -38,15 +38,25 @@ describe('the task detail dialog', () => {
     const fixture = TestBed.createComponent(TaskDetail);
     await fixture.whenStable();
     fixture.detectChanges();
-    return fixture.nativeElement.textContent as string;
+    return fixture.nativeElement as HTMLElement;
   };
 
   it('shows the notes in full, line breaks and all', async () => {
-    expect(await shown(task)).toContain('Behind the bath.\nMeasure first.');
+    const notes = (await shown(task)).querySelector('app-task-notes');
+
+    expect(notes?.textContent).toContain('Behind the bath.');
+    expect(notes?.textContent).toContain('Measure first.');
+    expect(notes?.querySelector('br')).not.toBeNull();
+  });
+
+  it('renders markdown in the notes', async () => {
+    const detail = await shown({ ...task, notes: 'Behind the **bath**.' });
+
+    expect(detail.querySelector('app-task-notes strong')?.textContent).toBe('bath');
   });
 
   it('shows where the task sits: title, zone, list, topics and due date', async () => {
-    const text = await shown(task);
+    const text = (await shown(task)).textContent ?? '';
 
     expect(text).toContain('Fix the tile');
     expect(text).toContain('Opportunity Now');
@@ -57,19 +67,19 @@ describe('the task detail dialog', () => {
   });
 
   it('says a task has no notes rather than leaving the space blank', async () => {
-    expect(await shown({ ...task, notes: undefined })).toContain('No notes');
+    expect((await shown({ ...task, notes: undefined })).textContent).toContain('No notes');
   });
 
   // A capture that has not synced has no server id, but every field shown here is already on the
   // device.
   it('opens for a task that is still waiting to sync, and says that it is', async () => {
-    const text = await shown({ ...task, id: null, pendingId: 'draft-1' });
+    const text = (await shown({ ...task, id: null, pendingId: 'draft-1' })).textContent ?? '';
 
     expect(text).toContain('Behind the bath.');
     expect(text).toContain('waiting to sync');
   });
 
   it('does not call a synced task pending', async () => {
-    expect(await shown(task)).not.toContain('waiting to sync');
+    expect((await shown(task)).textContent).not.toContain('waiting to sync');
   });
 });

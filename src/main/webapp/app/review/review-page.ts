@@ -7,6 +7,7 @@ import { ZONE_NAMES, Zone, zoneAfter } from '../api/model';
 import { TodoApi } from '../api/todo-api';
 import { BoardStore, BoardTask, asBoardTask } from '../board/board-store';
 import { TaskChips } from '../board/task-chips';
+import { TaskNotes } from '../board/task-notes';
 import { WriteResult } from '../core/writes';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -17,7 +18,7 @@ const DAY = 24 * 60 * 60 * 1000;
  */
 @Component({
   selector: 'app-review-page',
-  imports: [MatButton, MatIcon, MatProgressBar, TaskChips],
+  imports: [MatButton, MatIcon, MatProgressBar, TaskChips, TaskNotes],
   templateUrl: './review-page.html',
   styleUrl: './review-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

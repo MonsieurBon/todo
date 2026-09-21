@@ -1,0 +1,83 @@
+:host {
+  display: block;
+  // A note can carry a url with nothing to break at, and neither the card nor the dialog may widen.
+  overflow-wrap: anywhere;
+}
+
+// Markdown arrives through innerHTML, so it carries none of this component's encapsulation
+// attributes and only a piercing selector reaches it.
+:host ::ng-deep {
+  // The caller places the notes as a block; the marks inside space themselves.
+  .markdown > :first-child {
+    margin-top: 0;
+  }
+
+  .markdown > :last-child {
+    margin-bottom: 0;
+  }
+
+  p,
+  ul,
+  ol,
+  blockquote,
+  pre {
+    margin: 0.5rem 0;
+  }
+
+  ul,
+  ol {
+    padding-left: 1.5rem;
+  }
+
+  .heading {
+    margin: 0.75rem 0 0.25rem;
+    font: var(--mat-sys-title-small);
+  }
+
+  blockquote {
+    padding-left: 0.75rem;
+    border-left: 2px solid var(--mat-sys-outline-variant);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  code {
+    padding: 0.1rem 0.25rem;
+    border-radius: 0.25rem;
+    background: var(--mat-sys-surface-container-highest);
+    font-family: monospace;
+  }
+
+  pre {
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    background: var(--mat-sys-surface-container-highest);
+
+    code {
+      padding: 0;
+      background: none;
+    }
+  }
+
+  a {
+    color: var(--mat-sys-primary);
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    border-collapse: collapse;
+  }
+
+  th,
+  td {
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--mat-sys-outline-variant);
+    text-align: left;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--mat-sys-outline-variant);
+  }
+}
