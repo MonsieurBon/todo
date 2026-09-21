@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BoardView } from '../api/model';
 import { TodoApi } from '../api/todo-api';
+import { Outbox } from '../offline/outbox';
 import { BoardStore } from './board-store';
 
 /** Folding the outbox in: a task going missing, appearing twice, or not counting towards its cap. */
@@ -36,7 +37,7 @@ describe('the board', () => {
     await store.refresh();
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     api = {
       board: vi.fn(() => of(board([]))),
       lists: vi.fn(() => of([])),
@@ -46,6 +47,8 @@ describe('the board', () => {
     };
     TestBed.configureTestingModule({ providers: [{ provide: TodoApi, useValue: api }] });
     store = TestBed.inject(BoardStore);
+    // Shared with the previous test, and flush() reads it rather than this instance's signal.
+    await TestBed.inject(Outbox).clear();
   });
 
   it('counts a queued capture towards its zone, so the cap still means something', async () => {

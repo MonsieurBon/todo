@@ -13,8 +13,12 @@ in one jar, plus an MCP server.
 - TDD: failing test first. The test and the code that passes it land in the same commit.
 - Every change goes through a PR that Claude reviews. The review is one comment; answer it point by
   point — fix it or say why not. Silence is not an answer.
-- Reply to a review round *before* pushing the commits that address it; the push triggers the next
-  review, which reads the existing comments.
+- Read your own diff before every push — the first one and every round of review fixes alike.
+  Nothing reaches the remote that you haven't reviewed yourself.
+- First round: implement, review your own diff, push, open the PR.
+- Every round after: summarise the review's points and discuss them with Fabian *before* touching
+  code — the fix is not yours to choose alone. Then implement, review your own diff, reply to the
+  review, and push last; the push triggers the next review, which reads the existing comments.
 - During review, a fix is its own commit (`git commit --fixup`). Rebase and squash once, at the end,
   then merge as soon as it's green — a no-op rebase doesn't trigger a fresh review.
 - Commits are vertical slices: migration + service + controller + UI for one behaviour, never one
@@ -90,6 +94,17 @@ with `npm run build`.
   pinned by `model.spec.ts` against the contract, measured in UTF-16 code units like `@Size`.
 - **`navigator.onLine` is not a connection.** Reachability is probed against a URL the service
   worker deliberately does not cache.
+- **Only the IdP can end a session.** A token-endpoint answer of 400 or 401 *naming an OAuth error*
+  is a refusal: the tokens go and the device signs in again. Every other failure is a connection
+  problem and must leave the session, the cached board and the outbox alone — offline everything
+  fails, and a wrong guess deletes the offline board and then strands the device at an IdP it
+  cannot reach. Guessing the other way only restores the dead end, so lean that way.
+- **A recovered session may not be the same person.** Signing in again hands the device to whoever
+  answers the login form, so anything queued under the old session is dropped unless the subject
+  that comes back matches the one that left. The answer waits for a session to actually resolve:
+  abandoning the login form is ordinary, and deciding before anyone has claimed the device would
+  destroy the user's own unsynced writes. Nothing can leak while it waits, because flushing needs
+  a board and the board needs a session.
 
 ## Tests
 
