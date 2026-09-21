@@ -185,8 +185,6 @@ class TaskTest {
       assertThatThrownBy(() -> completed().position(3)).isInstanceOf(TaskCompletedException.class);
       assertThatThrownBy(() -> completed().clientRef("abc"))
           .isInstanceOf(TaskCompletedException.class);
-      assertThatThrownBy(() -> completed().clearDeferral())
-          .isInstanceOf(TaskCompletedException.class);
     }
 
     @Test
@@ -301,17 +299,6 @@ class TaskTest {
     void noBackdating() {
       assertThatThrownBy(() -> task().deferUntil(TODAY.minusDays(1), TODAY))
           .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    @DisplayName("clearing a deferral makes the task visible again")
-    void clearDeferral() {
-      Task task = task();
-      task.deferUntil(TODAY.plusDays(5), TODAY);
-      task.clearDeferral();
-
-      assertThat(task.deferUntil()).isNull();
-      assertThat(task.isVisibleOn(TODAY)).isTrue();
     }
   }
 

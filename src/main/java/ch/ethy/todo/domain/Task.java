@@ -222,10 +222,6 @@ public class Task {
     this.deferUntil = null;
   }
 
-  public void deferUntil(LocalDate until) {
-    deferUntil(until, LocalDate.now());
-  }
-
   public void deferUntil(LocalDate until, LocalDate today) {
     mustBeOpen();
     if (until == null) {
@@ -236,11 +232,6 @@ public class Task {
     }
     this.zone = TaskZone.OVER_THE_HORIZON;
     this.deferUntil = until;
-  }
-
-  public void clearDeferral() {
-    mustBeOpen();
-    this.deferUntil = null;
   }
 
   public boolean isVisibleOn(LocalDate today) {
