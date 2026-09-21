@@ -9,6 +9,7 @@ import {
 } from '@angular/material/dialog';
 import { BoardTask } from './board-store';
 import { TaskChips } from './task-chips';
+import { TaskNotes } from './task-notes';
 
 /**
  * The whole task, read-only. Everything here is already on the device, so it opens offline and for
@@ -23,6 +24,7 @@ import { TaskChips } from './task-chips';
     MatDialogContent,
     MatDialogTitle,
     TaskChips,
+    TaskNotes,
   ],
   templateUrl: './task-detail.html',
   styleUrl: './task-detail.scss',
