@@ -11,6 +11,7 @@ const oauthDouble = (events: Subject<unknown>) => {
     events: events as unknown as ReturnType<typeof vi.fn>,
     configure: vi.fn(),
     loadDiscoveryDocumentAndTryLogin: vi.fn(() => Promise.resolve(true)),
+    loadDiscoveryDocument: vi.fn(() => Promise.resolve({})),
     setupAutomaticSilentRefresh: vi.fn(),
     hasValidAccessToken: vi.fn(() => false),
     getRefreshToken: vi.fn(() => 'stored'),
@@ -24,6 +25,19 @@ const oauthDouble = (events: Subject<unknown>) => {
     }),
   };
   return oauth;
+};
+
+const serviceWith = (
+  oauth: Record<string, ReturnType<typeof vi.fn>>,
+  outbox: Record<string, ReturnType<typeof vi.fn>> = { clear: vi.fn(() => Promise.resolve()) },
+) => {
+  TestBed.configureTestingModule({
+    providers: [
+      { provide: OAuthService, useValue: oauth },
+      { provide: Outbox, useValue: outbox },
+    ],
+  });
+  return TestBed.inject(AuthService);
 };
 
 /** jsdom has no `caches`, and a test that stubs one or spies on storage must not leave it behind. */
@@ -93,23 +107,13 @@ describe('a session whose token is refused', () => {
     events = new Subject<unknown>();
     oauth = oauthDouble(events);
     outbox = { clear: vi.fn(() => Promise.resolve()) };
-    auth = configure();
+    auth = serviceWith(oauth, outbox);
   });
-
-  const configure = () => {
-    TestBed.configureTestingModule({
-      providers: [
-        { provide: OAuthService, useValue: oauth },
-        { provide: Outbox, useValue: outbox },
-      ],
-    });
-    return TestBed.inject(AuthService);
-  };
 
   /** A page load: what the service held in memory is gone, what it put in storage is not. */
   const afterNavigation = () => {
     TestBed.resetTestingModule();
-    return configure();
+    return serviceWith(oauth, outbox);
   };
 
   it('clears the tokens and asks the IdP again, returning to the page they were on', async () => {
@@ -336,6 +340,108 @@ describe('a session whose token is refused', () => {
 });
 
 /**
+ * An outage that is over. Without discovery the library has no token endpoint and no login URL, so
+ * a page that started while the IdP was unreachable must ask again, or it stays stranded until
+ * someone thinks to reload it.
+ */
+describe('a start that could not reach the IdP', () => {
+  let oauth: Record<string, ReturnType<typeof vi.fn>>;
+  let auth: AuthService;
+
+  const unreachable = () => Promise.reject({ status: 0 });
+
+  beforeEach(async () => {
+    freshBrowser();
+    oauth = oauthDouble(new Subject<unknown>());
+    oauth['loadDiscoveryDocumentAndTryLogin'] = vi.fn(unreachable);
+    auth = serviceWith(oauth);
+    await auth.bootstrap();
+    expect(auth.signedIn()).toBe(true);
+  });
+
+  it('renews once the IdP is back, and keeps renewing on its own from then on', async () => {
+    await expect(auth.tryRefresh()).resolves.toBe(true);
+
+    expect(oauth['loadDiscoveryDocument']).toHaveBeenCalled();
+    expect(oauth['refreshToken']).toHaveBeenCalled();
+    expect(oauth['setupAutomaticSilentRefresh']).toHaveBeenCalled();
+  });
+
+  it('sets the renewal up once, however many renewals follow', async () => {
+    await auth.tryRefresh();
+    await new Promise((resolve) => setTimeout(resolve));
+    await auth.tryRefresh();
+
+    expect(oauth['setupAutomaticSilentRefresh']).toHaveBeenCalledTimes(1);
+  });
+
+  // Shaped exactly like a refusal, but from the discovery URL: never the token endpoint's verdict.
+  it('stays signed in when something in front of the IdP answers discovery with 401', async () => {
+    oauth['loadDiscoveryDocument'] = vi.fn(() =>
+      Promise.reject({ status: 401, error: { error: 'invalid_token' } }),
+    );
+
+    await expect(auth.tryRefresh()).resolves.toBe(false);
+
+    expect(oauth['logOut']).not.toHaveBeenCalled();
+    expect(oauth['initCodeFlow']).not.toHaveBeenCalled();
+    expect(auth.signedIn()).toBe(true);
+  });
+
+  it('stays signed in while the IdP is still unreachable, and asks again next time', async () => {
+    oauth['loadDiscoveryDocument'] = vi.fn(unreachable);
+
+    await expect(auth.tryRefresh()).resolves.toBe(false);
+    await new Promise((resolve) => setTimeout(resolve));
+    await auth.tryRefresh();
+
+    expect(oauth['loadDiscoveryDocument']).toHaveBeenCalledTimes(2);
+    expect(oauth['logOut']).not.toHaveBeenCalled();
+    expect(auth.signedIn()).toBe(true);
+  });
+
+  it('asks once when a click and a renewal both need the IdP at the same time', async () => {
+    auth.signIn('/');
+    await auth.tryRefresh();
+
+    expect(oauth['loadDiscoveryDocument']).toHaveBeenCalledTimes(1);
+  });
+
+  it('goes to the login form once the IdP answers', async () => {
+    auth.signIn('/review');
+
+    await vi.waitFor(() => expect(oauth['initCodeFlow']).toHaveBeenCalledWith('/review'));
+  });
+
+  it('does not go to the login form later, when the click is long forgotten', async () => {
+    oauth['loadDiscoveryDocument'] = vi.fn(unreachable);
+    auth.signIn('/');
+    await new Promise((resolve) => setTimeout(resolve));
+
+    // What would fire a redirect held by the library, had the click handed it one.
+    oauth['loadDiscoveryDocument'] = vi.fn(() => Promise.resolve({}));
+    await auth.tryRefresh();
+
+    expect(oauth['initCodeFlow']).not.toHaveBeenCalled();
+  });
+});
+
+describe('a start that reached the IdP', () => {
+  it('does not ask for discovery again', async () => {
+    freshBrowser();
+    const oauth = oauthDouble(new Subject<unknown>());
+    const auth = serviceWith(oauth);
+    await auth.bootstrap();
+
+    await auth.tryRefresh();
+
+    expect(oauth['loadDiscoveryDocument']).not.toHaveBeenCalled();
+    // Once for the start's own renewal and this one together.
+    expect(oauth['setupAutomaticSilentRefresh']).toHaveBeenCalledTimes(1);
+  });
+});
+
+/**
  * Handing the device back, which recovery is not: sign-out drops the queue outright where recovery
  * weighs subjects first. What it could not drop is marked, so the next start weighs that one too.
  */
@@ -362,13 +468,7 @@ describe('signing out', () => {
     oauth['hasValidAccessToken'] = vi.fn(() => true);
     oauth['getIdentityClaims'] = vi.fn(() => ({ sub: 'alice' }));
     outbox = { clear: recording('outbox', dropped) };
-    TestBed.configureTestingModule({
-      providers: [
-        { provide: OAuthService, useValue: oauth },
-        { provide: Outbox, useValue: outbox },
-      ],
-    });
-    auth = TestBed.inject(AuthService);
+    auth = serviceWith(oauth, outbox);
     await auth.bootstrap();
     expect(auth.signedIn()).toBe(true);
 

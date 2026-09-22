@@ -36,6 +36,8 @@ export class AuthService {
   private readonly session = signal(false);
   private refreshing: Promise<boolean> | null = null;
   private startingOver = false;
+  private discovered = false;
+  private discovering: Promise<void> | null = null;
 
   readonly resolved = this.ready.asReadonly();
 
@@ -60,13 +62,14 @@ export class AuthService {
     this.watchForRefusal();
     try {
       await this.oauth.loadDiscoveryDocumentAndTryLogin();
+      this.markDiscovered();
       if (!this.oauth.hasValidAccessToken() && this.oauth.getRefreshToken()) {
         await this.renew();
       }
-      this.oauth.setupAutomaticSilentRefresh();
     } catch {
-      // Launched with no connection. Whatever is in storage still identifies the user, and the
-      // board renders from the service worker's cache; the first write goes to the outbox.
+      // Launched with no connection, or with the IdP down. Whatever is in storage still identifies
+      // the user, and the board renders from the service worker's cache; the first write goes to
+      // the outbox. The IdP is asked again the first time it is needed.
     }
     try {
       await this.settleOutboxOwnership();
@@ -84,7 +87,16 @@ export class AuthService {
   }
 
   signIn(returnUrl: string): void {
-    this.oauth.initCodeFlow(returnUrl);
+    if (this.discovered) {
+      this.oauth.initCodeFlow(returnUrl);
+      return;
+    }
+    // Never handed to the library undiscovered: it would hold the redirect until a document loads,
+    // sending the device to the IdP whenever a later renewal happens to succeed.
+    this.discover().then(
+      () => this.oauth.initCodeFlow(returnUrl),
+      () => undefined,
+    );
   }
 
   /** Consumed once. */
@@ -125,6 +137,12 @@ export class AuthService {
   /** A refusal ends the session here, rather than asking again with the same dead token for ever. */
   private async renew(): Promise<boolean> {
     try {
+      await this.discover();
+    } catch {
+      // Never the token endpoint's answer, so never a refusal, whatever its status and body say.
+      return false;
+    }
+    try {
       await this.oauth.refreshToken();
       return true;
     } catch (error) {
@@ -133,6 +151,22 @@ export class AuthService {
       }
       return false;
     }
+  }
+
+  private discover(): Promise<void> {
+    if (this.discovered) {
+      return Promise.resolve();
+    }
+    this.discovering ??= this.oauth
+      .loadDiscoveryDocument()
+      .then(() => this.markDiscovered())
+      .finally(() => (this.discovering = null));
+    return this.discovering;
+  }
+
+  private markDiscovered(): void {
+    this.discovered = true;
+    this.oauth.setupAutomaticSilentRefresh();
   }
 
   /**
