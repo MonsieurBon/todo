@@ -1,3 +1,10 @@
+## [2.3.1](https://github.com/MonsieurBon/todo/compare/v2.3.0...v2.3.1) (2026-09-22)
+
+
+### Bug Fixes
+
+* recover from an IdP outage at startup without a reload ([4745419](https://github.com/MonsieurBon/todo/commit/47454194b0a697d391902d2b0499f71539c01b53))
+
 # [2.3.0](https://github.com/MonsieurBon/todo/compare/v2.2.0...v2.3.0) (2026-09-21)
 
 
