@@ -123,15 +123,23 @@ with `npm run build`.
 
 ```bash
 ./mvnw test                       # Java unit tests + lint/format/vitest for the frontend
-./mvnw -Pintegration-tests verify # + Testcontainers integration tests (~70s)
+./mvnw -Pintegration-tests verify # Testcontainers integration tests; skips the Java unit tests
 npm run e2e                       # Playwright; needs the stack up and `npm run build` run
 ./mvnw test -Dskip.npm=true -Dskip.installnodenpm=true   # Java only
+npm run test:ci                   # frontend only
 ```
 
 The frontend build is wired into the Maven lifecycle, so every goal runs `npm ci` and `ng build`
 first unless skipped. Integration tests share one container and context, so none may assume an empty
-database — each invents its own user. Playwright is a local gate; CI has neither a browser nor an
-IdP.
+database — each invents its own user. Locally that container can outlive the run: with
+`testcontainers.reuse.enable=true` in `~/.testcontainers.properties` MySQL's startup is skipped, and
+the schema is still rebuilt from the migrations every time. Playwright is a local gate; CI has
+neither a browser nor an IdP.
+
+Prefer a unit test. An integration test earns its container only when what it checks exists nowhere
+but in a real schema or the running application — a query, a migration, structural authorization,
+the security and web wiring. Before writing one, ask whether it tests our code and configuration or
+only the framework's.
 
 ## Conventions
 

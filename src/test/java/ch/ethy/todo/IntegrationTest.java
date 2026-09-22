@@ -1,5 +1,6 @@
 package ch.ethy.todo;
 
+import java.sql.SQLException;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -21,10 +22,25 @@ public abstract class IntegrationTest {
 
   @SuppressWarnings("resource")
   public static final MySQLContainer<?> MYSQL =
-      new MySQLContainer<>("mysql:8.4").withDatabaseName("todo");
+      new MySQLContainer<>("mysql:8.4").withDatabaseName("todo").withReuse(true);
 
   static {
     MYSQL.start();
+    emptyDatabase();
+  }
+
+  /**
+   * A reused container keeps the last run's schema, and a migration changed since then fails
+   * Flyway's validation in every context that migrates. Starting empty is what CI does.
+   */
+  private static void emptyDatabase() {
+    try (var connection = MYSQL.createConnection("");
+        var statement = connection.createStatement()) {
+      statement.execute("DROP DATABASE " + MYSQL.getDatabaseName());
+      statement.execute("CREATE DATABASE " + MYSQL.getDatabaseName());
+    } catch (SQLException e) {
+      throw new IllegalStateException("Could not empty the test database", e);
+    }
   }
 
   @DynamicPropertySource
