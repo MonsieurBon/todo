@@ -15,13 +15,12 @@ public final class Responses {
   private Responses() {}
 
   public record TaskListSummary(
-      Long id, String name, String slug, boolean inbox, boolean owned, List<String> sharedWith) {
+      Long id, String name, boolean inbox, boolean owned, List<String> sharedWith) {
 
     public static TaskListSummary of(TaskList list, User viewer) {
       return new TaskListSummary(
           list.id(),
           list.name(),
-          list.slug(),
           list.isInbox(),
           list.isOwnedBy(viewer),
           list.members().stream().map(User::email).sorted().toList());

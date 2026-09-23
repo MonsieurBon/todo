@@ -47,7 +47,7 @@ describe('the capture form', () => {
         {
           provide: BoardStore,
           useValue: {
-            lists: signal([{ id: 1, name: 'Inbox', slug: 'inbox', inbox: true, owned: true }]),
+            lists: signal([{ id: 1, name: 'Inbox', inbox: true, owned: true }]),
             online: signal(true),
             zones: signal([]),
             capture: captured,

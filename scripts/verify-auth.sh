@@ -114,7 +114,7 @@ body=$(curl -sS -H "Authorization: Bearer $MCP_TOKEN" "$APP/api/tasklists")
 if [ "$code" = "403" ]; then
   [ -z "$body" ] && ok "denied response carries no data" || bad "DENIED RESPONSE LEAKED A BODY: $body"
 else
-  echo "$body" | grep -qiE '"(id|name|slug|title)"' \
+  echo "$body" | grep -qiE '"(id|name|title)"' \
     && bad "REFUSAL LEAKED TASK DATA: $body" \
     || ok "refusal carries no task data (status $code)"
 fi

@@ -50,7 +50,7 @@ public class CurrentUserService {
     }
 
     // Created here because nothing else can: there is no endpoint that makes an inbox.
-    TaskList inbox = new TaskList(user, "Inbox", "inbox");
+    TaskList inbox = new TaskList(user, "Inbox");
     inbox.markAsInbox();
     lists.save(inbox);
     return user;

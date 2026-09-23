@@ -51,7 +51,7 @@ class TaskPersistenceIT {
   @BeforeEach
   void setUp() {
     owner = users.save(new User("idp-subject-1", "fabian@example.com", "Fabian"));
-    inbox = new TaskList(owner, "Inbox", "inbox");
+    inbox = new TaskList(owner, "Inbox");
     inbox.markAsInbox();
     inbox = lists.save(inbox);
   }
@@ -157,7 +157,7 @@ class TaskPersistenceIT {
   @DisplayName("a shared list is visible to the member but a private one is not")
   void sharing() {
     User other = users.save(new User("idp-subject-2", "someone@example.com", "Someone"));
-    TaskList private_ = lists.save(new TaskList(owner, "Private", "private"));
+    TaskList private_ = lists.save(new TaskList(owner, "Private"));
 
     inbox.share(other);
     lists.saveAndFlush(inbox);

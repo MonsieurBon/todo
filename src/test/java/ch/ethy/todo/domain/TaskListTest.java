@@ -11,13 +11,15 @@ class TaskListTest {
   private static final User OWNER = new User("owner-1", "owner@example.com", "Owner");
 
   private static TaskList list(String name) {
-    return new TaskList(OWNER, name, Slug.of(name, TaskList.MAX_SLUG_LENGTH));
+    return new TaskList(OWNER, name);
   }
 
   @Test
   @DisplayName("a list needs an owner and a name")
   void required() {
-    assertThatThrownBy(() -> new TaskList(null, "Personal", "personal"))
+    assertThatThrownBy(() -> new TaskList(null, "Personal"))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> new TaskList(OWNER, null))
         .isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(() -> list("   ")).isInstanceOf(IllegalArgumentException.class);
   }
@@ -35,15 +37,6 @@ class TaskListTest {
     assertThatThrownBy(() -> list("n".repeat(TaskList.MAX_NAME_LENGTH + 1)))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(String.valueOf(TaskList.MAX_NAME_LENGTH));
-  }
-
-  @Test
-  @DisplayName("a slug longer than its column is refused, so nothing derives one that cannot store")
-  void slugTooLong() {
-    assertThatThrownBy(
-            () -> new TaskList(OWNER, "Personal", "s".repeat(TaskList.MAX_SLUG_LENGTH + 1)))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining(String.valueOf(TaskList.MAX_SLUG_LENGTH));
   }
 
   @Test

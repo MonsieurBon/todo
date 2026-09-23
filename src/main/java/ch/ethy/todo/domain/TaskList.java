@@ -23,19 +23,13 @@ import org.hibernate.annotations.CreationTimestamp;
 @Entity
 @Table(
     name = "task_list",
-    uniqueConstraints = {
-      @UniqueConstraint(
-          name = "uq_task_list_owner_slug",
-          columnNames = {"owner_id", "slug"}),
-      @UniqueConstraint(
-          name = "uq_task_list_owner_name",
-          columnNames = {"owner_id", "name"})
-    })
+    uniqueConstraints =
+        @UniqueConstraint(
+            name = "uq_task_list_owner_name",
+            columnNames = {"owner_id", "name"}))
 public class TaskList {
 
   public static final int MAX_NAME_LENGTH = 255;
-
-  public static final int MAX_SLUG_LENGTH = 128;
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -48,9 +42,6 @@ public class TaskList {
 
   @Column(nullable = false, length = MAX_NAME_LENGTH)
   private String name;
-
-  @Column(nullable = false, length = MAX_SLUG_LENGTH)
-  private String slug;
 
   /** Where a capture that names no list goes. Every user has exactly one. */
   @Column(name = "is_inbox", nullable = false)
@@ -74,13 +65,12 @@ public class TaskList {
     // for JPA
   }
 
-  public TaskList(User owner, String name, String slug) {
+  public TaskList(User owner, String name) {
     if (owner == null) {
       throw new IllegalArgumentException("A list needs an owner");
     }
     this.owner = owner;
     name(name);
-    slug(slug);
   }
 
   public Long id() {
@@ -100,14 +90,6 @@ public class TaskList {
       throw new IllegalArgumentException("A list needs a name");
     }
     this.name = Lengths.atMost(MAX_NAME_LENGTH, "A list name", name.trim());
-  }
-
-  public String slug() {
-    return slug;
-  }
-
-  public final void slug(String slug) {
-    this.slug = Lengths.atMost(MAX_SLUG_LENGTH, "A list slug", slug);
   }
 
   public boolean isInbox() {

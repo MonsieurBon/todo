@@ -14,9 +14,6 @@ public interface TaskListRepository extends JpaRepository<TaskList, Long> {
   // Every graph below names owner as well as members: @EntityGraph defaults to type FETCH, which
   // makes anything unlisted lazy whatever the entity declares, and a lazy owner fails DTO assembly.
 
-  @EntityGraph(attributePaths = {"owner", "members"})
-  Optional<TaskList> findByOwnerAndSlug(User owner, String slug);
-
   Optional<TaskList> findByOwnerAndName(User owner, String name);
 
   @EntityGraph(attributePaths = {"owner", "members"})
@@ -33,16 +30,6 @@ public interface TaskListRepository extends JpaRepository<TaskList, Long> {
 
   @EntityGraph(attributePaths = {"owner", "members"})
   Optional<TaskList> findByIdAndOwner(Long id, User owner);
-
-  @Query(
-      """
-      select l from TaskList l
-      left join l.members m
-      where l.slug = :slug and (l.owner = :user or m = :user)
-      order by case when l.owner = :user then 0 else 1 end
-      """)
-  java.util.List<TaskList> findAccessibleBySlug(
-      @Param("slug") String slug, @Param("user") User user);
 
   @Query(
       """

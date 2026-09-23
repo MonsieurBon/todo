@@ -16,8 +16,11 @@ import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 
-/** How a list's slug is derived. Everybody links to it, so it must not move on its own. */
-class TaskListSlugIT extends IntegrationTest {
+/**
+ * A list's name is unique per owner, and how the refusal reads matters: it is the only thing
+ * standing between an MCP caller and the driver's own message.
+ */
+class TaskListNameIT extends IntegrationTest {
 
   @Autowired private TaskListService lists;
   @Autowired private CurrentUserService currentUser;
@@ -28,7 +31,7 @@ class TaskListSlugIT extends IntegrationTest {
   }
 
   private User someone() {
-    String subject = "slug-" + System.nanoTime();
+    String subject = "name-" + System.nanoTime();
     Jwt jwt =
         Jwt.withTokenValue("test")
             .header("alg", "none")
@@ -39,33 +42,6 @@ class TaskListSlugIT extends IntegrationTest {
     auth.setAuthenticated(true);
     SecurityContextHolder.getContext().setAuthentication(auth);
     return currentUser.current();
-  }
-
-  @Test
-  @DisplayName("two names that slug the same get distinct slugs")
-  void collisionsGetASuffix() {
-    User me = someone();
-    TaskList first = lists.create(me, "Project A");
-    TaskList second = lists.create(me, "project-a!");
-
-    assertThat(first.slug()).isEqualTo("project-a");
-    assertThat(second.slug()).isEqualTo("project-a-2");
-  }
-
-  @Test
-  @DisplayName("renaming a list to a name that slugs the same leaves its slug alone")
-  void renameDoesNotWalkItsOwnSlug() {
-    User me = someone();
-    TaskList list = lists.create(me, "Personal");
-    assertThat(list.slug()).isEqualTo("personal");
-
-    lists.rename(list.id(), me, "personal");
-    assertThat(lists.owned(list.id(), me).slug())
-        .as("a rename that does not change the slug must not change the URL")
-        .isEqualTo("personal");
-
-    lists.rename(list.id(), me, "Personal ");
-    assertThat(lists.owned(list.id(), me).slug()).isEqualTo("personal");
   }
 
   /**
@@ -114,7 +90,6 @@ class TaskListSlugIT extends IntegrationTest {
     assertThatCode(() -> lists.rename(list.id(), me, "Household")).doesNotThrowAnyException();
   }
 
-  // Without the null guard in Slug, this is an NPE rather than the domain's message.
   @Test
   @DisplayName("a missing name is refused by the entity, not by a NullPointerException")
   void nullNameIsRefusedProperly() {
@@ -138,18 +113,5 @@ class TaskListSlugIT extends IntegrationTest {
   void namesAreScopedToTheOwner() {
     lists.create(someone(), "Household");
     assertThatCode(() -> lists.create(someone(), "Household")).doesNotThrowAnyException();
-  }
-
-  @Test
-  @DisplayName("renaming onto another list's slug still yields a distinct one")
-  void renameStillAvoidsOthers() {
-    User me = someone();
-    lists.create(me, "Household");
-    TaskList other = lists.create(me, "Garden");
-
-    // A different name — the name constraint collates case-insensitively — that slugs the same.
-    lists.rename(other.id(), me, "Household!");
-
-    assertThat(lists.owned(other.id(), me).slug()).isEqualTo("household-2");
   }
 }
