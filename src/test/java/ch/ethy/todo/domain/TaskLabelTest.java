@@ -32,29 +32,42 @@ class TaskLabelTest {
     assertThat(task.hasLabel("politics")).isFalse();
   }
 
-  @ParameterizedTest(name = "\"{0}\" normalises to project-a")
-  @ValueSource(strings = {"Project A", "project a", "project-a", "  PROJECT   A  ", "Projéct A"})
-  @DisplayName("spelling variants collapse to one label")
-  void normalised(String input) {
+  @ParameterizedTest(name = "\"{0}\" is tidied to Project A")
+  @ValueSource(strings = {"Project A", "  Project   A  ", "Project\tA", "Project\nA"})
+  @DisplayName("only the spacing is tidied")
+  void tidied(String input) {
     Task task = task();
     task.addLabel(input);
-    assertThat(task.labels()).containsExactly("project-a");
+    assertThat(task.labels()).containsExactly("Project A");
+  }
+
+  /**
+   * The point of the topic: a capital is not a typo to fix, and the column folds case and accents
+   * itself, so two spellings already match each other without the domain rewriting either.
+   */
+  @ParameterizedTest(name = "\"{0}\" is kept as it was written")
+  @ValueSource(strings = {"Küche", "Fix Roof", "🏠", "c++", "día", "PROJECT A"})
+  @DisplayName("a topic keeps its capitals, accents and symbols")
+  void keepsWhatWasTyped(String input) {
+    Task task = task();
+    task.addLabel(input);
+    assertThat(task.labels()).containsExactly(input);
   }
 
   @Test
-  @DisplayName("adding the same topic twice leaves one label")
+  @DisplayName("adding the identical topic twice leaves one label")
   void deduplicates() {
     Task task = task();
     task.addLabel("House");
-    task.addLabel("house");
-    assertThat(task.labels()).containsExactly("house");
+    task.addLabel("House");
+    assertThat(task.labels()).containsExactly("House");
   }
 
   @Test
-  @DisplayName("a label can be removed however it is spelled")
-  void removeIsNormalisedToo() {
+  @DisplayName("a label is removed by the spelling it was added under")
+  void removeUsesTheSameSpelling() {
     Task task = task();
-    task.addLabel("sports-club");
+    task.addLabel("Sports Club");
     task.removeLabel("Sports Club");
     assertThat(task.labels()).isEmpty();
   }
@@ -75,6 +88,26 @@ class TaskLabelTest {
     assertThatThrownBy(() -> task().addLabel(null)).isInstanceOf(IllegalArgumentException.class);
   }
 
+  /**
+   * Pasting is the ordinary way to acquire one, and neither strip() nor isBlank() counts it as
+   * whitespace - so without the Unicode flag it survives and quietly makes a second topic that
+   * looks exactly like the first.
+   */
+  @Test
+  @DisplayName("a non-breaking space is tidied like any other")
+  void nonBreakingSpaceIsWhitespaceToo() {
+    Task task = task();
+    task.addLabel("\u00a0Fix\u00a0\u00a0Roof\u00a0");
+    assertThat(task.labels()).containsExactly("Fix Roof");
+  }
+
+  @Test
+  @DisplayName("a label of nothing but non-breaking spaces is refused, not stored empty")
+  void nonBreakingSpacesAloneAreRefused() {
+    assertThatThrownBy(() -> task().addLabel("\u00a0\u00a0"))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
   @Test
   @DisplayName("a label as long as the column allows is accepted")
   void labelAtTheLimit() {
@@ -93,12 +126,12 @@ class TaskLabelTest {
   }
 
   @Test
-  @DisplayName("the length that counts is the normalised one, not what was typed")
-  void measuredAfterNormalising() {
+  @DisplayName("the length that counts is the tidied one, not what was typed")
+  void measuredAfterTidying() {
     Task task = task();
-    String slug = "l".repeat(Task.MAX_LABEL_LENGTH);
-    task.addLabel("  " + slug.toUpperCase(java.util.Locale.ROOT) + "  ");
-    assertThat(task.labels()).containsExactly(slug);
+    String label = "l".repeat(Task.MAX_LABEL_LENGTH);
+    task.addLabel("  " + label + "  ");
+    assertThat(task.labels()).containsExactly(label);
   }
 
   @Test

@@ -127,18 +127,41 @@ class BoardIT extends IntegrationTest {
     assertThat(task.get("listName").asString()).isEqualTo("Work");
   }
 
+  /**
+   * The topic is stored as it was typed, so every spelling here is forgiven by the column's
+   * collation rather than by anything the application does to the filter.
+   */
   @Test
-  @DisplayName("a label filter matches however the topic is spelled")
+  @DisplayName("a label filter matches however the topic is capitalised, spaced or accented")
   void filterIsNormalised() throws Exception {
+    String me = someone();
+    Long list = createList(me, "Projects");
+    addTask(me, list, "Kickoff", "CRITICAL_NOW", List.of("Projéct A"));
+
+    // .param, not a query string: MockMvc re-encodes a URI template, so %20 arrives literally.
+    for (String spelling :
+        List.of("Projéct A", "projéct a", "project a", "PROJECT   A", "  project a  ")) {
+      assertThat(perform(get("/api/board").param("label", spelling).with(as(me))).get("tasks"))
+          .as("filtering by %s", spelling)
+          .hasSize(1);
+    }
+  }
+
+  /**
+   * The deny path of the rule above. Folding case and accents is not the same as ignoring
+   * punctuation: a different topic must find nothing rather than quietly widen the board.
+   */
+  @Test
+  @DisplayName("a label filter does not match a topic spelled with different characters")
+  void filterKeepsTopicsApart() throws Exception {
     String me = someone();
     Long list = createList(me, "Projects");
     addTask(me, list, "Kickoff", "CRITICAL_NOW", List.of("Project A"));
 
-    // .param, not a query string: MockMvc re-encodes a URI template, so %20 arrives literally.
-    for (String spelling : List.of("Project A", "project a", "project-a", "PROJECT   A")) {
-      assertThat(perform(get("/api/board").param("label", spelling).with(as(me))).get("tasks"))
-          .as("filtering by %s", spelling)
-          .hasSize(1);
+    for (String other : List.of("project-a", "projecta", "project")) {
+      assertThat(perform(get("/api/board").param("label", other).with(as(me))).get("tasks"))
+          .as("filtering by %s", other)
+          .isEmpty();
     }
   }
 

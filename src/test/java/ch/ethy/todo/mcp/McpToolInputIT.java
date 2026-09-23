@@ -223,34 +223,13 @@ class McpToolInputIT extends IntegrationTest {
   }
 
   @Test
-  @DisplayName("a name at the limit is stored, slug and all")
+  @DisplayName("a name at the limit is stored whole")
   void listNameAtTheLimitIsStored() {
     asSomeone();
     String name = "Household " + "x".repeat(TaskList.MAX_NAME_LENGTH - 10);
     var created = tools.createTaskList(name);
     assertThat(created.name()).isEqualTo(name);
-    assertThat(created.slug()).hasSizeLessThanOrEqualTo(TaskList.MAX_SLUG_LENGTH);
     assertThat(tools.listTaskLists()).extracting(l -> l.name()).contains(name);
-  }
-
-  /**
-   * Two different names on purpose: the same name twice fails on the unique (owner, name)
-   * constraint before the slug it computed is ever used, so the suffix loop stays unobservable.
-   */
-  @Test
-  @DisplayName("a second name that shortens to the same slug gets a distinct one that still fits")
-  void shortenedSlugsStayUniqueAndFit() {
-    asSomeone();
-    String name = "s".repeat(TaskList.MAX_NAME_LENGTH);
-    String collides = "s".repeat(TaskList.MAX_NAME_LENGTH - 5) + " tail";
-
-    var first = tools.createTaskList(name);
-    var second = tools.createTaskList(collides);
-
-    assertThat(first.slug()).hasSize(TaskList.MAX_SLUG_LENGTH);
-    assertThat(second.slug())
-        .isNotEqualTo(first.slug())
-        .hasSizeLessThanOrEqualTo(TaskList.MAX_SLUG_LENGTH);
   }
 
   @Test

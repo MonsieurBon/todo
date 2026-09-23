@@ -1,6 +1,5 @@
 package ch.ethy.todo.service;
 
-import ch.ethy.todo.domain.Slug;
 import ch.ethy.todo.domain.TaskList;
 import ch.ethy.todo.domain.User;
 import ch.ethy.todo.repository.TaskListRepository;
@@ -44,14 +43,6 @@ public class TaskListService {
   }
 
   @Transactional(readOnly = true)
-  public TaskList bySlug(String slug, User user) {
-    // Ordered so the user's own list wins over one shared with them under the same slug.
-    return lists.findAccessibleBySlug(slug, user).stream()
-        .findFirst()
-        .orElseThrow(() -> new NotFoundException("No list '" + slug + "'"));
-  }
-
-  @Transactional(readOnly = true)
   public TaskList inboxOf(User user) {
     return lists
         .findByOwnerAndInboxIsTrue(user)
@@ -60,8 +51,7 @@ public class TaskListService {
 
   public TaskList create(User owner, String name) {
     refuseADuplicateName(owner, name, null);
-    return underAUniqueName(
-        () -> lists.saveAndFlush(new TaskList(owner, name, uniqueSlug(owner, name, null))));
+    return underAUniqueName(() -> lists.saveAndFlush(new TaskList(owner, name)));
   }
 
   public TaskList rename(Long id, User owner, String name) {
@@ -70,7 +60,6 @@ public class TaskListService {
     return underAUniqueName(
         () -> {
           list.name(name);
-          list.slug(uniqueSlug(owner, name, id));
           // Flushed here, not at commit, so a refused name is attributable to this call.
           lists.flush();
           return list;
@@ -94,17 +83,13 @@ public class TaskListService {
             });
   }
 
-  /**
-   * The race the checks above cannot cover. Whether the name or the slug collided is not knowable
-   * here — the transaction is already rollback-only — so the message covers both.
-   */
+  /** The race the check above cannot cover. */
   private TaskList underAUniqueName(Supplier<TaskList> write) {
     try {
       return write.get();
     } catch (DataIntegrityViolationException raced) {
       throw new IllegalArgumentException(
-          "Another of your lists took that name or its address a moment earlier - try again",
-          raced);
+          "Another of your lists took that name a moment earlier - try again", raced);
     }
   }
 
@@ -136,27 +121,6 @@ public class TaskListService {
     TaskList list = resolveOwned(id, owner);
     users.findByEmail(email).ifPresent(list::unshare);
     return list;
-  }
-
-  /**
-   * {@code renaming} is the list being renamed, or null when creating. Without it a no-op rename
-   * collides with itself and walks its own slug one suffix further, changing the list's URL.
-   */
-  private String uniqueSlug(User owner, String name, Long renaming) {
-    String candidate = Slug.of(name, TaskList.MAX_SLUG_LENGTH);
-    int suffix = 2;
-    while (takenByAnother(owner, candidate, renaming)) {
-      String tail = "-" + suffix++;
-      candidate = Slug.of(name, TaskList.MAX_SLUG_LENGTH - tail.length()) + tail;
-    }
-    return candidate;
-  }
-
-  private boolean takenByAnother(User owner, String slug, Long renaming) {
-    return lists
-        .findByOwnerAndSlug(owner, slug)
-        .filter(held -> !held.id().equals(renaming))
-        .isPresent();
   }
 
   private static NotFoundException notFound(Long id) {

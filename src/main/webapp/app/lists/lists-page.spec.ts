@@ -54,9 +54,7 @@ describe('the lists screen', () => {
         {
           provide: BoardStore,
           useValue: {
-            lists: signal([
-              { id: 1, name: 'Inbox', slug: 'inbox', inbox: true, owned: true, sharedWith: [] },
-            ]),
+            lists: signal([{ id: 1, name: 'Inbox', inbox: true, owned: true, sharedWith: [] }]),
             online: signal(true),
             refresh: vi.fn(async () => undefined),
           },

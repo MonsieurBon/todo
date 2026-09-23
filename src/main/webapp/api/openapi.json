@@ -199,9 +199,6 @@
               "type" : "string"
             },
             "type" : "array"
-          },
-          "slug" : {
-            "type" : "string"
           }
         },
         "type" : "object"
@@ -457,32 +454,6 @@
               }
             },
             "description" : "Created"
-          }
-        },
-        "tags" : [ "task-list-controller" ]
-      }
-    },
-    "/api/tasklists/by-slug/{slug}" : {
-      "get" : {
-        "operationId" : "listBySlug",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "slug",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/TaskListSummary"
-                }
-              }
-            },
-            "description" : "OK"
           }
         },
         "tags" : [ "task-list-controller" ]

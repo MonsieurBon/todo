@@ -22,7 +22,6 @@ describe('a task’s chips', () => {
     ({
       id,
       name,
-      slug: name.toLowerCase(),
       inbox: id === 1,
       owned: true,
       sharedWith: [],

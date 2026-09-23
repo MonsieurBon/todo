@@ -53,12 +53,6 @@ public class TaskListController {
         tasks.visibleIn(id, me).stream().map(Responses.TaskView::of).toList());
   }
 
-  @GetMapping("/by-slug/{slug}")
-  public Responses.TaskListSummary listBySlug(@PathVariable String slug) {
-    User me = currentUser.current();
-    return Responses.TaskListSummary.of(lists.bySlug(slug, me), me);
-  }
-
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   public Responses.TaskListSummary createList(@Valid @RequestBody Requests.CreateTaskList request) {

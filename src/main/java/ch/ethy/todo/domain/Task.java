@@ -244,31 +244,45 @@ public class Task {
 
   public void addLabel(String label) {
     mustBeOpen();
-    labels.add(normalise(label));
+    labels.add(normaliseLabel(label));
   }
 
   public void removeLabel(String label) {
     mustBeOpen();
-    labels.remove(normalise(label));
+    labels.remove(normaliseLabel(label));
   }
 
   public boolean hasLabel(String label) {
-    return labels.contains(normalise(label));
+    return labels.contains(normaliseLabel(label));
   }
 
   public void labels(Collection<String> replacements) {
     mustBeOpen();
     Set<String> next = new LinkedHashSet<>();
-    replacements.forEach(label -> next.add(normalise(label)));
+    replacements.forEach(label -> next.add(normaliseLabel(label)));
     labels.clear();
     labels.addAll(next);
   }
 
-  private static String normalise(String label) {
-    if (label == null || label.isBlank()) {
+  /**
+   * A topic is what was typed, only tidied. Its capitals, accents and symbols are kept, because a
+   * topic is read rather than put in a URL, and because the column's collation already finds one
+   * spelling of a topic by another - so rewriting what was typed buys no reach and costs what was
+   * meant. That is about filtering only: the same collation makes two spellings of one topic a
+   * single key, which this set does not, so a task given both still has a duplicate to answer for.
+   *
+   * <p>Collapsed before it is stripped, and {@code (?U)} so that a non-breaking space counts as
+   * whitespace: {@code strip} and {@code isBlank} both go by {@code Character.isWhitespace}, which
+   * says it is not. A topic pasted from a web page carries one, and doing this the other way round
+   * would turn a leading one into a leading ordinary space rather than removing it - and would let
+   * a topic made only of them through as an empty string.
+   */
+  public static String normaliseLabel(String label) {
+    String tidied = label == null ? "" : label.replaceAll("(?U)\\s+", " ").strip();
+    if (tidied.isEmpty()) {
       throw new IllegalArgumentException("A label needs a name");
     }
-    return Lengths.atMost(MAX_LABEL_LENGTH, "A label", Slug.of(label));
+    return Lengths.atMost(MAX_LABEL_LENGTH, "A label", tidied);
   }
 
   public void markReviewed(Instant at) {
