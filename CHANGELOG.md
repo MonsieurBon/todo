@@ -1,3 +1,15 @@
+# [2.5.0](https://github.com/MonsieurBon/todo/compare/v2.4.0...v2.5.0) (2026-09-25)
+
+
+### Features
+
+* complete a task from beside its menu, and on a wide row use its actions directly ([7af21af](https://github.com/MonsieurBon/todo/commit/7af21af8ce19abafb8eb86ca0fc02b958c0f0596))
+* every zone is swept, Critical Now hourly ([f19cc01](https://github.com/MonsieurBon/todo/commit/f19cc0162cad30da88c535523fd22a0017de1c84))
+* filing a task counts as reviewing it ([28e4e68](https://github.com/MonsieurBon/todo/commit/28e4e683c7c0ce3f3617499cd0c97bb7c9b7e97a))
+* moving or deferring a task counts as reviewing it ([c9d0108](https://github.com/MonsieurBon/todo/commit/c9d0108ab67034564a925b195d9d094362a0d243))
+* review, move or defer several tasks at once, over the API and MCP ([fb211c1](https://github.com/MonsieurBon/todo/commit/fb211c106f0dcee662c44e8ec8d8c374fb91c3fb))
+* the review sweep is a board of what is due, and settles a selection at once ([416aedb](https://github.com/MonsieurBon/todo/commit/416aedb68e08069d4cfcc5234cc2fccbc2b80d78))
+
 # [2.4.0](https://github.com/MonsieurBon/todo/compare/v2.3.1...v2.4.0) (2026-09-25)
 
 
