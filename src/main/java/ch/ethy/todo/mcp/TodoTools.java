@@ -238,12 +238,15 @@ public class TodoTools {
           The tasks overdue for a review sweep: Critical Now is swept hourly,
           Opportunity Now daily and Over The Horizon weekly.
 
-          Walk these one at a time with the user and for each one promote, demote,
-          defer, complete, delete or leave it as it is.
+          Read get_board first and show the user how full each zone is: whether a task
+          belongs in Critical Now depends on what is already there. Then propose for
+          each task whether to promote, demote, defer, complete, delete or leave it,
+          and let the user settle them in blocks - "all of these stay where they are"
+          is one call.
 
-          Moving or deferring a task records the review by itself, and completing or
-          deleting one takes it out of the queue. Call mark_task_reviewed only for a
-          task left where it is.
+          Moving or deferring tasks records the review by itself, and completing or
+          deleting one takes it out of the queue. Call mark_tasks_reviewed only for
+          tasks left where they are.
           """)
   public List<Responses.TaskView> getReviewQueue(
       @McpToolParam(description = "The list to sweep.", required = true) Long listId) {
@@ -294,56 +297,62 @@ public class TodoTools {
   }
 
   @McpTool(
-      name = "move_task_zone",
+      name = "move_tasks_to_zone",
       annotations =
           @McpTool.McpAnnotations(
               readOnlyHint = false,
               destructiveHint = true,
               idempotentHint = true,
               openWorldHint = false),
-      title = "Change a task's urgency",
+      title = "Change tasks' urgency",
       description =
           """
-          Move a task to a different urgency zone. Moving a task clears any deferral,
-          since deciding where it belongs is the attention that deferring postponed, and
+          Move tasks to an urgency zone. Moving a task clears any deferral, since
+          deciding where it belongs is the attention that deferring postponed, and
           counts as reviewing it, so it leaves the review queue.
 
           Before promoting into CRITICAL_NOW, check get_board: if that zone is already
           at its cap, something should come out before anything else goes in.
 
-          A completed task is read-only; call reopen_task first if it needs moving.
+          All of them move or none does: a completed task among them refuses the whole
+          call. A completed task is read-only; call reopen_task first if it needs
+          moving.
           """)
-  public Responses.TaskView moveTaskZone(
-      @McpToolParam(description = "Id of the task.", required = true) Long taskId,
-      @McpToolParam(description = "The zone to move it to.", required = true) TaskZone zone) {
-    return Responses.TaskView.of(tasks.moveTo(taskId, currentUser.current(), zone));
+  public List<Responses.TaskView> moveTasksToZone(
+      @McpToolParam(description = "Ids of the tasks.", required = true) List<Long> taskIds,
+      @McpToolParam(description = "The zone to move them to.", required = true) TaskZone zone) {
+    return tasks.moveAllTo(taskIds, currentUser.current(), zone).stream()
+        .map(Responses.TaskView::of)
+        .toList();
   }
 
   @McpTool(
-      name = "defer_task",
+      name = "defer_tasks",
       annotations =
           @McpTool.McpAnnotations(
               readOnlyHint = false,
               destructiveHint = true,
               idempotentHint = true,
               openWorldHint = false),
-      title = "Hide a task until a date",
+      title = "Hide tasks until a date",
       description =
           """
-          Push a task over the horizon and hide it until the given date, when it comes
-          back by itself. This is for "not yet", and is different from a due date:
-          deferring says when the user wants to see it again, a due date says when it
+          Push tasks over the horizon and hide them until the given date, when they come
+          back by themselves. This is for "not yet", and is different from a due date:
+          deferring says when the user wants to see a task again, a due date says when it
           must be finished. The date cannot be in the past. Deferring counts as
-          reviewing the task, so it leaves the review queue.
+          reviewing a task, so it leaves the review queue.
 
-          A completed task is read-only, and does not need hiding — it is already off
-          the list.
+          All of them are deferred or none is. A completed task is read-only, and does
+          not need hiding — it is already off the list.
           """)
-  public Responses.TaskView deferTask(
-      @McpToolParam(description = "Id of the task.", required = true) Long taskId,
-      @McpToolParam(description = "Date to bring it back, as YYYY-MM-DD.", required = true)
+  public List<Responses.TaskView> deferTasks(
+      @McpToolParam(description = "Ids of the tasks.", required = true) List<Long> taskIds,
+      @McpToolParam(description = "Date to bring them back, as YYYY-MM-DD.", required = true)
           LocalDate until) {
-    return Responses.TaskView.of(tasks.defer(taskId, currentUser.current(), until));
+    return tasks.deferAll(taskIds, currentUser.current(), until).stream()
+        .map(Responses.TaskView::of)
+        .toList();
   }
 
   @McpTool(
@@ -376,7 +385,7 @@ public class TodoTools {
   }
 
   @McpTool(
-      name = "mark_task_reviewed",
+      name = "mark_tasks_reviewed",
       annotations =
           @McpTool.McpAnnotations(
               readOnlyHint = false,
@@ -385,14 +394,17 @@ public class TodoTools {
               openWorldHint = false),
       title = "Record a review",
       description =
-          "Record that a task was considered during a review sweep, so it drops out of "
-              + "the review queue until its zone's cadence comes round again. Moving or "
-              + "deferring a task records this by itself. Only for a task that stays on the "
-              + "list: a completed one has left the queue already and is read-only, so it "
-              + "needs no record and must not be reopened to get one.")
-  public Responses.TaskView markTaskReviewed(
-      @McpToolParam(description = "Id of the task.", required = true) Long taskId) {
-    return Responses.TaskView.of(tasks.markReviewed(taskId, currentUser.current()));
+          "Record that tasks were considered during a review sweep and stay where they are, "
+              + "so they drop out of the review queue until their zone's cadence comes round "
+              + "again. Moving or deferring a task records this by itself. Only for tasks that "
+              + "stay on the list: a completed one has left the queue already and is "
+              + "read-only, so it needs no record and must not be reopened to get one. A "
+              + "completed task among them refuses the whole call.")
+  public List<Responses.TaskView> markTasksReviewed(
+      @McpToolParam(description = "Ids of the tasks.", required = true) List<Long> taskIds) {
+    return tasks.markAllReviewed(taskIds, currentUser.current()).stream()
+        .map(Responses.TaskView::of)
+        .toList();
   }
 
   @McpTool(

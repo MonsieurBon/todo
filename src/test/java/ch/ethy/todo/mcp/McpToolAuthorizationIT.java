@@ -190,8 +190,11 @@ class McpToolAuthorizationIT extends IntegrationTest {
 
       assertThat(tools.listLabels()).contains("house");
 
-      var promoted = tools.moveTaskZone(task.id(), TaskZone.CRITICAL_NOW);
-      assertThat(promoted.zone()).isEqualTo(TaskZone.CRITICAL_NOW);
+      var promoted = tools.moveTasksToZone(List.of(task.id()), TaskZone.CRITICAL_NOW);
+      assertThat(promoted)
+          .singleElement()
+          .extracting(t -> t.zone())
+          .isEqualTo(TaskZone.CRITICAL_NOW);
 
       var board = tools.getBoard("house", null, null, null);
       assertThat(board.tasks()).extracting(t -> t.title()).contains("Fix the tile");
@@ -253,6 +256,69 @@ class McpToolAuthorizationIT extends IntegrationTest {
                 assertThat(t.title()).isEqualTo("Private");
                 assertThat(t.notes()).isEqualTo("Mine");
               });
+    }
+
+    @Test
+    @DisplayName("can settle a whole sweep's worth of tasks in one call each")
+    void settlesSeveralAtOnce() {
+      as(someone());
+      var list = tools.createTaskList("Homelab " + System.nanoTime());
+      var ids =
+          java.util.stream.IntStream.range(0, 3)
+              .mapToObj(
+                  i ->
+                      tools
+                          .createTask(
+                              "Task " + i, TaskZone.OVER_THE_HORIZON, null, list.id(), null, null)
+                          .id())
+              .toList();
+      assertThat(tools.getReviewQueue(list.id())).hasSize(3);
+
+      assertThat(tools.markTasksReviewed(ids)).hasSize(3);
+      assertThat(tools.getReviewQueue(list.id())).isEmpty();
+
+      assertThat(tools.moveTasksToZone(ids, TaskZone.OPPORTUNITY_NOW))
+          .extracting(t -> t.zone())
+          .containsOnly(TaskZone.OPPORTUNITY_NOW);
+
+      tools.deferTasks(ids, LocalDate.of(2030, 1, 1));
+      assertThat(tools.getBoard(null, list.id(), null, null).tasks()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("cannot slip someone else's task into a bulk call, and changes none of them")
+    void cannotHideForeignTaskAmongOwn() {
+      String owner = someone();
+      as(owner);
+      var theirs = tools.createTask("Private", TaskZone.OPPORTUNITY_NOW, null, null, null, null);
+
+      as(someone());
+      var mine = tools.createTask("Mine", TaskZone.OPPORTUNITY_NOW, null, null, null, null);
+      var mixed = List.of(mine.id(), theirs.id());
+      assertThat(
+              List.<org.assertj.core.api.ThrowableAssert.ThrowingCallable>of(
+                  () -> tools.markTasksReviewed(mixed),
+                  () -> tools.moveTasksToZone(mixed, TaskZone.CRITICAL_NOW),
+                  () -> tools.deferTasks(mixed, LocalDate.of(2030, 1, 1))))
+          .allSatisfy(
+              call ->
+                  assertThatThrownBy(call)
+                      .isInstanceOf(NotFoundException.class)
+                      .satisfies(e -> assertThat(e.getMessage()).doesNotContain("Private")));
+      assertThat(tools.getBoard(null, null, null, null).tasks())
+          .filteredOn(t -> t.id().equals(mine.id()))
+          .singleElement()
+          .satisfies(
+              t -> {
+                assertThat(t.zone()).isEqualTo(TaskZone.OPPORTUNITY_NOW);
+                assertThat(t.lastReviewedAt()).isNull();
+              });
+
+      as(owner);
+      assertThat(tools.getBoard(null, null, null, null).tasks())
+          .filteredOn(t -> t.id().equals(theirs.id()))
+          .singleElement()
+          .satisfies(t -> assertThat(t.lastReviewedAt()).isNull());
     }
 
     @Test

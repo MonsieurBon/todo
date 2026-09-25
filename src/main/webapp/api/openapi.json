@@ -113,6 +113,42 @@
         "required" : [ "until" ],
         "type" : "object"
       },
+      "DeferSelection" : {
+        "properties" : {
+          "taskIds" : {
+            "items" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "minItems" : 1,
+            "type" : "array"
+          },
+          "until" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        },
+        "required" : [ "taskIds", "until" ],
+        "type" : "object"
+      },
+      "MoveSelection" : {
+        "properties" : {
+          "taskIds" : {
+            "items" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "minItems" : 1,
+            "type" : "array"
+          },
+          "zone" : {
+            "enum" : [ "CRITICAL_NOW", "OPPORTUNITY_NOW", "OVER_THE_HORIZON" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "taskIds", "zone" ],
+        "type" : "object"
+      },
       "MoveZone" : {
         "properties" : {
           "zone" : {
@@ -132,6 +168,20 @@
           }
         },
         "required" : [ "name" ],
+        "type" : "object"
+      },
+      "Selection" : {
+        "properties" : {
+          "taskIds" : {
+            "items" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "minItems" : 1,
+            "type" : "array"
+          }
+        },
+        "required" : [ "taskIds" ],
         "type" : "object"
       },
       "SetLabels" : {
@@ -729,6 +779,99 @@
               }
             },
             "description" : "Created"
+          }
+        },
+        "tags" : [ "task-controller" ]
+      }
+    },
+    "/api/tasks/defer" : {
+      "post" : {
+        "operationId" : "deferTasks",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DeferSelection"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/TaskView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "task-controller" ]
+      }
+    },
+    "/api/tasks/reviewed" : {
+      "post" : {
+        "operationId" : "markTasksReviewed",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Selection"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/TaskView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "task-controller" ]
+      }
+    },
+    "/api/tasks/zone" : {
+      "post" : {
+        "operationId" : "moveTasksToZone",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MoveSelection"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/TaskView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
           }
         },
         "tags" : [ "task-controller" ]

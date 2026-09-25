@@ -251,4 +251,60 @@ class TaskEditingIT extends IntegrationTest {
 
     assertThat(reread(me, id).get("dueDate").asString()).isEqualTo("2026-10-01");
   }
+
+  @Test
+  @DisplayName("a change to several tasks lands on every one of them")
+  void bulkChangesLand() throws Exception {
+    String me = "bulk-" + System.nanoTime();
+    long first = capture(me, Map.of("title", "Fix the tile", "zone", "OPPORTUNITY_NOW"));
+    long second = capture(me, Map.of("title", "Renew passport", "zone", "OPPORTUNITY_NOW"));
+    List<Long> both = List.of(first, second);
+
+    mvc.perform(withBody(post("/api/tasks/reviewed").with(as(me)), Map.of("taskIds", both)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(2));
+    for (long id : both) {
+      assertThat(reread(me, id).get("lastReviewedAt").isNull()).isFalse();
+    }
+
+    mvc.perform(
+            withBody(
+                post("/api/tasks/zone").with(as(me)),
+                Map.of("taskIds", both, "zone", "CRITICAL_NOW")))
+        .andExpect(status().isOk());
+    for (long id : both) {
+      assertThat(reread(me, id).get("zone").asString()).isEqualTo("CRITICAL_NOW");
+    }
+
+    mvc.perform(
+            withBody(
+                post("/api/tasks/defer").with(as(me)),
+                Map.of("taskIds", both, "until", "2030-01-01")))
+        .andExpect(status().isOk());
+    for (long id : both) {
+      assertThat(reread(me, id).get("deferUntil").asString()).isEqualTo("2030-01-01");
+    }
+  }
+
+  @Test
+  @DisplayName("one completed task among several refuses the lot, and none of them changes")
+  void bulkIsAllOrNothing() throws Exception {
+    String me = "bulk-" + System.nanoTime();
+    long open = capture(me, Map.of("title", "Fix the tile", "zone", "OPPORTUNITY_NOW"));
+    long done = capture(me, Map.of("title", "Renew passport", "zone", "OPPORTUNITY_NOW"));
+    mvc.perform(post("/api/tasks/" + done + "/complete").with(as(me))).andExpect(status().isOk());
+
+    mvc.perform(
+            withBody(
+                post("/api/tasks/zone").with(as(me)),
+                Map.of("taskIds", List.of(open, done), "zone", "CRITICAL_NOW")))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.error").value("task_completed"));
+
+    var untouched = reread(me, open);
+    assertThat(untouched.get("zone").asString()).isEqualTo("OPPORTUNITY_NOW");
+    assertThat(untouched.get("lastReviewedAt").isNull())
+        .as("the open task was moved before the completed one refused, and must be rolled back")
+        .isTrue();
+  }
 }

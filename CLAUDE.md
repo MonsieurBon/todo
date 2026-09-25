@@ -96,6 +96,9 @@ with `npm run build`.
   with `mustBeOpen()`, `complete` and `reopen` excepted. No test enumerates them, so a new one has to
   remember. `TaskCompletedException` answers 409 — reuse it for the next state refusal rather than
   inventing a 400.
+- **A write over several tasks is whole or nothing.** One task out of reach answers the same 404
+  it would alone, one completed task the same 409, and either way none of them has changed: the
+  transaction undoes whatever went before the refusal.
 - **Test the deny path** — that the refused thing returns no payload.
 - **The API contract is checked in and generated from.** `OpenApiContractIT` rewrites
   `openapi.json` and fails once when a DTO changes; review the diff and commit it. `npm run

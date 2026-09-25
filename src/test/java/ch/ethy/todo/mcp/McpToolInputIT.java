@@ -177,10 +177,10 @@ class McpToolInputIT extends IntegrationTest {
     assertThat(
             List.<ThrowingCallable>of(
                 () -> tools.updateTask(task.id(), "Fix the ridge", null, null, null),
-                () -> tools.moveTaskZone(task.id(), TaskZone.CRITICAL_NOW),
-                () -> tools.deferTask(task.id(), LocalDate.of(2030, 1, 1)),
+                () -> tools.moveTasksToZone(List.of(task.id()), TaskZone.CRITICAL_NOW),
+                () -> tools.deferTasks(List.of(task.id()), LocalDate.of(2030, 1, 1)),
                 () -> tools.setTaskLabels(task.id(), List.of("garden")),
-                () -> tools.markTaskReviewed(task.id())))
+                () -> tools.markTasksReviewed(List.of(task.id()))))
         .allSatisfy(
             call ->
                 assertThatThrownBy(call)
@@ -246,5 +246,23 @@ class McpToolInputIT extends IntegrationTest {
                     "n".repeat(Task.MAX_NOTES_LENGTH),
                     null))
         .doesNotThrowAnyException();
+  }
+
+  @Test
+  @DisplayName("a bulk tool given no tasks says so, rather than failing blind or doing nothing")
+  void bulkNeedsATask() {
+    asSomeone();
+
+    assertThat(
+            List.<ThrowingCallable>of(
+                () -> tools.markTasksReviewed(List.of()),
+                () -> tools.markTasksReviewed(null),
+                () -> tools.moveTasksToZone(List.of(), TaskZone.CRITICAL_NOW),
+                () -> tools.deferTasks(null, LocalDate.of(2030, 1, 1))))
+        .allSatisfy(
+            call ->
+                assertThatThrownBy(call)
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("at least one task"));
   }
 }
