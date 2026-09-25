@@ -131,7 +131,7 @@ class TaskPersistenceIT {
 
     Task visible = new Task("Call the dentist", TaskZone.CRITICAL_NOW);
     Task deferred = new Task("Plan the summer trip", TaskZone.OPPORTUNITY_NOW);
-    deferred.deferUntil(today.plusDays(30), today);
+    deferred.deferUntil(today.plusDays(30), today, java.time.Instant.now());
 
     inbox.add(visible);
     inbox.add(deferred);

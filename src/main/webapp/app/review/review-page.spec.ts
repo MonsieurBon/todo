@@ -101,6 +101,16 @@ describe('the review sweep', () => {
     expect(markReviewed).not.toHaveBeenCalled();
   });
 
+  it('lets a move stand as the review, since the server records it with the move', async () => {
+    const fixture = await render();
+
+    const shown = await press(fixture, 'Critical Now');
+
+    expect(moveZone).toHaveBeenCalledTimes(1);
+    expect(markReviewed).not.toHaveBeenCalled();
+    expect(shown).toContain('Renew passport');
+  });
+
   it('keeps the card when the decision never reached the server, since nothing was decided', async () => {
     markReviewed.mockResolvedValue('refused');
     const fixture = await render();

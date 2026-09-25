@@ -137,13 +137,13 @@ public class TaskService {
 
   public Task moveTo(Long id, User user, TaskZone zone) {
     Task task = resolve(id, user);
-    task.moveTo(zone);
+    task.moveTo(zone, clock.instant());
     return task;
   }
 
   public Task defer(Long id, User user, LocalDate until) {
     Task task = resolve(id, user);
-    task.deferUntil(until, LocalDate.now(clock));
+    task.deferUntil(until, LocalDate.now(clock), clock.instant());
     return task;
   }
 

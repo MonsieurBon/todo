@@ -106,7 +106,7 @@ public class Task {
 
   public Task(String title, TaskZone zone) {
     title(title);
-    moveTo(zone);
+    placeIn(zone);
   }
 
   public Long id() {
@@ -218,16 +218,23 @@ public class Task {
     this.state = TaskState.TODO;
   }
 
-  public final void moveTo(TaskZone zone) {
+  /** Deciding where a task belongs is the attention a review asks for, so it counts as one. */
+  public void moveTo(TaskZone zone, Instant decidedAt) {
     mustBeOpen();
+    placeIn(zone);
+    this.deferUntil = null;
+    this.lastReviewedAt = decidedAt;
+  }
+
+  private void placeIn(TaskZone zone) {
     if (zone == null) {
       throw new IllegalArgumentException("A task needs a zone");
     }
     this.zone = zone;
-    this.deferUntil = null;
   }
 
-  public void deferUntil(LocalDate until, LocalDate today) {
+  /** Deciding when to see a task again counts as a review, as moving it does. */
+  public void deferUntil(LocalDate until, LocalDate today, Instant decidedAt) {
     mustBeOpen();
     if (until == null) {
       throw new IllegalArgumentException("A deferral needs a date");
@@ -237,6 +244,7 @@ public class Task {
     }
     this.zone = TaskZone.OVER_THE_HORIZON;
     this.deferUntil = until;
+    this.lastReviewedAt = decidedAt;
   }
 
   public boolean isVisibleOn(LocalDate today) {

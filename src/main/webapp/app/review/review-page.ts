@@ -70,19 +70,13 @@ export class ReviewPage {
 
   protected async move(zone: Zone | null): Promise<void> {
     if (zone) {
-      await this.decide(async (task) => {
-        const moved = await this.board.moveZone(task, zone);
-        return moved === 'done' ? this.board.markReviewed(task) : moved;
-      });
+      await this.decide((task) => this.board.moveZone(task, zone));
     }
   }
 
   protected async defer(days: number): Promise<void> {
     const until = new Date(Date.now() + days * DAY).toISOString().slice(0, 10);
-    await this.decide(async (task) => {
-      const deferred = await this.board.defer(task, until);
-      return deferred === 'done' ? this.board.markReviewed(task) : deferred;
-    });
+    await this.decide((task) => this.board.defer(task, until));
   }
 
   protected async complete(): Promise<void> {

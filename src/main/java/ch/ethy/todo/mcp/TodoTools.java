@@ -241,9 +241,9 @@ public class TodoTools {
           Walk these one at a time with the user and for each one promote, demote,
           defer, complete, delete or leave it as it is.
 
-          Then call mark_task_reviewed, but only for a task that stays on the list:
-          completing or deleting one takes it out of the queue by itself, and there is
-          nothing left to record.
+          Moving or deferring a task records the review by itself, and completing or
+          deleting one takes it out of the queue. Call mark_task_reviewed only for a
+          task left where it is.
           """)
   public List<Responses.TaskView> getReviewQueue(
       @McpToolParam(description = "The list to sweep.", required = true) Long listId) {
@@ -305,7 +305,8 @@ public class TodoTools {
       description =
           """
           Move a task to a different urgency zone. Moving a task clears any deferral,
-          since deciding where it belongs is the attention that deferring postponed.
+          since deciding where it belongs is the attention that deferring postponed, and
+          counts as reviewing it, so it leaves the review queue.
 
           Before promoting into CRITICAL_NOW, check get_board: if that zone is already
           at its cap, something should come out before anything else goes in.
@@ -332,7 +333,8 @@ public class TodoTools {
           Push a task over the horizon and hide it until the given date, when it comes
           back by itself. This is for "not yet", and is different from a due date:
           deferring says when the user wants to see it again, a due date says when it
-          must be finished. The date cannot be in the past.
+          must be finished. The date cannot be in the past. Deferring counts as
+          reviewing the task, so it leaves the review queue.
 
           A completed task is read-only, and does not need hiding — it is already off
           the list.
@@ -384,9 +386,10 @@ public class TodoTools {
       title = "Record a review",
       description =
           "Record that a task was considered during a review sweep, so it drops out of "
-              + "the review queue until its zone's cadence comes round again. Only for a task "
-              + "that stays on the list: a completed one has left the queue already and is "
-              + "read-only, so it needs no record and must not be reopened to get one.")
+              + "the review queue until its zone's cadence comes round again. Moving or "
+              + "deferring a task records this by itself. Only for a task that stays on the "
+              + "list: a completed one has left the queue already and is read-only, so it "
+              + "needs no record and must not be reopened to get one.")
   public Responses.TaskView markTaskReviewed(
       @McpToolParam(description = "Id of the task.", required = true) Long taskId) {
     return Responses.TaskView.of(tasks.markReviewed(taskId, currentUser.current()));

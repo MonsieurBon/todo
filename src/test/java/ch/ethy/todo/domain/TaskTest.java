@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 class TaskTest {
 
   private static final LocalDate TODAY = LocalDate.of(2026, 9, 3);
+  private static final Instant NOW = Instant.parse("2026-09-03T10:00:00Z");
 
   private static Task task() {
     return new Task("Renew passport", TaskZone.OPPORTUNITY_NOW);
@@ -30,6 +31,13 @@ class TaskTest {
       assertThat(task.zone()).isEqualTo(TaskZone.OPPORTUNITY_NOW);
       assertThat(task.deferUntil()).isNull();
       assertThat(task.isVisibleOn(TODAY)).isTrue();
+    }
+
+    @Test
+    @DisplayName("a new task has not been reviewed, so the next sweep offers it")
+    void notYetReviewed() {
+      assertThat(task().lastReviewedAt()).isNull();
+      assertThat(task().isReviewDue(NOW)).isTrue();
     }
 
     @Test
@@ -118,7 +126,7 @@ class TaskTest {
     @DisplayName("completing a deferred task clears the deferral, so reopening shows it again")
     void completingClearsDeferral() {
       Task task = task();
-      task.deferUntil(TODAY.plusWeeks(2), TODAY);
+      task.deferUntil(TODAY.plusWeeks(2), TODAY, NOW);
       task.complete();
 
       assertThat(task.deferUntil()).isNull();
@@ -160,14 +168,14 @@ class TaskTest {
     @Test
     @DisplayName("it cannot be moved to another zone")
     void noMoving() {
-      assertThatThrownBy(() -> completed().moveTo(TaskZone.CRITICAL_NOW))
+      assertThatThrownBy(() -> completed().moveTo(TaskZone.CRITICAL_NOW, NOW))
           .isInstanceOf(TaskCompletedException.class);
     }
 
     @Test
     @DisplayName("it cannot be deferred")
     void noDeferring() {
-      assertThatThrownBy(() -> completed().deferUntil(TODAY.plusWeeks(2), TODAY))
+      assertThatThrownBy(() -> completed().deferUntil(TODAY.plusWeeks(2), TODAY, NOW))
           .isInstanceOf(TaskCompletedException.class);
     }
 
@@ -175,7 +183,7 @@ class TaskTest {
     @DisplayName(
         "it cannot be marked reviewed: the queue excludes it, but the endpoints take any id")
     void noReviewing() {
-      assertThatThrownBy(() -> completed().markReviewed(Instant.parse("2026-09-03T10:00:00Z")))
+      assertThatThrownBy(() -> completed().markReviewed(NOW))
           .isInstanceOf(TaskCompletedException.class);
     }
 
@@ -202,10 +210,10 @@ class TaskTest {
     @DisplayName("a refused deferral leaves the task where it was, hiding nothing")
     void refusedDeferralChangesNothing() {
       Task task = task();
-      task.moveTo(TaskZone.CRITICAL_NOW);
+      task.moveTo(TaskZone.CRITICAL_NOW, NOW);
       task.complete();
 
-      assertThatThrownBy(() -> task.deferUntil(TODAY.plusWeeks(2), TODAY))
+      assertThatThrownBy(() -> task.deferUntil(TODAY.plusWeeks(2), TODAY, NOW))
           .isInstanceOf(TaskCompletedException.class);
 
       assertThat(task.zone()).isEqualTo(TaskZone.CRITICAL_NOW);
@@ -221,7 +229,7 @@ class TaskTest {
       task.reopen();
 
       task.title("Renew passport urgently");
-      task.moveTo(TaskZone.CRITICAL_NOW);
+      task.moveTo(TaskZone.CRITICAL_NOW, NOW);
       task.labels(List.of("passport"));
 
       assertThat(task.title()).isEqualTo("Renew passport urgently");
@@ -238,7 +246,7 @@ class TaskTest {
     @DisplayName("a task can be promoted to Critical Now")
     void promote() {
       Task task = task();
-      task.moveTo(TaskZone.CRITICAL_NOW);
+      task.moveTo(TaskZone.CRITICAL_NOW, NOW);
       assertThat(task.zone()).isEqualTo(TaskZone.CRITICAL_NOW);
     }
 
@@ -246,8 +254,8 @@ class TaskTest {
     @DisplayName("promoting a deferred task clears the deferral")
     void promotingClearsDeferral() {
       Task task = task();
-      task.deferUntil(TODAY.plusWeeks(2), TODAY);
-      task.moveTo(TaskZone.CRITICAL_NOW);
+      task.deferUntil(TODAY.plusWeeks(2), TODAY, NOW);
+      task.moveTo(TaskZone.CRITICAL_NOW, NOW);
 
       assertThat(task.deferUntil()).isNull();
       assertThat(task.isVisibleOn(TODAY)).isTrue();
@@ -256,7 +264,18 @@ class TaskTest {
     @Test
     @DisplayName("a zone is required")
     void zoneRequired() {
-      assertThatThrownBy(() -> task().moveTo(null)).isInstanceOf(IllegalArgumentException.class);
+      assertThatThrownBy(() -> task().moveTo(null, NOW))
+          .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @DisplayName("deciding where a task belongs is a review, so it leaves the sweep")
+    void movingIsReviewing() {
+      Task task = task();
+      task.moveTo(TaskZone.CRITICAL_NOW, NOW);
+
+      assertThat(task.lastReviewedAt()).isEqualTo(NOW);
+      assertThat(task.isReviewDue(NOW)).isFalse();
     }
   }
 
@@ -268,7 +287,7 @@ class TaskTest {
     @DisplayName("deferring pushes the task over the horizon")
     void deferMovesOverTheHorizon() {
       Task task = task();
-      task.deferUntil(TODAY.plusDays(10), TODAY);
+      task.deferUntil(TODAY.plusDays(10), TODAY, NOW);
 
       assertThat(task.zone()).isEqualTo(TaskZone.OVER_THE_HORIZON);
       assertThat(task.deferUntil()).isEqualTo(TODAY.plusDays(10));
@@ -278,7 +297,7 @@ class TaskTest {
     @DisplayName("a deferred task is hidden until its date arrives")
     void hiddenUntilDue() {
       Task task = task();
-      task.deferUntil(TODAY.plusDays(3), TODAY);
+      task.deferUntil(TODAY.plusDays(3), TODAY, NOW);
 
       assertThat(task.isVisibleOn(TODAY)).isFalse();
       assertThat(task.isVisibleOn(TODAY.plusDays(2))).isFalse();
@@ -288,16 +307,25 @@ class TaskTest {
     @DisplayName("a deferred task resurfaces on the day it is due, not after")
     void resurfacesOnTheDay() {
       Task task = task();
-      task.deferUntil(TODAY.plusDays(3), TODAY);
+      task.deferUntil(TODAY.plusDays(3), TODAY, NOW);
 
       assertThat(task.isVisibleOn(TODAY.plusDays(3))).isTrue();
       assertThat(task.isVisibleOn(TODAY.plusDays(4))).isTrue();
     }
 
     @Test
+    @DisplayName("deciding when to see a task again is a review, so it leaves the sweep")
+    void deferringIsReviewing() {
+      Task task = task();
+      task.deferUntil(TODAY.plusDays(3), TODAY, NOW);
+
+      assertThat(task.lastReviewedAt()).isEqualTo(NOW);
+    }
+
+    @Test
     @DisplayName("deferral cannot be set in the past")
     void noBackdating() {
-      assertThatThrownBy(() -> task().deferUntil(TODAY.minusDays(1), TODAY))
+      assertThatThrownBy(() -> task().deferUntil(TODAY.minusDays(1), TODAY, NOW))
           .isInstanceOf(IllegalArgumentException.class);
     }
   }
