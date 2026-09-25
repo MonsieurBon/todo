@@ -23,6 +23,9 @@ describe('a task row', () => {
 
   let edit: ReturnType<typeof vi.fn>;
   let setLabels: ReturnType<typeof vi.fn>;
+  let complete: ReturnType<typeof vi.fn>;
+  let moveZone: ReturnType<typeof vi.fn>;
+  let remove: ReturnType<typeof vi.fn>;
   let open: ReturnType<typeof vi.fn>;
   let closedWith: TaskEdit;
 
@@ -42,6 +45,9 @@ describe('a task row', () => {
   beforeEach(() => {
     edit = vi.fn(async () => 'done');
     setLabels = vi.fn(async () => 'done');
+    complete = vi.fn(async () => 'done');
+    moveZone = vi.fn(async () => 'done');
+    remove = vi.fn(async () => 'done');
     closedWith = { title: 'Fix it', notes: '', dueDate: '2026-10-01', labels: ['diy'] };
     open = vi.fn(() => ({ afterClosed: () => of(closedWith) }));
     TestBed.configureTestingModule({
@@ -49,7 +55,15 @@ describe('a task row', () => {
         { provide: MatDialog, useValue: { open } },
         {
           provide: BoardStore,
-          useValue: { online: signal(true), lists: signal([]), edit, setLabels },
+          useValue: {
+            online: signal(true),
+            lists: signal([]),
+            edit,
+            setLabels,
+            complete,
+            moveZone,
+            remove,
+          },
         },
       ],
     });
@@ -61,6 +75,44 @@ describe('a task row', () => {
     fixture.nativeElement.querySelector('button.body').click();
 
     expect(open).toHaveBeenCalledWith(TaskDetail, { data: task });
+  });
+
+  const button = (host: HTMLElement, label: string): HTMLButtonElement =>
+    host.querySelector(`button[aria-label="${label}"]`)!;
+
+  /** The review board's left edge selects, so on the board it must not look like a tick box. */
+  it('completes from a button after the title, not from one before it', async () => {
+    const fixture = await rendered();
+    const host: HTMLElement = fixture.nativeElement;
+    const buttons = [...host.querySelectorAll('button')];
+
+    const completing = button(host, 'Complete Fix the tile');
+    expect(buttons.indexOf(completing)).toBeGreaterThan(
+      buttons.indexOf(host.querySelector('button.body')!),
+    );
+
+    completing.click();
+    expect(complete).toHaveBeenCalledWith(task);
+  });
+
+  it("offers the menu's actions as buttons, for a row with room to show them", async () => {
+    const fixture = await rendered();
+    const host: HTMLElement = fixture.nativeElement;
+
+    button(host, 'Move Fix the tile to Opportunity Now').click();
+    expect(moveZone).toHaveBeenCalledWith(task, 'OPPORTUNITY_NOW');
+
+    button(host, 'Delete Fix the tile').click();
+    expect(remove).toHaveBeenCalledWith(task);
+
+    expect(button(host, 'Edit Fix the tile')).toBeTruthy();
+    expect(button(host, 'Defer Fix the tile')).toBeTruthy();
+  });
+
+  it("greys out a step past the zone's edge rather than dropping it, so buttons line up", async () => {
+    const fixture = await rendered();
+
+    expect(button(fixture.nativeElement, 'Move Fix the tile up').disabled).toBe(true);
   });
 
   it('relabels once the edit itself has landed', async () => {

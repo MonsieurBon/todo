@@ -5,7 +5,6 @@ import { DomSanitizer } from '@angular/platform-browser';
 /** Inlined: Material's icon font is a web font, and a late icon renders as its own name. */
 const PATHS: Record<string, string> = {
   check: '<polyline points="4 12.5 9.5 18 20 6.5"/>',
-  box: '<rect x="4.5" y="4.5" width="15" height="15" rx="4"/>',
   undo: '<path d="M4 9h10a5 5 0 0 1 0 10h-6"/><polyline points="8 4 3.5 9 8 14"/>',
   up: '<line x1="12" y1="20" x2="12" y2="5"/><polyline points="5.5 11.5 12 5 18.5 11.5"/>',
   down: '<line x1="12" y1="4" x2="12" y2="19"/><polyline points="5.5 12.5 12 19 18.5 12.5"/>',

@@ -3,6 +3,7 @@ import { MatIconButton } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
+import { MatTooltip } from '@angular/material/tooltip';
 import { ZONE_NAMES, Zone, zoneAfter } from '../api/model';
 import { BoardStore, BoardTask } from './board-store';
 import { TaskChips } from './task-chips';
@@ -15,7 +16,7 @@ const isoDate = (inDays: number) => new Date(Date.now() + inDays * DAY).toISOStr
 
 @Component({
   selector: 'app-task-row',
-  imports: [MatIcon, MatIconButton, MatMenu, MatMenuItem, MatMenuTrigger, TaskChips],
+  imports: [MatIcon, MatIconButton, MatMenu, MatMenuItem, MatMenuTrigger, MatTooltip, TaskChips],
   templateUrl: './task-row.html',
   styleUrl: './task-row.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -34,6 +35,14 @@ export class TaskRow {
   protected readonly promoteTo = computed(() => zoneAfter(this.task().zone, -1));
   protected readonly demoteTo = computed(() => zoneAfter(this.task().zone, 1));
   protected readonly zoneName = (zone: Zone) => ZONE_NAMES[zone];
+
+  protected readonly promoteLabel = computed(() => this.moveLabel(this.promoteTo(), 'up'));
+  protected readonly demoteLabel = computed(() => this.moveLabel(this.demoteTo(), 'down'));
+
+  private moveLabel(zone: Zone | null, direction: string): string {
+    const title = this.task().title;
+    return zone ? `Move ${title} to ${ZONE_NAMES[zone]}` : `Move ${title} ${direction}`;
+  }
 
   protected details(): void {
     this.dialog.open(TaskDetail, { data: this.task() });

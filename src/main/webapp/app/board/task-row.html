@@ -1,14 +1,4 @@
 <div class="task" [class.pending]="pending()">
-  <button
-    matIconButton
-    type="button"
-    class="tick"
-    [attr.aria-label]="'Complete ' + task().title"
-    (click)="complete()"
-  >
-    <mat-icon svgIcon="box" />
-  </button>
-
   <!-- Named by its own content, so a screen reader gets the topics and the due date too; the
        hidden word is what says the name is a thing to open. -->
   <button type="button" class="grow body" (click)="details()">
@@ -20,6 +10,74 @@
   <button
     matIconButton
     type="button"
+    [attr.aria-label]="'Complete ' + task().title"
+    matTooltip="Complete"
+    (click)="complete()"
+  >
+    <mat-icon svgIcon="check" />
+  </button>
+
+  @if (!pending()) {
+    <!-- The menu's actions, for a row with room to show them; the stylesheet shows one or the
+         other. -->
+    <span class="unfolded">
+      <button
+        matIconButton
+        type="button"
+        [disabled]="!online() || !promoteTo()"
+        [attr.aria-label]="promoteLabel()"
+        [matTooltip]="promoteTo() ? 'Move to ' + zoneName(promoteTo()!) : ''"
+        (click)="move(promoteTo())"
+      >
+        <mat-icon svgIcon="up" />
+      </button>
+      <button
+        matIconButton
+        type="button"
+        [disabled]="!online() || !demoteTo()"
+        [attr.aria-label]="demoteLabel()"
+        [matTooltip]="demoteTo() ? 'Move to ' + zoneName(demoteTo()!) : ''"
+        (click)="move(demoteTo())"
+      >
+        <mat-icon svgIcon="down" />
+      </button>
+      <button
+        matIconButton
+        type="button"
+        [disabled]="!online()"
+        [attr.aria-label]="'Defer ' + task().title"
+        matTooltip="Defer"
+        [matMenuTriggerFor]="deferMenu"
+      >
+        <mat-icon svgIcon="later" />
+      </button>
+      <button
+        matIconButton
+        type="button"
+        [disabled]="!online()"
+        [attr.aria-label]="'Edit ' + task().title"
+        matTooltip="Edit"
+        (click)="edit()"
+      >
+        <mat-icon svgIcon="edit" />
+      </button>
+      <button
+        matIconButton
+        type="button"
+        [disabled]="!online()"
+        [attr.aria-label]="'Delete ' + task().title"
+        matTooltip="Delete"
+        (click)="remove()"
+      >
+        <mat-icon svgIcon="trash" />
+      </button>
+    </span>
+  }
+
+  <button
+    matIconButton
+    type="button"
+    [class.folded]="!pending()"
     [attr.aria-label]="'Actions for ' + task().title"
     [matMenuTriggerFor]="menu"
   >
