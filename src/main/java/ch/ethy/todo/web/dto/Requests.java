@@ -6,6 +6,7 @@ import ch.ethy.todo.domain.TaskZone;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
@@ -55,4 +56,11 @@ public final class Requests {
   public record Defer(@NotNull @FutureOrPresent LocalDate until) {}
 
   public record SetLabels(@NotNull List<@Size(max = Task.MAX_LABEL_LENGTH) String> labels) {}
+
+  public record Selection(@NotEmpty List<@NotNull Long> taskIds) {}
+
+  public record MoveSelection(@NotEmpty List<@NotNull Long> taskIds, @NotNull TaskZone zone) {}
+
+  public record DeferSelection(
+      @NotEmpty List<@NotNull Long> taskIds, @NotNull @FutureOrPresent LocalDate until) {}
 }

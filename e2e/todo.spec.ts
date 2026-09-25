@@ -90,13 +90,10 @@ test('completing a task takes it off the board', async () => {
   await expect(zoneSection('Critical Now').getByText('5 / 5')).toBeVisible();
 });
 
-test('the review sweep offers what is due and never Critical Now', async () => {
+test('a task just filed is not asked about again: choosing its zone was the review', async () => {
   await capture(`Soon ${run}`, { zone: 'Opportunity Now', labels: run });
   await page.goto('/review');
 
-  // Everything in Critical Now is excluded by cadence, so this run's only entry is the new one.
-  await expect(page.getByRole('heading', { name: `Soon ${run}` })).toBeVisible();
-  await page.getByRole('button', { name: 'Leave it' }).click();
   await expect(page.getByText('Nothing is due for review.')).toBeVisible();
 });
 

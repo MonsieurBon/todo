@@ -1,65 +1,111 @@
-<div class="page review">
-  @if (loading()) {
-    <mat-progress-bar mode="indeterminate" />
-  } @else if (current(); as task) {
-    <mat-progress-bar mode="determinate" [value]="progress()" />
-    <p class="muted counter">{{ position() }} of {{ total() }}</p>
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
 
-    @if (!online()) {
-      <p class="offline row">
-        <mat-icon svgIcon="offline" />
-        <span
-          >A sweep is a series of decisions about where things belong, and those need a connection.
-          Come back when there is one.</span
-        >
-      </p>
-    }
+<div class="page" [class.selecting]="selecting()">
+  @if (!online()) {
+    <p class="offline row">
+      <mat-icon svgIcon="offline" />
+      <span
+        >A sweep is a series of decisions about where things belong, and those need a connection.
+        Come back when there is one.</span
+      >
+    </p>
+  }
 
-    <article class="card">
-      <h1>{{ task.title }}</h1>
-      <p class="muted zone">{{ zoneName(task.zone) }}</p>
-      @if (task.notes; as notes) {
-        <app-task-notes class="notes" [notes]="notes" />
-      }
-      <app-task-chips class="meta" [task]="task" />
-    </article>
-
-    <div class="decisions">
-      <button matButton="filled" type="button" [disabled]="!online()" (click)="complete()">
-        <mat-icon svgIcon="check" />
-        Done
-      </button>
-      @if (promoteTo(); as zone) {
-        <button matButton="tonal" type="button" [disabled]="!online()" (click)="move(zone)">
-          <mat-icon svgIcon="up" />
-          {{ zoneName(zone) }}
-        </button>
-      }
-      @if (demoteTo(); as zone) {
-        <button matButton="tonal" type="button" [disabled]="!online()" (click)="move(zone)">
-          <mat-icon svgIcon="down" />
-          {{ zoneName(zone) }}
-        </button>
-      }
-      <button matButton="outlined" type="button" [disabled]="!online()" (click)="defer(7)">
-        <mat-icon svgIcon="later" />
-        Not for a week
-      </button>
-      <button matButton="outlined" type="button" [disabled]="!online()" (click)="keep()">
-        Leave it
-      </button>
-      <button matButton type="button" [disabled]="!online()" (click)="remove()">
-        <mat-icon svgIcon="trash" />
-        Delete
-      </button>
-    </div>
-  } @else {
+  @if (!loading() && remaining() === 0) {
     <div class="empty">
       <p>Nothing is due for review.</p>
       <p class="muted">
-        Opportunity Now is swept daily and Over the Horizon weekly. Critical Now is never swept — it
-        is worked, not reviewed.
+        Critical Now is swept hourly, Opportunity Now daily and Over the Horizon weekly.
       </p>
     </div>
+  } @else if (!loading()) {
+    <div class="progress">
+      <span class="muted">{{ remaining() }} left to review</span>
+      <mat-progress-bar mode="determinate" [value]="progress()" />
+    </div>
+
+    @for (section of zones(); track section.zone) {
+      <section class="zone" [class.over]="section.overSoftCap">
+        <header class="row">
+          <mat-checkbox
+            [checked]="selectionIn(section.zone) === 'all'"
+            [indeterminate]="selectionIn(section.zone) === 'some'"
+            [disabled]="section.tasks.length === 0"
+            [aria-label]="'Select everything due in ' + zoneName(section.zone)"
+            (change)="selectZone(section.zone, $event.checked)"
+          />
+          <h2 class="grow">{{ zoneName(section.zone) }}</h2>
+          <span class="load" [class.over]="section.overSoftCap">
+            {{ section.open }}
+            @if (section.softCap !== null) {
+              <span> / {{ section.softCap }}</span>
+            }
+          </span>
+        </header>
+
+        @if (section.overSoftCap) {
+          <p class="warning">
+            Over the {{ section.softCap }} this zone is meant to hold. Nothing is blocked — but
+            something here belongs further down.
+          </p>
+        }
+
+        @for (task of section.tasks; track task.id) {
+          <app-review-row [task]="task" />
+        } @empty {
+          <p class="muted meaning">Nothing due.</p>
+        }
+      </section>
+    }
   }
 </div>
+
+@if (selecting()) {
+  <div class="bulk" role="region" aria-label="Selection">
+    <div class="row">
+      <button matIconButton type="button" aria-label="Clear selection" (click)="clearSelection()">
+        <mat-icon svgIcon="close" />
+      </button>
+      <span class="count">{{ selectedCount() }} selected</span>
+    </div>
+    <div class="actions">
+      <button
+        matButton="filled"
+        type="button"
+        class="reviewed"
+        [disabled]="!online()"
+        (click)="reviewedAll()"
+      >
+        <mat-icon svgIcon="seen" />
+        Reviewed
+      </button>
+      <button matButton="tonal" type="button" [disabled]="!online()" [matMenuTriggerFor]="moveMenu">
+        Move to…
+      </button>
+      <button
+        matButton="tonal"
+        type="button"
+        [disabled]="!online()"
+        [matMenuTriggerFor]="deferMenu"
+      >
+        <mat-icon svgIcon="later" />
+        Defer…
+      </button>
+    </div>
+  </div>
+
+  <mat-menu #moveMenu="matMenu">
+    <div class="hint muted">Move the selection to</div>
+    @for (zone of allZones; track zone) {
+      <button mat-menu-item type="button" (click)="moveAll(zone)">{{ zoneName(zone) }}</button>
+    }
+  </mat-menu>
+
+  <mat-menu #deferMenu="matMenu">
+    <button mat-menu-item type="button" (click)="deferAll(1)">Tomorrow</button>
+    <button mat-menu-item type="button" (click)="deferAll(7)">Next week</button>
+    <button mat-menu-item type="button" (click)="deferAll(30)">In a month</button>
+  </mat-menu>
+}

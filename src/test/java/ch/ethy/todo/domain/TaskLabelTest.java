@@ -11,7 +11,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 class TaskLabelTest {
 
   private static Task task() {
-    return new Task("Fix the roof", TaskZone.OPPORTUNITY_NOW);
+    return new Task("Fix the roof", TaskZone.OPPORTUNITY_NOW, java.time.Instant.EPOCH);
   }
 
   @Test

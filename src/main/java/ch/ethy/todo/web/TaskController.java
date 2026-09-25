@@ -155,6 +155,29 @@ public class TaskController {
     return Responses.TaskView.of(tasks.markReviewed(id, currentUser.current()));
   }
 
+  @PostMapping("/tasks/reviewed")
+  public List<Responses.TaskView> markTasksReviewed(
+      @Valid @RequestBody Requests.Selection request) {
+    return tasks.markAllReviewed(request.taskIds(), currentUser.current()).stream()
+        .map(Responses.TaskView::of)
+        .toList();
+  }
+
+  @PostMapping("/tasks/zone")
+  public List<Responses.TaskView> moveTasksToZone(
+      @Valid @RequestBody Requests.MoveSelection request) {
+    return tasks.moveAllTo(request.taskIds(), currentUser.current(), request.zone()).stream()
+        .map(Responses.TaskView::of)
+        .toList();
+  }
+
+  @PostMapping("/tasks/defer")
+  public List<Responses.TaskView> deferTasks(@Valid @RequestBody Requests.DeferSelection request) {
+    return tasks.deferAll(request.taskIds(), currentUser.current(), request.until()).stream()
+        .map(Responses.TaskView::of)
+        .toList();
+  }
+
   @PutMapping("/tasks/{id}/labels")
   public Responses.TaskView setTaskLabels(
       @PathVariable Long id, @Valid @RequestBody Requests.SetLabels request) {

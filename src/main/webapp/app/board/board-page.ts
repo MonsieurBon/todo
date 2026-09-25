@@ -50,6 +50,11 @@ export class BoardPage {
 
   protected readonly empty = computed(() => this.zones().every((zone) => zone.tasks.length === 0));
 
+  /** What the device holds when the connection goes is all the board has until it is back. */
+  constructor() {
+    void this.board.sync();
+  }
+
   protected collapsed(section: ZoneSection): boolean {
     return section.zone === 'OVER_THE_HORIZON' && !this.horizonOpen();
   }

@@ -56,21 +56,21 @@ class TaskZoneTest {
   class ReviewCadence {
 
     @Test
+    @DisplayName("Critical Now is reviewed hourly")
+    void criticalNowHourly() {
+      assertThat(TaskZone.CRITICAL_NOW.reviewInterval()).isEqualTo(Duration.ofHours(1));
+    }
+
+    @Test
     @DisplayName("Opportunity Now is reviewed daily")
     void opportunityNowDaily() {
-      assertThat(TaskZone.OPPORTUNITY_NOW.reviewInterval()).contains(Duration.ofDays(1));
+      assertThat(TaskZone.OPPORTUNITY_NOW.reviewInterval()).isEqualTo(Duration.ofDays(1));
     }
 
     @Test
     @DisplayName("Over The Horizon is reviewed weekly")
     void overTheHorizonWeekly() {
-      assertThat(TaskZone.OVER_THE_HORIZON.reviewInterval()).contains(Duration.ofDays(7));
-    }
-
-    @Test
-    @DisplayName("Critical Now is worked continuously, not swept")
-    void criticalNowHasNoSweep() {
-      assertThat(TaskZone.CRITICAL_NOW.reviewInterval()).isEmpty();
+      assertThat(TaskZone.OVER_THE_HORIZON.reviewInterval()).isEqualTo(Duration.ofDays(7));
     }
   }
 
@@ -83,7 +83,7 @@ class TaskZoneTest {
     @DisplayName("every zone answers both questions without throwing")
     void totality(TaskZone zone) {
       Optional<Integer> cap = zone.softCap();
-      Optional<Duration> interval = zone.reviewInterval();
+      Duration interval = zone.reviewInterval();
       assertThat(cap).isNotNull();
       assertThat(interval).isNotNull();
     }

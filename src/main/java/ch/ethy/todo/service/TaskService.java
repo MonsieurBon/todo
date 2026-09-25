@@ -7,10 +7,13 @@ import ch.ethy.todo.domain.User;
 import ch.ethy.todo.repository.TaskRepository;
 import java.text.Collator;
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +43,30 @@ public class TaskService {
    */
   private Task resolve(Long id, User user) {
     return tasks.findAccessible(id, user).orElseThrow(() -> new NotFoundException("No task " + id));
+  }
+
+  /**
+   * The whole selection or none of it: an id out of reach refuses the lot with the 404 it would
+   * earn alone, and the transaction undoes whatever was changed before a refusal.
+   */
+  private List<Task> resolveAll(Collection<Long> ids, User user) {
+    if (ids == null || ids.isEmpty()) {
+      throw new IllegalArgumentException("Name at least one task");
+    }
+    Map<Long, Task> found =
+        tasks.findAllAccessible(ids, user).stream()
+            .collect(Collectors.toMap(Task::id, Function.identity()));
+    return ids.stream()
+        .distinct()
+        .map(
+            id -> {
+              Task task = found.get(id);
+              if (task == null) {
+                throw new NotFoundException("No task " + id);
+              }
+              return task;
+            })
+        .toList();
   }
 
   @Transactional(readOnly = true)
@@ -76,7 +103,7 @@ public class TaskService {
     return tasks.findLabelsVisibleTo(user).stream().sorted(alphabetical).toList();
   }
 
-  public Task setLabels(Long id, User user, java.util.Collection<String> labels) {
+  public Task setLabels(Long id, User user, Collection<String> labels) {
     Task task = resolve(id, user);
     task.labels(labels);
     return task;
@@ -98,7 +125,7 @@ public class TaskService {
         return existing.get();
       }
     }
-    Task task = new Task(draft.title(), draft.zone());
+    Task task = new Task(draft.title(), draft.zone(), clock.instant());
     task.clientRef(clientRef);
     task.notes(draft.notes());
     task.dueDate(draft.dueDate());
@@ -137,14 +164,29 @@ public class TaskService {
 
   public Task moveTo(Long id, User user, TaskZone zone) {
     Task task = resolve(id, user);
-    task.moveTo(zone);
+    task.moveTo(zone, clock.instant());
     return task;
   }
 
   public Task defer(Long id, User user, LocalDate until) {
     Task task = resolve(id, user);
-    task.deferUntil(until, LocalDate.now(clock));
+    task.deferUntil(until, LocalDate.now(clock), clock.instant());
     return task;
+  }
+
+  public List<Task> moveAllTo(Collection<Long> ids, User user, TaskZone zone) {
+    List<Task> selection = resolveAll(ids, user);
+    Instant now = clock.instant();
+    selection.forEach(task -> task.moveTo(zone, now));
+    return selection;
+  }
+
+  public List<Task> deferAll(Collection<Long> ids, User user, LocalDate until) {
+    List<Task> selection = resolveAll(ids, user);
+    Instant now = clock.instant();
+    LocalDate today = LocalDate.now(clock);
+    selection.forEach(task -> task.deferUntil(until, today, now));
+    return selection;
   }
 
   public void delete(Long id, User user) {
@@ -157,6 +199,13 @@ public class TaskService {
     Task task = resolve(id, user);
     task.markReviewed(clock.instant());
     return task;
+  }
+
+  public List<Task> markAllReviewed(Collection<Long> ids, User user) {
+    List<Task> selection = resolveAll(ids, user);
+    Instant now = clock.instant();
+    selection.forEach(task -> task.markReviewed(now));
+    return selection;
   }
 
   @Transactional(readOnly = true)

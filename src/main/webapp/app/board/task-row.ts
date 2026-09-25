@@ -3,19 +3,17 @@ import { MatIconButton } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
-import { ZONE_NAMES, Zone, zoneAfter } from '../api/model';
+import { MatTooltip } from '@angular/material/tooltip';
+import { ZONE_NAMES, Zone, moveLabel, zoneAfter } from '../api/model';
+import { isoDateIn } from '../core/dates';
 import { BoardStore, BoardTask } from './board-store';
 import { TaskChips } from './task-chips';
 import { TaskDetail } from './task-detail';
 import { TaskEdit, TaskEditor } from './task-editor';
 
-const DAY = 24 * 60 * 60 * 1000;
-
-const isoDate = (inDays: number) => new Date(Date.now() + inDays * DAY).toISOString().slice(0, 10);
-
 @Component({
   selector: 'app-task-row',
-  imports: [MatIcon, MatIconButton, MatMenu, MatMenuItem, MatMenuTrigger, TaskChips],
+  imports: [MatIcon, MatIconButton, MatMenu, MatMenuItem, MatMenuTrigger, MatTooltip, TaskChips],
   templateUrl: './task-row.html',
   styleUrl: './task-row.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -35,6 +33,13 @@ export class TaskRow {
   protected readonly demoteTo = computed(() => zoneAfter(this.task().zone, 1));
   protected readonly zoneName = (zone: Zone) => ZONE_NAMES[zone];
 
+  protected readonly promoteLabel = computed(() =>
+    moveLabel(this.task().title, this.promoteTo(), 'up'),
+  );
+  protected readonly demoteLabel = computed(() =>
+    moveLabel(this.task().title, this.demoteTo(), 'down'),
+  );
+
   protected details(): void {
     this.dialog.open(TaskDetail, { data: this.task() });
   }
@@ -50,7 +55,7 @@ export class TaskRow {
   }
 
   protected deferBy(days: number): void {
-    void this.board.defer(this.task(), isoDate(days));
+    void this.board.defer(this.task(), isoDateIn(days));
   }
 
   protected remove(): void {

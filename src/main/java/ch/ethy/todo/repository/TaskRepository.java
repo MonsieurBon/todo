@@ -83,6 +83,16 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
   java.util.Optional<Task> findAccessible(
       @Param("id") Long id, @Param("user") ch.ethy.todo.domain.User user);
 
+  @Query(
+      """
+      select distinct t from Task t
+      left join t.taskList.members m
+      where t.id in :ids and (t.taskList.owner = :user or m = :user)
+      """)
+  @EntityGraph(attributePaths = {"labels", "taskList"})
+  List<Task> findAllAccessible(
+      @Param("ids") java.util.Collection<Long> ids, @Param("user") ch.ethy.todo.domain.User user);
+
   /** Scoped to the list, so a reference guessed by someone else resolves to nothing. */
   @EntityGraph(attributePaths = {"labels", "taskList"})
   java.util.Optional<Task> findByTaskListAndClientRef(TaskList list, String clientRef);

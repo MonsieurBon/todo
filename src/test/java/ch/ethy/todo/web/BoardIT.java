@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import ch.ethy.todo.IntegrationTest;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -303,7 +304,7 @@ class BoardIT extends IntegrationTest {
   }
 
   @Test
-  @DisplayName("the review sweep spans every list, and never offers Critical Now")
+  @DisplayName("the review sweep spans every list and every zone")
   void reviewSpansLists() throws Exception {
     String me = someone();
     Long personal = createList(me, "Personal");
@@ -311,10 +312,14 @@ class BoardIT extends IntegrationTest {
     addTask(me, personal, "Soon, personal", "OPPORTUNITY_NOW", List.of());
     addTask(me, family, "Someday, family", "OVER_THE_HORIZON", List.of());
     addTask(me, personal, "Today", "CRITICAL_NOW", List.of());
+    assertThat(perform(get("/api/review").with(as(me))))
+        .as("filing a task in a zone is a review, so nothing is due yet")
+        .isEmpty();
+
+    clock.advance(Duration.ofDays(7));
 
     assertThat(titles(perform(get("/api/review").with(as(me)))))
-        .as("Critical Now is worked continuously, so it is never swept")
-        .containsExactlyInAnyOrder("Soon, personal", "Someday, family");
+        .containsExactlyInAnyOrder("Soon, personal", "Someday, family", "Today");
   }
 
   @Test
@@ -324,6 +329,7 @@ class BoardIT extends IntegrationTest {
     Long list = createList(me, "Everything");
     addTask(me, list, "Roof", "OPPORTUNITY_NOW", List.of("house"));
     addTask(me, list, "Taxes", "OPPORTUNITY_NOW", List.of("admin"));
+    clock.advance(Duration.ofDays(1));
 
     assertThat(titles(perform(get("/api/review").param("label", "house").with(as(me)))))
         .containsExactly("Roof");
@@ -336,6 +342,8 @@ class BoardIT extends IntegrationTest {
     String bob = someone();
     Long hers = createList(alice, "Alice's");
     addTask(alice, hers, "Alice's private task", "OPPORTUNITY_NOW", List.of("house"));
+    clock.advance(Duration.ofDays(1));
+    assertThat(perform(get("/api/review").with(as(alice)))).hasSize(1);
 
     assertThat(perform(get("/api/review").with(as(bob)))).isEmpty();
     assertThat(perform(get("/api/review?list=" + hers).with(as(bob)))).isEmpty();

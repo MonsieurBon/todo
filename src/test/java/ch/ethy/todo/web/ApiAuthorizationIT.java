@@ -146,6 +146,52 @@ class ApiAuthorizationIT extends IntegrationTest {
     }
 
     @Test
+    @DisplayName(
+        "Bob cannot slip Alice's task in among his own, and the refusal changes none of them")
+    void cannotHideAmongOwn() throws Exception {
+      MvcResult own =
+          mvc.perform(
+                  withBody(
+                      post("/api/tasks/capture").with(as(BOB, API)),
+                      java.util.Map.of("title", "Bob's task", "zone", "OPPORTUNITY_NOW")))
+              .andReturn();
+      Long bobTask = json.readTree(own.getResponse().getContentAsString()).get("id").asLong();
+      String alicesStamp = reviewedAt(ALICE, aliceTask);
+      String bobsStamp = reviewedAt(BOB, bobTask);
+      List<Long> mixed = List.of(bobTask, aliceTask);
+      clock.advance(java.time.Duration.ofHours(1));
+
+      for (MockHttpServletRequestBuilder request :
+          List.of(
+              withBody(
+                  post("/api/tasks/reviewed").with(as(BOB, API)),
+                  java.util.Map.of("taskIds", mixed)),
+              withBody(
+                  post("/api/tasks/zone").with(as(BOB, API)),
+                  java.util.Map.of("taskIds", mixed, "zone", "OVER_THE_HORIZON")),
+              withBody(
+                  post("/api/tasks/defer").with(as(BOB, API)),
+                  java.util.Map.of("taskIds", mixed, "until", "2030-01-01")))) {
+        MvcResult r = mvc.perform(request).andReturn();
+        assertThat(r.getResponse().getStatus()).isEqualTo(404);
+        assertThat(r.getResponse().getContentAsString()).doesNotContain("Alice's private task");
+      }
+
+      assertThat(reviewedAt(ALICE, aliceTask)).isEqualTo(alicesStamp);
+      assertThat(reviewedAt(BOB, bobTask)).isEqualTo(bobsStamp);
+    }
+
+    private String reviewedAt(String who, Long task) throws Exception {
+      return json.readTree(
+              mvc.perform(get("/api/tasks/" + task).with(as(who, API)))
+                  .andReturn()
+                  .getResponse()
+                  .getContentAsString())
+          .get("lastReviewedAt")
+          .asString();
+    }
+
+    @Test
     @DisplayName("Bob cannot rename, delete or share Alice's list")
     void cannotAdministerList() throws Exception {
       for (MockHttpServletRequestBuilder request :
@@ -304,6 +350,19 @@ class ApiAuthorizationIT extends IntegrationTest {
               .andReturn();
       assertThat(r.getResponse().getStatus()).isEqualTo(400);
       assertThat(r.getResponse().getContentAsString()).contains("title");
+    }
+
+    @Test
+    @DisplayName("a change to several tasks has to name at least one")
+    void bulkNeedsATask() throws Exception {
+      MvcResult r =
+          mvc.perform(
+                  withBody(
+                      post("/api/tasks/reviewed").with(as(ALICE, API)),
+                      java.util.Map.of("taskIds", List.of())))
+              .andReturn();
+      assertThat(r.getResponse().getStatus()).isEqualTo(400);
+      assertThat(r.getResponse().getContentAsString()).contains("taskIds");
     }
 
     @Test

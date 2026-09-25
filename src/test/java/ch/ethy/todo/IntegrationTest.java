@@ -1,8 +1,14 @@
 package ch.ethy.todo;
 
 import java.sql.SQLException;
+import org.junit.jupiter.api.AfterEach;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -18,6 +24,7 @@ import org.testcontainers.containers.MySQLContainer;
  */
 @SpringBootTest
 @AutoConfigureMockMvc
+@Import(IntegrationTest.Clocks.class)
 public abstract class IntegrationTest {
 
   @SuppressWarnings("resource")
@@ -53,4 +60,21 @@ public abstract class IntegrationTest {
   }
 
   @MockitoBean protected JwtDecoder jwtDecoder;
+
+  @Autowired protected TestClock clock;
+
+  /** The context is shared, so time a test moved on must not carry into the next one. */
+  @AfterEach
+  void backToNow() {
+    clock.reset();
+  }
+
+  @TestConfiguration
+  static class Clocks {
+    @Bean
+    @Primary
+    TestClock testClock() {
+      return new TestClock();
+    }
+  }
 }

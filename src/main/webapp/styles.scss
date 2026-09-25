@@ -80,6 +80,12 @@ body {
   min-width: 0;
 }
 
+.hint {
+  padding: 0.5rem 1rem;
+  max-width: 16rem;
+  font: var(--mat-sys-label-medium);
+}
+
 .truncate {
   overflow: hidden;
   text-overflow: ellipsis;

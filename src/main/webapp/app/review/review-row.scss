@@ -1,0 +1,9 @@
+@use '../board/row';
+
+.select {
+  flex: 0 0 auto;
+}
+
+.task.selected {
+  background: var(--mat-sys-secondary-container);
+}
