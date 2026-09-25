@@ -66,10 +66,24 @@ export const MAX_TITLE_LENGTH = 255;
 export const MAX_NOTES_LENGTH = 10_000;
 export const MAX_LABEL_LENGTH = 64;
 
+/**
+ * The one rewriting a topic gets, matching the entity: a composed and a combining accent are the
+ * same text, and would otherwise be two topics that look identical.
+ */
+export function asTopic(label: string): string {
+  return label.normalize('NFC');
+}
+
+/**
+ * The one place typed text becomes topics, so the one place they are normalised. Before the rule
+ * that follows, not after: a combining accent is a mark rather than a letter, so an unnormalised
+ * "Cafe\u0301" would be refused for holding something that is not a letter when composing it first
+ * makes it one. The entity does the same, in the same order.
+ */
 export function parseLabels(input: string): string[] {
   return input
     .split(',')
-    .map((label) => label.trim())
+    .map((label) => asTopic(label.trim()))
     .filter(Boolean);
 }
 
@@ -95,4 +109,18 @@ export function cutTo(max: number, value: string): string {
 
 export function tooLongLabel(input: string): string | null {
   return parseLabels(input).find((label) => label.length > MAX_LABEL_LENGTH) ?? null;
+}
+
+/**
+ * What a topic may be spelled with, held here as well as on the entity for the same reason as the
+ * lengths: the outbox drops a refusal as settled, so a topic the server would refuse is a task
+ * reported saved and never seen again. `model.spec.ts` pins it against the entity's own rule.
+ *
+ * Letters that stand on their own — a script writing one as a base plus a combining mark is
+ * refused, deliberately, and only for a topic. A title and notes take any language.
+ */
+const ALLOWED_LABEL = /^[\p{L}\p{Nd}-]+$/u;
+
+export function unusableLabel(input: string): string | null {
+  return parseLabels(input).find((label) => !ALLOWED_LABEL.test(label)) ?? null;
 }

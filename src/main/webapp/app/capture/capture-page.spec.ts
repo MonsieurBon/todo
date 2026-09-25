@@ -29,8 +29,12 @@ describe('the capture form', () => {
     fixture.detectChanges();
   };
 
+  // By its text, not the first button on the page: a confirmed topic puts a chip's remove button
+  // ahead of it in the DOM, and the failure would read as the save button being wrongly disabled.
   const button = (fixture: ComponentFixture<CapturePage>): HTMLButtonElement =>
-    fixture.nativeElement.querySelector('button');
+    Array.from(fixture.nativeElement.querySelectorAll('button')).find(
+      (candidate) => (candidate as HTMLElement).textContent!.trim() === 'Add to the list',
+    ) as HTMLButtonElement;
 
   const shareOf = (params: Record<string, string> | string) => ({
     useValue: {
@@ -48,6 +52,7 @@ describe('the capture form', () => {
           provide: BoardStore,
           useValue: {
             lists: signal([{ id: 1, name: 'Inbox', inbox: true, owned: true }]),
+            labels: signal(['house', 'work']),
             online: signal(true),
             zones: signal([]),
             capture: captured,

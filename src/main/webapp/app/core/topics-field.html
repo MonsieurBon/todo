@@ -1,0 +1,37 @@
+<mat-form-field>
+  <mat-label>Topics</mat-label>
+  <mat-chip-grid #grid>
+    @for (topic of topics(); track topic) {
+      <mat-chip-row (removed)="remove(topic)">
+        {{ topic }}
+        <button matChipRemove type="button" [attr.aria-label]="'Remove ' + topic">
+          <mat-icon svgIcon="close" />
+        </button>
+      </mat-chip-row>
+    }
+  </mat-chip-grid>
+  <input
+    #pendingInput
+    name="labels"
+    [matChipInputFor]="grid"
+    [matChipInputSeparatorKeyCodes]="separators"
+    [matAutocomplete]="existing"
+    matAutocompletePosition="above"
+    (input)="typed(pendingInput.value)"
+    (matChipInputTokenEnd)="commit($event.value)"
+  />
+  <mat-autocomplete #existing (optionSelected)="pick($event.option.value)">
+    @for (topic of suggestions(); track topic) {
+      <mat-option [value]="topic">{{ topic }}</mat-option>
+    }
+  </mat-autocomplete>
+  @if (tooLong(); as long) {
+    <mat-hint class="too-long">
+      "{{ long }}" is longer than {{ maxLabelLength }} characters.
+    </mat-hint>
+  } @else if (unusable(); as wrong) {
+    <mat-hint class="too-long">
+      "{{ wrong }}" — a topic holds only letters, digits and hyphens.
+    </mat-hint>
+  }
+</mat-form-field>

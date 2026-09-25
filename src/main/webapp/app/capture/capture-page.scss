@@ -18,8 +18,8 @@ h1 {
 }
 
 // A hint rather than a mat-error on purpose: mat-error only renders when the control's own
-// errorState is true, which needs a validator and a touched field. The topics input has neither —
-// what it is too long for is a rule only this component knows — so an error there is never shown.
+// errorState is true, which needs a validator and a touched field. These fields have neither, so
+// an error there is never shown.
 .too-long {
   color: var(--mat-sys-error);
 }

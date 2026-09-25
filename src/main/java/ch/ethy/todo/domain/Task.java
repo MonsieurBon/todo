@@ -15,11 +15,13 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.text.Normalizer;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.regex.Pattern;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -38,6 +40,9 @@ public class Task {
   public static final int MAX_CLIENT_REF_LENGTH = 64;
 
   public static final int MAX_NOTES_LENGTH = 10_000;
+
+  /** Letters, digits and hyphens. Anything else is refused rather than rewritten. */
+  private static final Pattern ALLOWED = Pattern.compile("[\\p{L}\\p{Nd}-]+");
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -265,24 +270,42 @@ public class Task {
   }
 
   /**
-   * A topic is what was typed, only tidied. Its capitals, accents and symbols are kept, because a
-   * topic is read rather than put in a URL, and because the column's collation already finds one
-   * spelling of a topic by another - so rewriting what was typed buys no reach and costs what was
-   * meant. That is about filtering only: the same collation makes two spellings of one topic a
-   * single key, which this set does not, so a task given both still has a duplicate to answer for.
+   * A topic is letters, digits and hyphens - nothing else, and never rewritten to fit. What is
+   * refused is refused out loud, because the slug this replaced used to rewrite silently and that
+   * is how "Fix Roof" became "fix-roof" and an emoji became the word "list".
    *
-   * <p>Collapsed before it is stripped, and {@code (?U)} so that a non-breaking space counts as
-   * whitespace: {@code strip} and {@code isBlank} both go by {@code Character.isWhitespace}, which
-   * says it is not. A topic pasted from a web page carries one, and doing this the other way round
-   * would turn a leading one into a leading ordinary space rather than removing it - and would let
-   * a topic made only of them through as an empty string.
+   * <p>The narrowness is what keeps a topic's identity simple. Everything outside this set is
+   * either invisible - a soft hyphen or a variation selector carried in by a paste, which would
+   * make two topics that look identical - or a separator the capture form needs for itself. The
+   * column compares code points, so two topics are the same exactly when their spellings are, and
+   * no character can make Java and the database disagree about that.
+   *
+   * <p>Letters here means letters that stand on their own. A script that writes a letter as a base
+   * plus a separate combining mark - Devanagari, Thai, Arabic or Hebrew with vowel marks - is
+   * refused, and that is a deliberate narrowness rather than an oversight: this is the one field
+   * with the restriction, and a title and notes take any language at all.
    */
   public static String normaliseLabel(String label) {
-    String tidied = label == null ? "" : label.replaceAll("(?U)\\s+", " ").strip();
+    String tidied = tidyLabel(label);
     if (tidied.isEmpty()) {
       throw new IllegalArgumentException("A label needs a name");
     }
+    if (!ALLOWED.matcher(tidied).matches()) {
+      throw new IllegalArgumentException(
+          "A label may hold only letters, digits and hyphens, but this one is \"" + tidied + "\"");
+    }
     return Lengths.atMost(MAX_LABEL_LENGTH, "A label", tidied);
+  }
+
+  /**
+   * The tidying, without the rules about what a topic may be called: for looking one up rather than
+   * naming one, where anything unusable is simply a filter nothing matches.
+   *
+   * <p>NFC because a composed accent and a combining one are the same text, and would otherwise be
+   * two topics that look identical. It is the only rewriting a topic gets.
+   */
+  public static String tidyLabel(String label) {
+    return label == null ? "" : Normalizer.normalize(label, Normalizer.Form.NFC).strip();
   }
 
   public void markReviewed(Instant at) {

@@ -70,7 +70,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
       join t.labels l
       left join t.taskList.members m
       where t.taskList.owner = :user or m = :user
-      order by l
       """)
   List<String> findLabelsVisibleTo(@Param("user") ch.ethy.todo.domain.User user);
 

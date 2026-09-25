@@ -83,6 +83,15 @@ with `npm run build`.
 - **Length limits belong on the entity**, because MCP tools hand arguments straight to the domain.
   The entity holds the constant and measures `codePointCount` (utf8mb4); the DTO's `@Size`
   constrains against that constant.
+- **A topic is identified by how it is spelled**, so two spellings are two topics and tidying them
+  up belongs to whoever names them — the capture form offers the ones already in use, which is what
+  makes that a fair thing to ask. Three things hold that together and all three must agree: the
+  column compares code points, because every collation that folds anything folds more than it looks
+  and the domain cannot predict it; the domain composes accents, because two ways of writing one
+  accent are the same text; and a topic is narrowed to letters, digits and hyphens, so nothing
+  invisible can arrive in a paste. Loosen any one and a write is refused rather than a test failing.
+  The narrowness is deliberate and only here: letters that stand on their own, so a script writing
+  one as a base plus a combining mark is refused, while a title and notes take any language.
 - **A completed task is read-only**, for the same reason: every public mutator on `Task` starts
   with `mustBeOpen()`, `complete` and `reopen` excepted. No test enumerates them, so a new one has to
   remember. `TaskCompletedException` answers 409 — reuse it for the next state refusal rather than

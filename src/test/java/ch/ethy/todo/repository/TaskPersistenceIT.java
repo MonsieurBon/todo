@@ -41,12 +41,39 @@ class TaskPersistenceIT {
     registry.add("spring.flyway.enabled", () -> "true");
   }
 
+  @Autowired private jakarta.persistence.EntityManager entityManager;
   @Autowired private UserRepository users;
   @Autowired private TaskListRepository lists;
   @Autowired private TaskRepository tasks;
 
   private User owner;
   private TaskList inbox;
+
+  /**
+   * The domain treats two topics as one when the strings are equal, and nothing in Java says which
+   * collation makes that true of the column as well - it just is, and a later migration could
+   * quietly make it false. Anything that folds at all would let the domain keep two spellings the
+   * key calls one, and the second insert would be refused with the write lost - silently, on the
+   * path a capture takes.
+   *
+   * <p>Only a code-point comparison has nothing to enumerate. Every alternative folds something,
+   * and the last round of this was spent discovering that the list is longer than it looks.
+   */
+  @Test
+  @DisplayName("the label column is collated so that equal strings, and only those, are one topic")
+  void labelIdentityIsExact() {
+    Object collation =
+        entityManager
+            .createNativeQuery(
+                """
+                select collation_name from information_schema.columns
+                where table_schema = database()
+                  and table_name = 'task_label' and column_name = 'label'
+                """)
+            .getSingleResult();
+
+    assertThat(collation).isEqualTo("utf8mb4_0900_bin");
+  }
 
   @BeforeEach
   void setUp() {

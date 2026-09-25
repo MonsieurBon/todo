@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import contract from '../../api/openapi.json';
 import {
   MAX_LABEL_LENGTH,
+  unusableLabel,
   MAX_NOTES_LENGTH,
   MAX_TITLE_LENGTH,
   cutTo,
@@ -50,6 +51,21 @@ describe('parsing the comma-separated topics field', () => {
 
   it('accepts one exactly at the limit', () => {
     expect(tooLongLabel('l'.repeat(MAX_LABEL_LENGTH))).toBeNull();
+  });
+
+  /**
+   * The character rule, held here as well as on the entity. Nothing in the contract carries it -
+   * `@Size` only knows the length - so this is the copy that has to be read against
+   * `Task.normaliseLabel` by eye when either changes.
+   */
+  it('allows only letters, digits and hyphens in a topic', () => {
+    expect(unusableLabel('Küche, día, 3D-Druck, 日本語')).toBeNull();
+    expect(unusableLabel('Fix Roof')).toBe('Fix Roof');
+    expect(unusableLabel('Haus & Garten')).toBe('Haus & Garten');
+    expect(unusableLabel('🏠')).toBe('🏠');
+    expect(unusableLabel('co\u00adoperate')).toBe('co\u00adoperate');
+    // A combining accent composes into a letter first, so it is allowed rather than a stray mark.
+    expect(unusableLabel('Cafe\u0301')).toBeNull();
   });
 });
 

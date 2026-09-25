@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import {
@@ -11,8 +18,8 @@ import {
 } from '@angular/material/dialog';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
-import { parseLabels } from '../api/model';
-import { BoardTask } from './board-store';
+import { TopicsField } from '../core/topics-field';
+import { BoardStore, BoardTask } from './board-store';
 
 export interface TaskEdit {
   title: string;
@@ -37,6 +44,7 @@ export interface TaskEdit {
     MatFormField,
     MatInput,
     MatLabel,
+    TopicsField,
   ],
   templateUrl: './task-editor.html',
   styles: `
@@ -53,21 +61,29 @@ export class TaskEditor {
   private readonly dialog = inject<MatDialogRef<TaskEditor, TaskEdit>>(MatDialogRef);
   private readonly task = inject<BoardTask>(MAT_DIALOG_DATA);
 
+  protected readonly knownTopics = inject(BoardStore).labels;
+  private readonly topicsField = viewChild.required(TopicsField);
+
   protected readonly title = signal(this.task.title);
   protected readonly notes = signal(this.task.notes ?? '');
   protected readonly dueDate = signal(this.task.dueDate ?? '');
-  protected readonly labels = signal((this.task.labels ?? []).join(', '));
+  protected readonly labels = signal(this.task.labels ?? []);
+
+  protected readonly canSave = computed(
+    () => !!this.title().trim() && !this.topicsField().invalid(),
+  );
 
   protected save(): void {
-    const title = this.title().trim();
-    if (!title) {
+    if (!this.canSave()) {
       return;
     }
+    // A topic typed but never confirmed is still a topic the user meant to add.
+    this.topicsField().commitPending();
     this.dialog.close({
-      title,
+      title: this.title().trim(),
       notes: this.notes().trim(),
       dueDate: this.dueDate(),
-      labels: parseLabels(this.labels()),
+      labels: this.labels(),
     });
   }
 }
