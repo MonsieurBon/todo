@@ -1,3 +1,10 @@
+# [2.4.0](https://github.com/MonsieurBon/todo/compare/v2.3.1...v2.4.0) (2026-09-25)
+
+
+### Features
+
+* offer the topics already in use when adding one ([1925a56](https://github.com/MonsieurBon/todo/commit/1925a56f93b019c572f68c318e91f5529686569f))
+
 ## [2.3.1](https://github.com/MonsieurBon/todo/compare/v2.3.0...v2.3.1) (2026-09-22)
 
 
