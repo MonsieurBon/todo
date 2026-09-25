@@ -235,9 +235,8 @@ public class TodoTools {
       title = "What is due for review",
       description =
           """
-          The tasks overdue for a review sweep: Opportunity Now is swept daily and Over
-          The Horizon weekly. Critical Now never appears here because it is worked
-          continuously rather than reviewed.
+          The tasks overdue for a review sweep: Critical Now is swept hourly,
+          Opportunity Now daily and Over The Horizon weekly.
 
           Walk these one at a time with the user and for each one promote, demote,
           defer, complete, delete or leave it as it is.

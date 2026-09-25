@@ -314,8 +314,6 @@ public class Task {
   }
 
   public boolean isReviewDue(Instant now) {
-    return zone.reviewInterval()
-        .map(interval -> lastReviewedAt == null || !lastReviewedAt.plus(interval).isAfter(now))
-        .orElse(false);
+    return lastReviewedAt == null || !lastReviewedAt.plus(zone.reviewInterval()).isAfter(now);
   }
 }

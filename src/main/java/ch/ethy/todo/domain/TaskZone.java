@@ -4,7 +4,7 @@ import java.time.Duration;
 import java.util.Optional;
 
 public enum TaskZone {
-  CRITICAL_NOW(5, null),
+  CRITICAL_NOW(5, Duration.ofHours(1)),
   OPPORTUNITY_NOW(20, Duration.ofDays(1)),
   OVER_THE_HORIZON(null, Duration.ofDays(7));
 
@@ -20,8 +20,8 @@ public enum TaskZone {
     return Optional.ofNullable(softCap);
   }
 
-  public Optional<Duration> reviewInterval() {
-    return Optional.ofNullable(reviewInterval);
+  public Duration reviewInterval() {
+    return reviewInterval;
   }
 
   public boolean isOverSoftCap(int count) {

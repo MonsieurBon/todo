@@ -303,7 +303,7 @@ class BoardIT extends IntegrationTest {
   }
 
   @Test
-  @DisplayName("the review sweep spans every list, and never offers Critical Now")
+  @DisplayName("the review sweep spans every list and every zone")
   void reviewSpansLists() throws Exception {
     String me = someone();
     Long personal = createList(me, "Personal");
@@ -313,8 +313,7 @@ class BoardIT extends IntegrationTest {
     addTask(me, personal, "Today", "CRITICAL_NOW", List.of());
 
     assertThat(titles(perform(get("/api/review").with(as(me)))))
-        .as("Critical Now is worked continuously, so it is never swept")
-        .containsExactlyInAnyOrder("Soon, personal", "Someday, family");
+        .containsExactlyInAnyOrder("Soon, personal", "Someday, family", "Today");
   }
 
   @Test
