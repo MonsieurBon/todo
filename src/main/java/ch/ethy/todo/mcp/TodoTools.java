@@ -72,7 +72,11 @@ public class TodoTools {
               description =
                   "Topics for this task, e.g. [\"house\", \"project-a\"]. At most "
                       + Task.MAX_LABEL_LENGTH
-                      + " characters each.",
+                      + " characters each."
+                      + " Letters, digits and hyphens only - no spaces, so write \"project-a\" rather "
+                      + "than \"project a\". A topic outside that is refused, and the refusal "
+                      + "takes the whole call with it. Call list_labels first and reuse an "
+                      + "existing spelling: topics are matched exactly.",
               required = false)
           List<String> labels,
       @McpToolParam(
@@ -165,7 +169,13 @@ public class TodoTools {
           Deferred tasks and completed tasks are hidden by default.
           """)
   public Responses.BoardView getBoard(
-      @McpToolParam(description = "Only this topic, e.g. \"house\".", required = false)
+      @McpToolParam(
+              description =
+                  "Only this topic, matched exactly - \"House\" and \"house\" are different topics. "
+                      + "Call list_labels first and pass one of those, rather than guessing "
+                      + "a spelling: a topic that does not exist answers with an empty board "
+                      + "rather than an error.",
+              required = false)
           String label,
       @McpToolParam(description = "Only this list id.", required = false) Long listId,
       @McpToolParam(description = "Only this zone.", required = false) TaskZone zone,
@@ -354,7 +364,11 @@ public class TodoTools {
               description =
                   "The complete set of topics, at most "
                       + Task.MAX_LABEL_LENGTH
-                      + " characters each.",
+                      + " characters each."
+                      + " Letters, digits and hyphens only - no spaces, so write \"project-a\" rather "
+                      + "than \"project a\". A topic outside that is refused, and the refusal "
+                      + "takes the whole call with it. Call list_labels first and reuse an "
+                      + "existing spelling: topics are matched exactly.",
               required = true)
           List<String> labels) {
     return Responses.TaskView.of(tasks.setLabels(taskId, currentUser.current(), labels));

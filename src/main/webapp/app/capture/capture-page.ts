@@ -17,7 +17,6 @@ import { MatSelect } from '@angular/material/select';
 import { MatOption } from '@angular/material/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
-  MAX_LABEL_LENGTH,
   MAX_NOTES_LENGTH,
   MAX_TITLE_LENGTH,
   ZONE_MEANINGS,
@@ -26,10 +25,9 @@ import {
   Zone,
   cutTo,
   openingLine,
-  parseLabels,
-  tooLongLabel,
 } from '../api/model';
 import { BoardStore } from '../board/board-store';
+import { TopicsField } from '../core/topics-field';
 
 /**
  * Capture, and the Web Share Target. Android hands a share over as `?title=&text=&url=` (see
@@ -48,6 +46,7 @@ import { BoardStore } from '../board/board-store';
     MatLabel,
     MatOption,
     MatSelect,
+    TopicsField,
   ],
   templateUrl: './capture-page.html',
   styleUrl: './capture-page.scss',
@@ -62,11 +61,12 @@ export class CapturePage {
   protected readonly zoneName = (zone: Zone) => ZONE_NAMES[zone];
   protected readonly zoneMeaning = (zone: Zone) => ZONE_MEANINGS[zone];
   protected readonly lists = this.board.lists;
+  protected readonly knownTopics = this.board.labels;
   protected readonly online = this.board.online;
 
   protected readonly title = signal('');
   protected readonly notes = signal('');
-  protected readonly labels = signal('');
+  protected readonly labels = signal<string[]>([]);
   protected readonly zone = signal<Zone>('OPPORTUNITY_NOW');
 
   /**
@@ -86,10 +86,8 @@ export class CapturePage {
 
   protected readonly maxTitleLength = MAX_TITLE_LENGTH;
   protected readonly maxNotesLength = MAX_NOTES_LENGTH;
-  protected readonly maxLabelLength = MAX_LABEL_LENGTH;
 
-  /** The cap is per topic but the input holds several, so it cannot sit on the field itself. */
-  protected readonly labelTooLong = computed(() => tooLongLabel(this.labels()));
+  private readonly topicsField = viewChild.required(TopicsField);
 
   /**
    * Told, not enforced: no `maxlength`, because a paste it silently cuts is the same silent loss
@@ -100,7 +98,10 @@ export class CapturePage {
 
   protected readonly canSave = computed(
     () =>
-      !!this.title().trim() && !this.titleTooLong() && !this.notesTooLong() && !this.labelTooLong(),
+      !!this.title().trim() &&
+      !this.titleTooLong() &&
+      !this.notesTooLong() &&
+      !this.topicsField().invalid(),
   );
 
   private readonly titleField = viewChild<ElementRef<HTMLInputElement>>('titleField');
@@ -153,12 +154,14 @@ export class CapturePage {
     if (!this.canSave()) {
       return;
     }
+    // A topic typed but never confirmed is still a topic the user meant to add.
+    this.topicsField().commitPending();
     const title = this.title().trim();
     await this.board.capture({
       title,
       notes: this.notes().trim(),
       zone: this.zone(),
-      labels: parseLabels(this.labels()),
+      labels: this.labels(),
       listId: this.listId() === this.INBOX ? null : this.listId(),
     });
     this.saved.set(true);

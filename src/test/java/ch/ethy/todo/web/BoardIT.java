@@ -128,19 +128,19 @@ class BoardIT extends IntegrationTest {
   }
 
   /**
-   * The topic is stored as it was typed, so every spelling here is forgiven by the column's
-   * collation rather than by anything the application does to the filter.
+   * A topic is identified by how it is spelled, so the filter matches that spelling rather than a
+   * variant of it. Only the tidying is forgiven - the spacing, and the two ways Unicode writes one
+   * accent - because those are the same text rather than a different topic.
    */
   @Test
-  @DisplayName("a label filter matches however the topic is capitalised, spaced or accented")
-  void filterIsNormalised() throws Exception {
+  @DisplayName("a label filter matches the spelling it was given, tidying aside")
+  void filterMatchesTheSameSpelling() throws Exception {
     String me = someone();
     Long list = createList(me, "Projects");
-    addTask(me, list, "Kickoff", "CRITICAL_NOW", List.of("Projéct A"));
+    addTask(me, list, "Kickoff", "CRITICAL_NOW", List.of("Proj\u00e9ct-A"));
 
     // .param, not a query string: MockMvc re-encodes a URI template, so %20 arrives literally.
-    for (String spelling :
-        List.of("Projéct A", "projéct a", "project a", "PROJECT   A", "  project a  ")) {
+    for (String spelling : List.of("Proj\u00e9ct-A", "  Proj\u00e9ct-A  ", "Proje\u0301ct-A")) {
       assertThat(perform(get("/api/board").param("label", spelling).with(as(me))).get("tasks"))
           .as("filtering by %s", spelling)
           .hasSize(1);
@@ -148,17 +148,18 @@ class BoardIT extends IntegrationTest {
   }
 
   /**
-   * The deny path of the rule above. Folding case and accents is not the same as ignoring
-   * punctuation: a different topic must find nothing rather than quietly widen the board.
+   * The deny path, and the cost of the rule above: the board offers its topics as a menu, so the
+   * app never asks anyone to guess a spelling - but a hand-written URL, or an assistant that did
+   * not call list_labels first, finds nothing rather than something close.
    */
   @Test
-  @DisplayName("a label filter does not match a topic spelled with different characters")
-  void filterKeepsTopicsApart() throws Exception {
+  @DisplayName("a label filter spelled differently finds nothing rather than guessing")
+  void filterDoesNotGuessAtSpelling() throws Exception {
     String me = someone();
     Long list = createList(me, "Projects");
-    addTask(me, list, "Kickoff", "CRITICAL_NOW", List.of("Project A"));
+    addTask(me, list, "Kickoff", "CRITICAL_NOW", List.of("Proj\u00e9ct-A"));
 
-    for (String other : List.of("project-a", "projecta", "project")) {
+    for (String other : List.of("proj\u00e9ct-a", "Project-A", "PROJ\u00c9CT-A", "Proj\u00e9ctA")) {
       assertThat(perform(get("/api/board").param("label", other).with(as(me))).get("tasks"))
           .as("filtering by %s", other)
           .isEmpty();
@@ -196,6 +197,22 @@ class BoardIT extends IntegrationTest {
     assertThat(board.get("zones")).hasSize(3);
     assertThat(zoneCount(board, "OPPORTUNITY_NOW")).isEqualTo(1);
     assertThat(zoneCount(board, "OVER_THE_HORIZON")).isEqualTo(1);
+  }
+
+  /**
+   * By code point the column would answer Banana, Zebra, apple, Ärger - so this fails if the
+   * listing ever goes back to letting the database do the ordering.
+   */
+  @Test
+  @DisplayName("the label index comes back in alphabetical order, not the column's")
+  void labelIndexIsAlphabetical() throws Exception {
+    String me = someone();
+    Long list = createList(me, "Mine");
+    addTask(
+        me, list, "Anything", "CRITICAL_NOW", List.of("Zebra", "apple", "\u00c4rger", "Banana"));
+
+    assertThat(perform(get("/api/labels").with(as(me))).valueStream().map(JsonNode::asString))
+        .containsExactly("apple", "\u00c4rger", "Banana", "Zebra");
   }
 
   @Test

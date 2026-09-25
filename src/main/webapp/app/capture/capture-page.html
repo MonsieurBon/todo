@@ -71,15 +71,7 @@
     <mat-hint>Lists are who can see it. Topics are what it is about.</mat-hint>
   </mat-form-field>
 
-  <mat-form-field>
-    <mat-label>Topics, comma separated</mat-label>
-    <input matInput name="labels" [ngModel]="labels()" (ngModelChange)="labels.set($event)" />
-    @if (labelTooLong(); as tooLong) {
-      <mat-hint class="too-long">
-        "{{ tooLong }}" is longer than {{ maxLabelLength }} characters.
-      </mat-hint>
-    }
-  </mat-form-field>
+  <app-topics-field [(topics)]="labels" [known]="knownTopics()" />
 
   <button matButton="filled" type="button" [disabled]="!canSave()" (click)="save()">
     Add to the list

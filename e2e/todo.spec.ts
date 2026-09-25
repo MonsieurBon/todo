@@ -40,7 +40,8 @@ async function capture(
     await page.getByRole('option', { name: options.zone }).click();
   }
   if (options.labels) {
-    await page.getByLabel('Topics, comma separated').fill(options.labels);
+    // Typed, not confirmed: the save commits whatever is still in the field.
+    await page.getByLabel('Topics').fill(options.labels);
   }
   await page.getByRole('button', { name: 'Add to the list' }).click();
   await expect(page.getByRole('heading', { name: 'Critical Now' })).toBeVisible();
@@ -140,4 +141,28 @@ test('the board still renders with no connection, and a capture is kept and sent
   // And exactly once: the retry carries the reference the first attempt was sent under.
   await page.reload();
   await expect(page.getByText(`Captured underground ${run}`)).toHaveCount(1);
+});
+
+/**
+ * The mouse path through the topics dropdown, which the specs cannot reach: the panel is a CDK
+ * overlay and selecting from it interleaves a blur with the click. Committing on both produced two
+ * chips from one tap, and the half-typed one went to the server. It also covers the panel being
+ * pinned above the field - opening downwards it lies over the save button and eats the tap.
+ */
+test('a topic picked from the dropdown is the only one added', async () => {
+  const topic = `kaffee${run}`;
+  await capture(`First ${run}`, { zone: 'Critical Now', labels: topic });
+
+  await page.goto('/capture');
+  await page.getByLabel('What needs doing?').fill(`Second ${run}`);
+  await page.getByLabel('Topics').fill(topic.slice(0, 6));
+  await page.getByRole('option', { name: topic }).click();
+
+  await expect(page.locator('mat-chip-row')).toHaveText([topic]);
+
+  await page.getByRole('button', { name: 'Add to the list' }).click();
+  await expect(page.getByRole('heading', { name: 'Critical Now' })).toBeVisible();
+
+  await page.goto(`/?label=${topic}`);
+  await expect(page.getByText(`Second ${run}`)).toBeVisible();
 });

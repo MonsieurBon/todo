@@ -5,9 +5,11 @@ import ch.ethy.todo.domain.TaskList;
 import ch.ethy.todo.domain.TaskZone;
 import ch.ethy.todo.domain.User;
 import ch.ethy.todo.repository.TaskRepository;
+import java.text.Collator;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
@@ -67,9 +69,11 @@ public class TaskService {
         .collect(Collectors.toMap(zone -> zone, zone -> counts.getOrDefault(zone, 0L)));
   }
 
+  /** Sorted here because the column is compared by code point, so the database cannot. */
   @Transactional(readOnly = true)
   public List<String> labelsVisibleTo(User user) {
-    return tasks.findLabelsVisibleTo(user);
+    Collator alphabetical = Collator.getInstance(Locale.ROOT);
+    return tasks.findLabelsVisibleTo(user).stream().sorted(alphabetical).toList();
   }
 
   public Task setLabels(Long id, User user, java.util.Collection<String> labels) {

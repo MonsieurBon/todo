@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import ch.ethy.todo.IntegrationTest;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -62,6 +63,51 @@ class TaskEditingIT extends IntegrationTest {
             .andReturn()
             .getResponse()
             .getContentAsString());
+  }
+
+  /**
+   * The rule the column now carries: a topic is identified by how it is spelled, so two spellings
+   * are two topics. Only a real schema answers it - the collation is the thing being asserted.
+   */
+  @Test
+  @DisplayName("two spellings of one word are two topics, kept as they were written")
+  void spellingsAreTheirOwnTopics() throws Exception {
+    String me = "topics-" + System.nanoTime();
+    long id = capture(me, Map.of("title", "Fix the roof", "zone", "CRITICAL_NOW"));
+
+    mvc.perform(
+            withBody(
+                put("/api/tasks/" + id + "/labels").with(as(me)),
+                Map.of("labels", List.of("Garden", "garden", "straße", "strasse", "Küche"))))
+        .andExpect(status().isOk());
+
+    assertThat(reread(me, id).get("labels").valueStream().map(JsonNode::asString).toList())
+        .containsExactlyInAnyOrder("Garden", "garden", "straße", "strasse", "Küche");
+  }
+
+  /**
+   * A capture arrives through the outbox, which discards a write the server refuses on its merits
+   * and says nothing. Nothing about a topic may refuse one, so the task always survives.
+   */
+  @Test
+  @DisplayName("a capture carrying two spellings keeps the task and both topics")
+  void aCaptureIsNeverLostToItsTopics() throws Exception {
+    String me = "topics-" + System.nanoTime();
+    long id =
+        capture(
+            me,
+            Map.of(
+                "title",
+                "Mow the lawn",
+                "zone",
+                "CRITICAL_NOW",
+                "labels",
+                List.of("straße", "strasse")));
+
+    JsonNode task = reread(me, id);
+    assertThat(task.get("title").asString()).isEqualTo("Mow the lawn");
+    assertThat(task.get("labels").valueStream().map(JsonNode::asString).toList())
+        .containsExactlyInAnyOrder("straße", "strasse");
   }
 
   @Test
