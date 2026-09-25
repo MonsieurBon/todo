@@ -3,6 +3,7 @@ package ch.ethy.todo.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -16,7 +17,7 @@ class TaskTest {
   private static final Instant NOW = Instant.parse("2026-09-03T10:00:00Z");
 
   private static Task task() {
-    return new Task("Renew passport", TaskZone.OPPORTUNITY_NOW);
+    return new Task("Renew passport", TaskZone.OPPORTUNITY_NOW, NOW);
   }
 
   @Nested
@@ -34,23 +35,26 @@ class TaskTest {
     }
 
     @Test
-    @DisplayName("a new task has not been reviewed, so the next sweep offers it")
-    void notYetReviewed() {
-      assertThat(task().lastReviewedAt()).isNull();
-      assertThat(task().isReviewDue(NOW)).isTrue();
+    @DisplayName("choosing its zone at capture is a review, so the sweep waits a full interval")
+    void captureIsReviewing() {
+      Task task = task();
+
+      assertThat(task.lastReviewedAt()).isEqualTo(NOW);
+      assertThat(task.isReviewDue(NOW.plus(Duration.ofHours(23)))).isFalse();
+      assertThat(task.isReviewDue(NOW.plus(Duration.ofDays(1)))).isTrue();
     }
 
     @Test
     @DisplayName("a task needs a title")
     void titleRequired() {
-      assertThatThrownBy(() -> new Task("  ", TaskZone.CRITICAL_NOW))
+      assertThatThrownBy(() -> new Task("  ", TaskZone.CRITICAL_NOW, NOW))
           .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     @DisplayName("a task needs a zone")
     void zoneRequired() {
-      assertThatThrownBy(() -> new Task("Renew passport", null))
+      assertThatThrownBy(() -> new Task("Renew passport", null, NOW))
           .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -58,14 +62,14 @@ class TaskTest {
     @DisplayName("a title as long as the column allows is accepted")
     void titleAtTheLimit() {
       String title = "t".repeat(Task.MAX_TITLE_LENGTH);
-      assertThat(new Task(title, TaskZone.OPPORTUNITY_NOW).title()).isEqualTo(title);
+      assertThat(new Task(title, TaskZone.OPPORTUNITY_NOW, NOW).title()).isEqualTo(title);
     }
 
     @Test
     @DisplayName("a longer title is refused, and the refusal names the limit")
     void titleTooLong() {
       assertThatThrownBy(
-              () -> new Task("t".repeat(Task.MAX_TITLE_LENGTH + 1), TaskZone.OPPORTUNITY_NOW))
+              () -> new Task("t".repeat(Task.MAX_TITLE_LENGTH + 1), TaskZone.OPPORTUNITY_NOW, NOW))
           .isInstanceOf(IllegalArgumentException.class)
           .hasMessageContaining(String.valueOf(Task.MAX_TITLE_LENGTH));
     }
@@ -77,7 +81,7 @@ class TaskTest {
       assertThat(title.length())
           .as("two UTF-16 code units each, so measuring those would refuse this")
           .isEqualTo(Task.MAX_TITLE_LENGTH * 2);
-      assertThat(new Task(title, TaskZone.OPPORTUNITY_NOW).title()).isEqualTo(title);
+      assertThat(new Task(title, TaskZone.OPPORTUNITY_NOW, NOW).title()).isEqualTo(title);
     }
 
     @Test
@@ -86,7 +90,9 @@ class TaskTest {
       assertThatThrownBy(
               () ->
                   new Task(
-                      "\uD83E\uDDF9".repeat(Task.MAX_TITLE_LENGTH + 1), TaskZone.OPPORTUNITY_NOW))
+                      "\uD83E\uDDF9".repeat(Task.MAX_TITLE_LENGTH + 1),
+                      TaskZone.OPPORTUNITY_NOW,
+                      NOW))
           .isInstanceOf(IllegalArgumentException.class)
           .hasMessageContaining(String.valueOf(Task.MAX_TITLE_LENGTH + 1));
     }
@@ -95,7 +101,8 @@ class TaskTest {
     @DisplayName("surrounding whitespace does not count towards the limit")
     void titleTrimmedBeforeMeasuring() {
       String title = "t".repeat(Task.MAX_TITLE_LENGTH);
-      assertThat(new Task("  " + title + "  ", TaskZone.OPPORTUNITY_NOW).title()).isEqualTo(title);
+      assertThat(new Task("  " + title + "  ", TaskZone.OPPORTUNITY_NOW, NOW).title())
+          .isEqualTo(title);
     }
   }
 

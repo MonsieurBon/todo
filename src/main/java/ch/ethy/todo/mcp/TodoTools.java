@@ -244,9 +244,9 @@ public class TodoTools {
           and let the user settle them in blocks - "all of these stay where they are"
           is one call.
 
-          Moving or deferring tasks records the review by itself, and completing or
-          deleting one takes it out of the queue. Call mark_tasks_reviewed only for
-          tasks left where they are.
+          Filing, moving or deferring a task records the review by itself, and
+          completing or deleting one takes it out of the queue. Call mark_tasks_reviewed
+          only for tasks left where they are.
           """)
   public List<Responses.TaskView> getReviewQueue(
       @McpToolParam(description = "The list to sweep.", required = true) Long listId) {
@@ -396,9 +396,9 @@ public class TodoTools {
       description =
           "Record that tasks were considered during a review sweep and stay where they are, "
               + "so they drop out of the review queue until their zone's cadence comes round "
-              + "again. Moving or deferring a task records this by itself. Only for tasks that "
-              + "stay on the list: a completed one has left the queue already and is "
-              + "read-only, so it needs no record and must not be reopened to get one. A "
+              + "again. Filing, moving or deferring a task records this by itself. Only for "
+              + "tasks that stay on the list: a completed one has left the queue already and "
+              + "is read-only, so it needs no record and must not be reopened to get one. A "
               + "completed task among them refuses the whole call.")
   public List<Responses.TaskView> markTasksReviewed(
       @McpToolParam(description = "Ids of the tasks.", required = true) List<Long> taskIds) {

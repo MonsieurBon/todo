@@ -90,30 +90,10 @@ test('completing a task takes it off the board', async () => {
   await expect(zoneSection('Critical Now').getByText('5 / 5')).toBeVisible();
 });
 
-test('the review board shows what is due, and a reviewed task leaves it', async () => {
+test('a task just filed is not asked about again: choosing its zone was the review', async () => {
   await capture(`Soon ${run}`, { zone: 'Opportunity Now', labels: run });
   await page.goto('/review');
-  await page.getByRole('button', { name: 'All topics' }).click();
-  await page.getByRole('menuitem', { name: run }).click();
 
-  // Nothing of this run's has been reviewed, so every task of it is due, in every zone.
-  await expect(zoneSection('Critical Now').getByText('5 / 5')).toBeVisible();
-  await expect(zoneSection('Opportunity Now').getByText(`Soon ${run}`)).toBeVisible();
-
-  await page.getByRole('button', { name: `Mark Soon ${run} reviewed` }).click();
-  await expect(page.getByText(`Soon ${run}`)).toBeHidden();
-  await expect(zoneSection('Opportunity Now').getByText('Nothing due.')).toBeVisible();
-  await expect(zoneSection('Opportunity Now').getByText('1 / 20')).toBeVisible();
-});
-
-test('a whole zone is reviewed in one go', async () => {
-  await page.getByRole('checkbox', { name: 'Select everything due in Critical Now' }).check();
-  await expect(page.getByText('5 selected')).toBeVisible();
-
-  await page
-    .getByRole('region', { name: 'Selection' })
-    .getByRole('button', { name: 'Reviewed' })
-    .click();
   await expect(page.getByText('Nothing is due for review.')).toBeVisible();
 });
 

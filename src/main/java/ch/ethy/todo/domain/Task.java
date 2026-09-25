@@ -104,9 +104,11 @@ public class Task {
     // for JPA
   }
 
-  public Task(String title, TaskZone zone) {
+  /** Choosing the zone is the attention a review asks for, as {@link #moveTo} is. */
+  public Task(String title, TaskZone zone, Instant capturedAt) {
     title(title);
     placeIn(zone);
+    this.lastReviewedAt = capturedAt;
   }
 
   public Long id() {

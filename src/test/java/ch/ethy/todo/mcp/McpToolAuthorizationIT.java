@@ -272,6 +272,7 @@ class McpToolAuthorizationIT extends IntegrationTest {
                               "Task " + i, TaskZone.OVER_THE_HORIZON, null, list.id(), null, null)
                           .id())
               .toList();
+      clock.advance(java.time.Duration.ofDays(7));
       assertThat(tools.getReviewQueue(list.id())).hasSize(3);
 
       assertThat(tools.markTasksReviewed(ids)).hasSize(3);
@@ -291,10 +292,13 @@ class McpToolAuthorizationIT extends IntegrationTest {
       String owner = someone();
       as(owner);
       var theirs = tools.createTask("Private", TaskZone.OPPORTUNITY_NOW, null, null, null, null);
+      var theirStamp = reviewedAt(theirs.id());
 
       as(someone());
       var mine = tools.createTask("Mine", TaskZone.OPPORTUNITY_NOW, null, null, null, null);
+      var myStamp = reviewedAt(mine.id());
       var mixed = List.of(mine.id(), theirs.id());
+      clock.advance(java.time.Duration.ofHours(1));
       assertThat(
               List.<org.assertj.core.api.ThrowableAssert.ThrowingCallable>of(
                   () -> tools.markTasksReviewed(mixed),
@@ -311,14 +315,23 @@ class McpToolAuthorizationIT extends IntegrationTest {
           .satisfies(
               t -> {
                 assertThat(t.zone()).isEqualTo(TaskZone.OPPORTUNITY_NOW);
-                assertThat(t.lastReviewedAt()).isNull();
+                assertThat(t.lastReviewedAt()).isEqualTo(myStamp);
               });
 
       as(owner);
       assertThat(tools.getBoard(null, null, null, null).tasks())
           .filteredOn(t -> t.id().equals(theirs.id()))
           .singleElement()
-          .satisfies(t -> assertThat(t.lastReviewedAt()).isNull());
+          .satisfies(t -> assertThat(t.lastReviewedAt()).isEqualTo(theirStamp));
+    }
+
+    /** Read back as stored, so it compares at the column's precision rather than the clock's. */
+    private java.time.Instant reviewedAt(Long taskId) {
+      return tools.getBoard(null, null, null, null).tasks().stream()
+          .filter(t -> t.id().equals(taskId))
+          .findFirst()
+          .orElseThrow()
+          .lastReviewedAt();
     }
 
     @Test

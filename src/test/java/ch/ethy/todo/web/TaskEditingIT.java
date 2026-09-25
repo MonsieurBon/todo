@@ -259,12 +259,14 @@ class TaskEditingIT extends IntegrationTest {
     long first = capture(me, Map.of("title", "Fix the tile", "zone", "OPPORTUNITY_NOW"));
     long second = capture(me, Map.of("title", "Renew passport", "zone", "OPPORTUNITY_NOW"));
     List<Long> both = List.of(first, second);
+    String captured = reread(me, first).get("lastReviewedAt").asString();
+    clock.advance(java.time.Duration.ofHours(1));
 
     mvc.perform(withBody(post("/api/tasks/reviewed").with(as(me)), Map.of("taskIds", both)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.length()").value(2));
     for (long id : both) {
-      assertThat(reread(me, id).get("lastReviewedAt").isNull()).isFalse();
+      assertThat(reread(me, id).get("lastReviewedAt").asString()).isNotEqualTo(captured);
     }
 
     mvc.perform(
@@ -293,6 +295,8 @@ class TaskEditingIT extends IntegrationTest {
     long open = capture(me, Map.of("title", "Fix the tile", "zone", "OPPORTUNITY_NOW"));
     long done = capture(me, Map.of("title", "Renew passport", "zone", "OPPORTUNITY_NOW"));
     mvc.perform(post("/api/tasks/" + done + "/complete").with(as(me))).andExpect(status().isOk());
+    String captured = reread(me, open).get("lastReviewedAt").asString();
+    clock.advance(java.time.Duration.ofHours(1));
 
     mvc.perform(
             withBody(
@@ -303,8 +307,8 @@ class TaskEditingIT extends IntegrationTest {
 
     var untouched = reread(me, open);
     assertThat(untouched.get("zone").asString()).isEqualTo("OPPORTUNITY_NOW");
-    assertThat(untouched.get("lastReviewedAt").isNull())
+    assertThat(untouched.get("lastReviewedAt").asString())
         .as("the open task was moved before the completed one refused, and must be rolled back")
-        .isTrue();
+        .isEqualTo(captured);
   }
 }

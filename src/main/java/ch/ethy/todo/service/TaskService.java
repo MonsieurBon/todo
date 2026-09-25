@@ -125,7 +125,7 @@ public class TaskService {
         return existing.get();
       }
     }
-    Task task = new Task(draft.title(), draft.zone());
+    Task task = new Task(draft.title(), draft.zone(), clock.instant());
     task.clientRef(clientRef);
     task.notes(draft.notes());
     task.dueDate(draft.dueDate());

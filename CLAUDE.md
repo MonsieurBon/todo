@@ -96,6 +96,9 @@ with `npm run build`.
   with `mustBeOpen()`, `complete` and `reopen` excepted. No test enumerates them, so a new one has to
   remember. `TaskCompletedException` answers 409 — reuse it for the next state refusal rather than
   inventing a 400.
+- **Deciding where a task belongs is a review.** Filing it in a zone, moving it and deferring it
+  all record that it was looked at, so the sweep never asks again about something just decided.
+  No test enumerates them, so a new change to a task has to decide whether it is such a decision.
 - **A write over several tasks is whole or nothing.** One task out of reach answers the same 404
   it would alone, one completed task the same 409, and either way none of them has changed: the
   transaction undoes whatever went before the refusal.

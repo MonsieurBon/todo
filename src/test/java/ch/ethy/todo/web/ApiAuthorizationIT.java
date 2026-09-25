@@ -156,7 +156,10 @@ class ApiAuthorizationIT extends IntegrationTest {
                       java.util.Map.of("title", "Bob's task", "zone", "OPPORTUNITY_NOW")))
               .andReturn();
       Long bobTask = json.readTree(own.getResponse().getContentAsString()).get("id").asLong();
+      String alicesStamp = reviewedAt(ALICE, aliceTask);
+      String bobsStamp = reviewedAt(BOB, bobTask);
       List<Long> mixed = List.of(bobTask, aliceTask);
+      clock.advance(java.time.Duration.ofHours(1));
 
       for (MockHttpServletRequestBuilder request :
           List.of(
@@ -174,22 +177,18 @@ class ApiAuthorizationIT extends IntegrationTest {
         assertThat(r.getResponse().getContentAsString()).doesNotContain("Alice's private task");
       }
 
-      var alices =
-          json.readTree(
-              mvc.perform(get("/api/tasks/" + aliceTask).with(as(ALICE, API)))
+      assertThat(reviewedAt(ALICE, aliceTask)).isEqualTo(alicesStamp);
+      assertThat(reviewedAt(BOB, bobTask)).isEqualTo(bobsStamp);
+    }
+
+    private String reviewedAt(String who, Long task) throws Exception {
+      return json.readTree(
+              mvc.perform(get("/api/tasks/" + task).with(as(who, API)))
                   .andReturn()
                   .getResponse()
-                  .getContentAsString());
-      assertThat(alices.get("zone").asString()).isEqualTo("CRITICAL_NOW");
-      assertThat(alices.get("lastReviewedAt").isNull()).isTrue();
-      var bobs =
-          json.readTree(
-              mvc.perform(get("/api/tasks/" + bobTask).with(as(BOB, API)))
-                  .andReturn()
-                  .getResponse()
-                  .getContentAsString());
-      assertThat(bobs.get("zone").asString()).isEqualTo("OPPORTUNITY_NOW");
-      assertThat(bobs.get("lastReviewedAt").isNull()).isTrue();
+                  .getContentAsString())
+          .get("lastReviewedAt")
+          .asString();
     }
 
     @Test

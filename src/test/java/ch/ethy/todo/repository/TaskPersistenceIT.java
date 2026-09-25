@@ -99,7 +99,7 @@ class TaskPersistenceIT {
   @Test
   @DisplayName("a task survives a round trip with its zone and state intact")
   void roundTrip() {
-    Task task = new Task("Renew passport", TaskZone.OPPORTUNITY_NOW);
+    Task task = new Task("Renew passport", TaskZone.OPPORTUNITY_NOW, java.time.Instant.now());
     task.notes("Check the photo requirements");
     task.dueDate(LocalDate.of(2026, 12, 1));
     inbox.add(task);
@@ -117,7 +117,7 @@ class TaskPersistenceIT {
   @Test
   @DisplayName("emoji survive, which they did not under the old 3-byte utf8 schema")
   void utf8mb4() {
-    Task task = new Task("Buy 🎂 for the party", TaskZone.CRITICAL_NOW);
+    Task task = new Task("Buy 🎂 for the party", TaskZone.CRITICAL_NOW, java.time.Instant.now());
     inbox.add(task);
     tasks.saveAndFlush(task);
 
@@ -129,8 +129,9 @@ class TaskPersistenceIT {
   void deferredTasksAreHidden() {
     LocalDate today = LocalDate.of(2026, 9, 3);
 
-    Task visible = new Task("Call the dentist", TaskZone.CRITICAL_NOW);
-    Task deferred = new Task("Plan the summer trip", TaskZone.OPPORTUNITY_NOW);
+    Task visible = new Task("Call the dentist", TaskZone.CRITICAL_NOW, java.time.Instant.now());
+    Task deferred =
+        new Task("Plan the summer trip", TaskZone.OPPORTUNITY_NOW, java.time.Instant.now());
     deferred.deferUntil(today.plusDays(30), today, java.time.Instant.now());
 
     inbox.add(visible);
@@ -149,7 +150,7 @@ class TaskPersistenceIT {
   @DisplayName("completed tasks drop out of the visible list")
   void completedTasksAreHidden() {
     LocalDate today = LocalDate.of(2026, 9, 3);
-    Task task = new Task("Take out the bins", TaskZone.CRITICAL_NOW);
+    Task task = new Task("Take out the bins", TaskZone.CRITICAL_NOW, java.time.Instant.now());
     inbox.add(task);
     tasks.saveAndFlush(task);
 
@@ -165,9 +166,10 @@ class TaskPersistenceIT {
   @DisplayName("visible tasks come back ordered by zone urgency")
   void orderedByZoneUrgency() {
     LocalDate today = LocalDate.of(2026, 9, 3);
-    Task horizon = new Task("Learn the cello", TaskZone.OVER_THE_HORIZON);
-    Task critical = new Task("File the tax return", TaskZone.CRITICAL_NOW);
-    Task opportunity = new Task("Book a haircut", TaskZone.OPPORTUNITY_NOW);
+    Task horizon = new Task("Learn the cello", TaskZone.OVER_THE_HORIZON, java.time.Instant.now());
+    Task critical = new Task("File the tax return", TaskZone.CRITICAL_NOW, java.time.Instant.now());
+    Task opportunity =
+        new Task("Book a haircut", TaskZone.OPPORTUNITY_NOW, java.time.Instant.now());
 
     inbox.add(horizon);
     inbox.add(critical);
@@ -202,7 +204,7 @@ class TaskPersistenceIT {
   @DisplayName("counting a zone is what drives the soft-cap warning")
   void countsPerZone() {
     for (int i = 0; i < 6; i++) {
-      Task task = new Task("Urgent " + i, TaskZone.CRITICAL_NOW);
+      Task task = new Task("Urgent " + i, TaskZone.CRITICAL_NOW, java.time.Instant.now());
       inbox.add(task);
       tasks.save(task);
     }
