@@ -31,7 +31,7 @@ export interface ZoneSection {
 
 const RECOVERY_CHECK_MS = 20_000;
 
-const GONE = 'That task was completed or deleted elsewhere.';
+export const GONE = 'That task was completed or deleted elsewhere.';
 
 export const asBoardTask = (task: Task): BoardTask => ({
   id: task.id,
@@ -204,10 +204,6 @@ export class BoardStore {
 
   async setLabels(task: BoardTask, labels: string[]): Promise<WriteResult> {
     return this.online_(() => firstValueFrom(this.api.setLabels(task.id!, labels)));
-  }
-
-  async markReviewed(task: BoardTask): Promise<WriteResult> {
-    return this.online_(() => firstValueFrom(this.api.markReviewed(task.id!)));
   }
 
   async remove(task: BoardTask): Promise<WriteResult> {

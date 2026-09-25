@@ -1,0 +1,112 @@
+<div class="task" [class.selected]="selected()">
+  <mat-checkbox
+    class="select"
+    [checked]="selected()"
+    [aria-label]="'Select ' + task().title"
+    (change)="toggle()"
+  />
+
+  <!-- Named by its own content, so a screen reader gets the topics and the due date too; the
+       hidden word is what says the name is a thing to open. -->
+  <button type="button" class="grow body" (click)="details()">
+    <span class="cdk-visually-hidden">Open</span>
+    <span class="title truncate">{{ task().title }}</span>
+    <app-task-chips class="meta" [task]="task()" />
+  </button>
+
+  <!-- A selection is acted on from its own bar, so while there is one the rows only select. -->
+  @if (!selecting()) {
+    <button
+      matIconButton
+      type="button"
+      [disabled]="!online()"
+      [attr.aria-label]="'Mark ' + task().title + ' reviewed'"
+      matTooltip="Reviewed"
+      (click)="reviewed()"
+    >
+      <mat-icon svgIcon="seen" />
+    </button>
+
+    <span class="unfolded">
+      <button
+        matIconButton
+        type="button"
+        [disabled]="!online() || !promoteTo()"
+        [attr.aria-label]="promoteLabel()"
+        [matTooltip]="promoteTo() ? 'Move to ' + zoneName(promoteTo()!) : ''"
+        (click)="move(promoteTo())"
+      >
+        <mat-icon svgIcon="up" />
+      </button>
+      <button
+        matIconButton
+        type="button"
+        [disabled]="!online() || !demoteTo()"
+        [attr.aria-label]="demoteLabel()"
+        [matTooltip]="demoteTo() ? 'Move to ' + zoneName(demoteTo()!) : ''"
+        (click)="move(demoteTo())"
+      >
+        <mat-icon svgIcon="down" />
+      </button>
+      <button
+        matIconButton
+        type="button"
+        [disabled]="!online()"
+        [attr.aria-label]="'Defer ' + task().title"
+        matTooltip="Defer"
+        [matMenuTriggerFor]="deferMenu"
+      >
+        <mat-icon svgIcon="later" />
+      </button>
+      <button
+        matIconButton
+        type="button"
+        [disabled]="!online()"
+        [attr.aria-label]="'Delete ' + task().title"
+        matTooltip="Delete"
+        (click)="remove()"
+      >
+        <mat-icon svgIcon="trash" />
+      </button>
+    </span>
+
+    <button
+      matIconButton
+      type="button"
+      class="folded"
+      [attr.aria-label]="'Actions for ' + task().title"
+      [matMenuTriggerFor]="menu"
+    >
+      <mat-icon svgIcon="more" />
+    </button>
+  }
+
+  <mat-menu #menu="matMenu">
+    @if (promoteTo(); as zone) {
+      <button mat-menu-item type="button" [disabled]="!online()" (click)="move(zone)">
+        <mat-icon svgIcon="up" />
+        <span>Move to {{ zoneName(zone) }}</span>
+      </button>
+    }
+    @if (demoteTo(); as zone) {
+      <button mat-menu-item type="button" [disabled]="!online()" (click)="move(zone)">
+        <mat-icon svgIcon="down" />
+        <span>Move to {{ zoneName(zone) }}</span>
+      </button>
+    }
+    <button mat-menu-item type="button" [disabled]="!online()" [matMenuTriggerFor]="deferMenu">
+      <mat-icon svgIcon="later" />
+      <span>Defer</span>
+    </button>
+    <button mat-menu-item type="button" [disabled]="!online()" (click)="remove()">
+      <mat-icon svgIcon="trash" />
+      <span>Delete</span>
+    </button>
+  </mat-menu>
+
+  <mat-menu #deferMenu="matMenu">
+    <button mat-menu-item type="button" (click)="defer(1)">Tomorrow</button>
+    <button mat-menu-item type="button" (click)="defer(7)">Next week</button>
+    <button mat-menu-item type="button" (click)="defer(30)">In a month</button>
+  </mat-menu>
+</div>

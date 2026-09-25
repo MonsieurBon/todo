@@ -1,0 +1,55 @@
+// The row decides by its own width rather than the device's, so a narrow window on a desktop
+// gets the phone's row.
+:host {
+  display: block;
+  container-type: inline-size;
+}
+
+.unfolded {
+  display: none;
+}
+
+@container (min-width: 36rem) {
+  .unfolded {
+    display: flex;
+    margin-left: 0.5rem;
+  }
+
+  .folded {
+    display: none;
+  }
+}
+
+.task {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.25rem 0.15rem 0;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.task.pending {
+  opacity: 0.75;
+}
+
+// The row's body is a button so a tap anywhere on the task opens it, but it has to read as text.
+.body {
+  appearance: none;
+  background: none;
+  border: 0;
+  margin: 0;
+  padding: 0.35rem 0.25rem;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.title {
+  display: block;
+  font: var(--mat-sys-body-large);
+}
+
+.meta {
+  margin-top: 0.1rem;
+}

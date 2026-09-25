@@ -95,6 +95,18 @@ export class TodoApi {
     return this.http.post<Task>(`/api/tasks/${id}/reviewed`, {});
   }
 
+  markAllReviewed(ids: number[]): Observable<Task[]> {
+    return this.http.post<Task[]>('/api/tasks/reviewed', { taskIds: ids });
+  }
+
+  moveAllTo(ids: number[], zone: Zone): Observable<Task[]> {
+    return this.http.post<Task[]>('/api/tasks/zone', { taskIds: ids, zone });
+  }
+
+  deferAll(ids: number[], until: string): Observable<Task[]> {
+    return this.http.post<Task[]>('/api/tasks/defer', { taskIds: ids, until });
+  }
+
   update(id: number, patch: UpdateTask): Observable<Task> {
     return this.http.patch<Task>(`/api/tasks/${id}`, patch);
   }

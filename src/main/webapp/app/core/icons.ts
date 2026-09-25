@@ -19,6 +19,7 @@ const PATHS: Record<string, string> = {
   lists:
     '<line x1="9" y1="6.5" x2="20" y2="6.5"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="17.5" x2="20" y2="17.5"/><circle cx="4.5" cy="6.5" r="1.3"/><circle cx="4.5" cy="12" r="1.3"/><circle cx="4.5" cy="17.5" r="1.3"/>',
   review: '<circle cx="11" cy="11" r="6.5"/><line x1="16" y1="16" x2="21" y2="21"/>',
+  seen: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/>',
   board:
     '<rect x="3.5" y="4" width="17" height="5" rx="1.5"/><rect x="3.5" y="12" width="17" height="8" rx="1.5"/>',
   share:

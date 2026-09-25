@@ -1,107 +1,71 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { MatButton } from '@angular/material/button';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatCheckbox } from '@angular/material/checkbox';
 import { MatIcon } from '@angular/material/icon';
+import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { MatProgressBar } from '@angular/material/progress-bar';
-import { firstValueFrom } from 'rxjs';
-import { ZONE_NAMES, Zone, zoneAfter } from '../api/model';
-import { TodoApi } from '../api/todo-api';
-import { BoardStore, BoardTask, asBoardTask } from '../board/board-store';
-import { TaskChips } from '../board/task-chips';
-import { TaskNotes } from '../board/task-notes';
-import { WriteResult } from '../core/writes';
+import { ZONES, ZONE_NAMES, Zone } from '../api/model';
+import { ReviewRow } from './review-row';
+import { ReviewStore } from './review-store';
 
-const DAY = 24 * 60 * 60 * 1000;
-
-/**
- * The review sweep. "Leave it" is a button rather than a skip because it records that the task was
- * looked at, which is what stops the sweep offering it again.
- */
+/** The review sweep, as a board of what is due. */
 @Component({
   selector: 'app-review-page',
-  imports: [MatButton, MatIcon, MatProgressBar, TaskChips, TaskNotes],
+  imports: [
+    MatButton,
+    MatCheckbox,
+    MatIcon,
+    MatIconButton,
+    MatMenu,
+    MatMenuItem,
+    MatMenuTrigger,
+    MatProgressBar,
+    ReviewRow,
+  ],
+  providers: [ReviewStore],
   templateUrl: './review-page.html',
   styleUrl: './review-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ReviewPage {
-  private readonly api = inject(TodoApi);
-  private readonly board = inject(BoardStore);
+  private readonly review = inject(ReviewStore);
 
-  private readonly queue = signal<BoardTask[]>([]);
-  private readonly index = signal(0);
-  private readonly working = signal(true);
+  protected readonly zones = this.review.zones;
+  protected readonly loading = this.review.loading;
+  protected readonly online = this.review.online;
+  protected readonly remaining = this.review.remaining;
+  protected readonly progress = this.review.progress;
+  protected readonly selecting = this.review.selecting;
+  protected readonly selectedCount = this.review.selectedCount;
 
-  protected readonly loading = this.working.asReadonly();
-  protected readonly online = this.board.online;
-  protected readonly total = computed(() => this.queue().length);
-  protected readonly position = computed(() => Math.min(this.index() + 1, this.total()));
-  protected readonly current = computed<BoardTask | null>(() => this.queue()[this.index()] ?? null);
-  protected readonly done = computed(() => !this.working() && this.current() === null);
-  protected readonly progress = computed(() =>
-    this.total() === 0 ? 0 : (this.index() / this.total()) * 100,
-  );
-
+  protected readonly allZones = ZONES;
   protected readonly zoneName = (zone: Zone) => ZONE_NAMES[zone];
-  protected readonly promoteTo = computed(() =>
-    this.current() ? zoneAfter(this.current()!.zone, -1) : null,
-  );
-  protected readonly demoteTo = computed(() =>
-    this.current() ? zoneAfter(this.current()!.zone, 1) : null,
-  );
 
   constructor() {
-    void this.load();
+    void this.review.load();
   }
 
-  private async load(): Promise<void> {
-    this.working.set(true);
-    try {
-      const due = await firstValueFrom(this.api.reviewQueue(this.board.filter()));
-      this.queue.set(due.map(asBoardTask));
-      this.index.set(0);
-    } finally {
-      this.working.set(false);
-    }
+  protected selectionIn(zone: Zone): 'all' | 'some' | 'none' {
+    return this.review.selectionIn(zone);
   }
 
-  protected async keep(): Promise<void> {
-    await this.decide((task) => this.board.markReviewed(task));
+  protected selectZone(zone: Zone, on: boolean): void {
+    this.review.selectZone(zone, on);
   }
 
-  protected async move(zone: Zone | null): Promise<void> {
-    if (zone) {
-      await this.decide((task) => this.board.moveZone(task, zone));
-    }
+  protected clearSelection(): void {
+    this.review.clearSelection();
   }
 
-  protected async defer(days: number): Promise<void> {
-    const until = new Date(Date.now() + days * DAY).toISOString().slice(0, 10);
-    await this.decide((task) => this.board.defer(task, until));
+  protected reviewedAll(): void {
+    void this.review.reviewedAll();
   }
 
-  protected async complete(): Promise<void> {
-    await this.decide((task) => this.board.complete(task));
+  protected moveAll(zone: Zone): void {
+    void this.review.moveAll(zone);
   }
 
-  protected async remove(): Promise<void> {
-    await this.decide((task) => this.board.remove(task));
-  }
-
-  /**
-   * A card settled elsewhere is the card being stale, not the decision failing, so it is dropped —
-   * that keeps the position and the count honest. A refusal leaves it, because nothing was decided;
-   * the store says why.
-   */
-  private async decide(action: (task: BoardTask) => Promise<WriteResult>): Promise<void> {
-    const task = this.current();
-    if (!task) {
-      return;
-    }
-    const result = await action(task);
-    if (result === 'settled') {
-      this.queue.update((cards) => cards.filter((card) => card.id !== task.id));
-    } else if (result === 'done') {
-      this.index.update((at) => at + 1);
-    }
+  protected deferAll(days: number): void {
+    void this.review.deferAll(days);
   }
 }

@@ -1,7 +1,4 @@
-.counter {
-  margin: 0.5rem 0 0;
-  font: var(--mat-sys-label-medium);
-}
+@use '../board/zones';
 
 .offline {
   padding: 0.6rem 0.75rem;
@@ -12,37 +9,46 @@
   align-items: flex-start;
 }
 
-.card {
-  margin: 0.75rem 0 1.25rem;
-  padding: 1rem;
-  border-radius: 0.75rem;
-  background: var(--mat-sys-surface-container);
-
-  h1 {
-    margin: 0;
-    font: var(--mat-sys-headline-small);
-  }
-}
-
-.zone {
-  margin: 0.35rem 0 0;
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0 0 1rem;
   font: var(--mat-sys-label-medium);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
 }
 
-.notes {
-  margin: 0.75rem 0 0;
-  font: var(--mat-sys-body-medium);
+// Room for the selection bar, so it never sits over the last rows.
+.page.selecting {
+  padding-bottom: 14rem;
 }
 
-.meta {
-  margin-top: 0.75rem;
+.bulk {
+  position: fixed;
+  z-index: 2;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  max-width: 54.5rem;
+  margin: 0 auto;
+  padding: 0.25rem 0.75rem 0.75rem;
+  border-radius: 1rem;
+  background: var(--mat-sys-surface-container-high);
+  box-shadow: var(--mat-sys-level3);
 }
 
-// One decision per row on a phone: these are deliberate choices, not a toolbar to swipe past.
-.decisions {
+.count {
+  font: var(--mat-sys-title-medium);
+}
+
+// Three to a row even on a phone, so each keeps its label on one line.
+.actions {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.5rem;
+  --mat-button-filled-horizontal-padding: 0.5rem;
+  --mat-button-tonal-horizontal-padding: 0.5rem;
+
+  button {
+    white-space: nowrap;
+  }
 }

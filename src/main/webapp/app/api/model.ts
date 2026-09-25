@@ -57,6 +57,11 @@ export function zoneAfter(zone: Zone, steps: number): Zone | null {
   return next >= 0 && next < ZONES.length ? ZONES[next] : null;
 }
 
+/** A move button's name, which still says something when the zone has no neighbour that way. */
+export function moveLabel(title: string, zone: Zone | null, direction: 'up' | 'down'): string {
+  return zone ? `Move ${title} to ${ZONE_NAMES[zone]}` : `Move ${title} ${direction}`;
+}
+
 /**
  * Enforced where a value is typed, because the outbox drops a 4xx as settled — so a value the
  * server refuses is a task reported saved and never seen again. Third copy of a number that starts
