@@ -1,3 +1,10 @@
+## [2.5.1](https://github.com/MonsieurBon/todo/compare/v2.5.0...v2.5.1) (2026-10-01)
+
+
+### Bug Fixes
+
+* deferring a task keeps it in its zone ([4ae1e82](https://github.com/MonsieurBon/todo/commit/4ae1e82fc4f43a2d71644ce878703ccbe7937b29))
+
 # [2.5.0](https://github.com/MonsieurBon/todo/compare/v2.4.0...v2.5.0) (2026-09-25)
 
 
