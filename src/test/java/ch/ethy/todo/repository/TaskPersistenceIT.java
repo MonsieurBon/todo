@@ -199,19 +199,4 @@ class TaskPersistenceIT {
         .containsExactlyInAnyOrder("Inbox", "Private");
     assertThat(private_.isAccessibleBy(other)).isFalse();
   }
-
-  @Test
-  @DisplayName("counting a zone is what drives the soft-cap warning")
-  void countsPerZone() {
-    for (int i = 0; i < 6; i++) {
-      Task task = new Task("Urgent " + i, TaskZone.CRITICAL_NOW, java.time.Instant.now());
-      inbox.add(task);
-      tasks.save(task);
-    }
-    tasks.flush();
-
-    long count = tasks.countByTaskListAndZoneAndState(inbox, TaskZone.CRITICAL_NOW, TaskState.TODO);
-    assertThat(count).isEqualTo(6);
-    assertThat(TaskZone.CRITICAL_NOW.isOverSoftCap((int) count)).isTrue();
-  }
 }

@@ -337,8 +337,8 @@ public class TodoTools {
       title = "Hide tasks until a date",
       description =
           """
-          Push tasks over the horizon and hide them until the given date, when they come
-          back by themselves. This is for "not yet", and is different from a due date:
+          Hide tasks until the given date, when they come back by themselves in the zone
+          they were in. This is for "not yet", and is different from a due date:
           deferring says when the user wants to see a task again, a due date says when it
           must be finished. The date cannot be in the past. Deferring counts as
           reviewing a task, so it leaves the review queue.

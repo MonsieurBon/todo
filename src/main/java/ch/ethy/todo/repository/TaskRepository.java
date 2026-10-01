@@ -96,7 +96,4 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
   /** Scoped to the list, so a reference guessed by someone else resolves to nothing. */
   @EntityGraph(attributePaths = {"labels", "taskList"})
   java.util.Optional<Task> findByTaskListAndClientRef(TaskList list, String clientRef);
-
-  long countByTaskListAndZoneAndState(
-      TaskList list, ch.ethy.todo.domain.TaskZone zone, ch.ethy.todo.domain.TaskState state);
 }

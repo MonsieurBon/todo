@@ -244,7 +244,6 @@ public class Task {
     if (until.isBefore(today)) {
       throw new IllegalArgumentException("Cannot defer into the past: " + until);
     }
-    this.zone = TaskZone.OVER_THE_HORIZON;
     this.deferUntil = until;
     this.lastReviewedAt = decidedAt;
   }
