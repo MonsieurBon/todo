@@ -1,3 +1,10 @@
+# [2.6.0](https://github.com/MonsieurBon/todo/compare/v2.5.1...v2.6.0) (2026-10-01)
+
+
+### Features
+
+* show deferred tasks on the board when asked for ([170e64a](https://github.com/MonsieurBon/todo/commit/170e64a3844709d47218487fb60bc331fe7c0e7f))
+
 ## [2.5.1](https://github.com/MonsieurBon/todo/compare/v2.5.0...v2.5.1) (2026-10-01)
 
 
