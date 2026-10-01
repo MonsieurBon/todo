@@ -6,7 +6,7 @@ import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { MatTooltip } from '@angular/material/tooltip';
 import { ZONE_NAMES, Zone, moveLabel, zoneAfter } from '../api/model';
 import { isoDateIn } from '../core/dates';
-import { BoardStore, BoardTask } from './board-store';
+import { BoardStore, BoardTask, isDeferred } from './board-store';
 import { TaskChips } from './task-chips';
 import { TaskDetail } from './task-detail';
 import { TaskEdit, TaskEditor } from './task-editor';
@@ -28,6 +28,8 @@ export class TaskRow {
 
   /** A queued capture has no server id, so everything but completing it is out of reach. */
   protected readonly pending = computed(() => this.task().pendingId !== null);
+
+  protected readonly deferred = computed(() => isDeferred(this.task()));
 
   protected readonly promoteTo = computed(() => zoneAfter(this.task().zone, -1));
   protected readonly demoteTo = computed(() => zoneAfter(this.task().zone, 1));

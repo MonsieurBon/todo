@@ -125,47 +125,24 @@ class TaskPersistenceIT {
   }
 
   @Test
-  @DisplayName("a deferred task is excluded from the visible list until its date arrives")
-  void deferredTasksAreHidden() {
-    LocalDate today = LocalDate.of(2026, 9, 3);
-
-    Task visible = new Task("Call the dentist", TaskZone.CRITICAL_NOW, java.time.Instant.now());
-    Task deferred =
-        new Task("Plan the summer trip", TaskZone.OPPORTUNITY_NOW, java.time.Instant.now());
-    deferred.deferUntil(today.plusDays(30), today, java.time.Instant.now());
-
-    inbox.add(visible);
-    inbox.add(deferred);
-    tasks.saveAllAndFlush(java.util.List.of(visible, deferred));
-
-    assertThat(tasks.findVisibleIn(inbox, today))
-        .extracting(Task::title)
-        .containsExactly("Call the dentist");
-    assertThat(tasks.findVisibleIn(inbox, today.plusDays(30)))
-        .extracting(Task::title)
-        .containsExactlyInAnyOrder("Call the dentist", "Plan the summer trip");
-  }
-
-  @Test
-  @DisplayName("completed tasks drop out of the visible list")
+  @DisplayName("completed tasks drop off the board unless asked for")
   void completedTasksAreHidden() {
-    LocalDate today = LocalDate.of(2026, 9, 3);
     Task task = new Task("Take out the bins", TaskZone.CRITICAL_NOW, java.time.Instant.now());
     inbox.add(task);
     tasks.saveAndFlush(task);
 
-    assertThat(tasks.findVisibleIn(inbox, today)).hasSize(1);
+    assertThat(tasks.findOnBoard(owner, inbox.id(), null, false)).hasSize(1);
 
     task.complete();
     tasks.saveAndFlush(task);
 
-    assertThat(tasks.findVisibleIn(inbox, today)).isEmpty();
+    assertThat(tasks.findOnBoard(owner, inbox.id(), null, false)).isEmpty();
+    assertThat(tasks.findOnBoard(owner, inbox.id(), null, true)).hasSize(1);
   }
 
   @Test
-  @DisplayName("visible tasks come back ordered by zone urgency")
+  @DisplayName("the board comes back ordered by zone urgency")
   void orderedByZoneUrgency() {
-    LocalDate today = LocalDate.of(2026, 9, 3);
     Task horizon = new Task("Learn the cello", TaskZone.OVER_THE_HORIZON, java.time.Instant.now());
     Task critical = new Task("File the tax return", TaskZone.CRITICAL_NOW, java.time.Instant.now());
     Task opportunity =
@@ -176,7 +153,7 @@ class TaskPersistenceIT {
     inbox.add(opportunity);
     tasks.saveAllAndFlush(java.util.List.of(horizon, critical, opportunity));
 
-    assertThat(tasks.findVisibleIn(inbox, today))
+    assertThat(tasks.findOnBoard(owner, inbox.id(), null, false))
         .extracting(Task::zone)
         .containsExactly(
             TaskZone.CRITICAL_NOW, TaskZone.OPPORTUNITY_NOW, TaskZone.OVER_THE_HORIZON);

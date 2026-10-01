@@ -196,11 +196,11 @@ class McpToolAuthorizationIT extends IntegrationTest {
           .extracting(t -> t.zone())
           .isEqualTo(TaskZone.CRITICAL_NOW);
 
-      var board = tools.getBoard("house", null, null, null);
+      var board = tools.getBoard("house", null, null, null, null);
       assertThat(board.tasks()).extracting(t -> t.title()).contains("Fix the tile");
 
       tools.completeTask(task.id());
-      assertThat(tools.getBoard("house", null, null, null).tasks())
+      assertThat(tools.getBoard("house", null, null, null, null).tasks())
           .extracting(t -> t.title())
           .doesNotContain("Fix the tile");
     }
@@ -225,7 +225,7 @@ class McpToolAuthorizationIT extends IntegrationTest {
       assertThat(notesOnly.dueDate()).isEqualTo(LocalDate.of(2030, 4, 1));
 
       tools.updateTask(task.id(), null, "", null, true);
-      assertThat(tools.getBoard(null, null, null, null).tasks())
+      assertThat(tools.getBoard(null, null, null, null, null).tasks())
           .filteredOn(t -> t.id().equals(task.id()))
           .singleElement()
           .satisfies(
@@ -248,7 +248,7 @@ class McpToolAuthorizationIT extends IntegrationTest {
           .satisfies(e -> assertThat(e.getMessage()).doesNotContain("Private", "Mine"));
 
       as(owner);
-      assertThat(tools.getBoard(null, null, null, null).tasks())
+      assertThat(tools.getBoard(null, null, null, null, null).tasks())
           .filteredOn(t -> t.id().equals(task.id()))
           .singleElement()
           .satisfies(
@@ -283,7 +283,7 @@ class McpToolAuthorizationIT extends IntegrationTest {
           .containsOnly(TaskZone.OPPORTUNITY_NOW);
 
       tools.deferTasks(ids, LocalDate.of(2030, 1, 1));
-      assertThat(tools.getBoard(null, list.id(), null, null).tasks()).isEmpty();
+      assertThat(tools.getBoard(null, list.id(), null, null, null).tasks()).isEmpty();
     }
 
     @Test
@@ -309,7 +309,7 @@ class McpToolAuthorizationIT extends IntegrationTest {
                   assertThatThrownBy(call)
                       .isInstanceOf(NotFoundException.class)
                       .satisfies(e -> assertThat(e.getMessage()).doesNotContain("Private")));
-      assertThat(tools.getBoard(null, null, null, null).tasks())
+      assertThat(tools.getBoard(null, null, null, null, null).tasks())
           .filteredOn(t -> t.id().equals(mine.id()))
           .singleElement()
           .satisfies(
@@ -319,7 +319,7 @@ class McpToolAuthorizationIT extends IntegrationTest {
               });
 
       as(owner);
-      assertThat(tools.getBoard(null, null, null, null).tasks())
+      assertThat(tools.getBoard(null, null, null, null, null).tasks())
           .filteredOn(t -> t.id().equals(theirs.id()))
           .singleElement()
           .satisfies(t -> assertThat(t.lastReviewedAt()).isEqualTo(theirStamp));
@@ -327,7 +327,7 @@ class McpToolAuthorizationIT extends IntegrationTest {
 
     /** Read back as stored, so it compares at the column's precision rather than the clock's. */
     private java.time.Instant reviewedAt(Long taskId) {
-      return tools.getBoard(null, null, null, null).tasks().stream()
+      return tools.getBoard(null, null, null, null, null).tasks().stream()
           .filter(t -> t.id().equals(taskId))
           .findFirst()
           .orElseThrow()
@@ -346,14 +346,14 @@ class McpToolAuthorizationIT extends IntegrationTest {
       assertThatThrownBy(() -> tools.reopenTask(task.id())).isInstanceOf(NotFoundException.class);
 
       as(owner);
-      assertThat(tools.getBoard(null, null, null, true).tasks())
+      assertThat(tools.getBoard(null, null, null, true, null).tasks())
           .filteredOn(t -> t.id().equals(task.id()))
           .singleElement()
           .as("a stranger's attempt leaves it done")
           .satisfies(t -> assertThat(t.state()).isEqualTo(TaskState.DONE));
 
       assertThat(tools.reopenTask(task.id()).state()).isEqualTo(TaskState.TODO);
-      assertThat(tools.getBoard(null, null, null, null).tasks())
+      assertThat(tools.getBoard(null, null, null, null, null).tasks())
           .extracting(t -> t.id())
           .contains(task.id());
     }
@@ -370,7 +370,7 @@ class McpToolAuthorizationIT extends IntegrationTest {
       }
 
       var criticalOnBoard =
-          tools.getBoard(null, null, null, null).zones().stream()
+          tools.getBoard(null, null, null, null, null).zones().stream()
               .filter(z -> z.zone() == TaskZone.CRITICAL_NOW)
               .findFirst()
               .orElseThrow();

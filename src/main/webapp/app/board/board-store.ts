@@ -33,6 +33,9 @@ const RECOVERY_CHECK_MS = 20_000;
 
 export const GONE = 'That task was completed or deleted elsewhere.';
 
+/** The server sends a deferral only while it still hides the task. */
+export const isDeferred = (task: BoardTask): boolean => !!task.deferUntil;
+
 export const asBoardTask = (task: Task): BoardTask => ({
   id: task.id,
   pendingId: null,
@@ -94,21 +97,16 @@ export class BoardStore {
   });
 
   /**
-   * Loads counted from what is on screen, so an offline capture counts; the caps themselves stay
-   * the server's.
+   * Loads counted from what is on screen, so an offline capture counts and a deferred task shown
+   * on request does not; the caps themselves stay the server's.
    */
   readonly zones = computed<ZoneSection[]>(() => {
     const caps = new Map(this.served()?.zones.map((load) => [load.zone, load.softCap ?? null]));
     return ZONES.map((zone) => {
       const tasks = this.tasks().filter((task) => task.zone === zone);
       const softCap = caps.get(zone) ?? null;
-      return {
-        zone,
-        tasks,
-        open: tasks.length,
-        softCap,
-        overSoftCap: softCap !== null && tasks.length > softCap,
-      };
+      const open = tasks.filter((task) => !isDeferred(task)).length;
+      return { zone, tasks, open, softCap, overSoftCap: softCap !== null && open > softCap };
     });
   });
 

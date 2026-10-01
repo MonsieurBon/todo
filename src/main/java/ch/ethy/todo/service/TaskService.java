@@ -70,30 +70,32 @@ public class TaskService {
   }
 
   @Transactional(readOnly = true)
-  public List<Task> visibleIn(Long listId, User user) {
-    return tasks.findVisibleIn(lists.accessible(listId, user), LocalDate.now(clock));
+  public Board visibleIn(Long listId, User user) {
+    return board(user, BoardFilter.forList(lists.accessible(listId, user).id()));
   }
 
+  /**
+   * One read for the tasks and the loads: the loads cover every zone whatever the filter shows, and
+   * count no completed or deferred task even when it is shown.
+   */
   @Transactional(readOnly = true)
-  public List<Task> board(User user, BoardFilter filter) {
-    return tasks.findOnBoard(
-        user,
-        LocalDate.now(clock),
-        filter.listId(),
-        filter.label(),
-        filter.zone(),
-        filter.includeDone());
-  }
-
-  @Transactional(readOnly = true)
-  public Map<TaskZone, Long> zoneLoads(User user, BoardFilter filter) {
-    Map<TaskZone, Long> counts =
-        tasks
-            .countOpenByZoneOnBoard(user, LocalDate.now(clock), filter.listId(), filter.label())
-            .stream()
-            .collect(Collectors.toMap(row -> (TaskZone) row[0], row -> (Long) row[1]));
-    return java.util.Arrays.stream(TaskZone.values())
-        .collect(Collectors.toMap(zone -> zone, zone -> counts.getOrDefault(zone, 0L)));
+  public Board board(User user, BoardFilter filter) {
+    LocalDate today = LocalDate.now(clock);
+    List<Task> read =
+        tasks.findOnBoard(user, filter.listId(), filter.label(), filter.includeDone());
+    List<Task> shown =
+        read.stream()
+            .filter(task -> filter.zone() == null || task.zone() == filter.zone())
+            .filter(task -> filter.includeDeferred() || task.isVisibleOn(today))
+            .toList();
+    Map<TaskZone, Long> counted =
+        read.stream()
+            .filter(task -> task.isOpen() && task.isVisibleOn(today))
+            .collect(Collectors.groupingBy(Task::zone, Collectors.counting()));
+    Map<TaskZone, Long> loads =
+        java.util.Arrays.stream(TaskZone.values())
+            .collect(Collectors.toMap(zone -> zone, zone -> counted.getOrDefault(zone, 0L)));
+    return new Board(shown, loads, today);
   }
 
   /** Sorted here because the column is compared by code point, so the database cannot. */
@@ -210,11 +212,15 @@ public class TaskService {
 
   @Transactional(readOnly = true)
   public List<Task> reviewQueue(Long listId, User user) {
-    return visibleIn(listId, user).stream().filter(t -> t.isReviewDue(clock.instant())).toList();
+    return visibleIn(listId, user).tasks().stream()
+        .filter(t -> t.isReviewDue(clock.instant()))
+        .toList();
   }
 
   @Transactional(readOnly = true)
   public List<Task> reviewQueue(User user, BoardFilter filter) {
-    return board(user, filter).stream().filter(t -> t.isReviewDue(clock.instant())).toList();
+    return board(user, filter).tasks().stream()
+        .filter(t -> t.isReviewDue(clock.instant()))
+        .toList();
   }
 }

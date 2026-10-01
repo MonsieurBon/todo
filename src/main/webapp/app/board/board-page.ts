@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButton, MatFabButton, MatIconButton } from '@angular/material/button';
+import { MatCheckbox, MatCheckboxChange } from '@angular/material/checkbox';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { MatProgressBar } from '@angular/material/progress-bar';
@@ -12,6 +13,7 @@ import { TaskRow } from './task-row';
   selector: 'app-board-page',
   imports: [
     MatButton,
+    MatCheckbox,
     MatFabButton,
     MatIcon,
     MatIconButton,
@@ -69,6 +71,10 @@ export class BoardPage {
 
   protected byLabel(label: string | null): void {
     this.board.narrowTo({ label });
+  }
+
+  protected showDeferred(change: MatCheckboxChange): void {
+    this.board.narrowTo({ includeDeferred: change.checked });
   }
 
   protected clear(): void {

@@ -101,7 +101,7 @@ with `npm run build`.
   No test enumerates them, so a new change to a task has to decide whether it is such a decision.
 - **A deferral hides a task; it does not move it.** So a task can sit in Critical Now out of sight,
   and anything that reads or counts a zone has to say what it does with deferred tasks. They count
-  towards no cap.
+  towards no cap, shown or not.
 - **A write over several tasks is whole or nothing.** One task out of reach answers the same 404
   it would alone, one completed task the same 409, and either way none of them has changed: the
   transaction undoes whatever went before the refusal.

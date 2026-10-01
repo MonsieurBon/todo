@@ -163,3 +163,31 @@ test('a topic picked from the dropdown is the only one added', async () => {
   await page.goto(`/?label=${topic}`);
   await expect(page.getByText(`Second ${run}`)).toBeVisible();
 });
+
+test('a deferred task can be brought into sight and edited, and still counts towards no cap', async () => {
+  const topic = `parked${run}`;
+  await capture(`Parked ${run}`, { zone: 'Critical Now', labels: topic });
+  await page.getByRole('button', { name: 'All topics' }).click();
+  await page.getByRole('menuitem', { name: topic }).click();
+  const critical = zoneSection('Critical Now');
+  await expect(critical.getByText('1 / 5')).toBeVisible();
+
+  await page.getByRole('button', { name: `Defer Parked ${run}` }).click();
+  await page.getByRole('menuitem', { name: 'Tomorrow' }).click();
+  await expect(page.getByText(`Parked ${run}`)).toBeHidden();
+  await expect(critical.getByText('0 / 5')).toBeVisible();
+
+  await page.getByRole('checkbox', { name: 'Deferred' }).check();
+  await expect(critical.getByText(`Parked ${run}`)).toBeVisible();
+  await expect(critical.getByText(/^until /)).toBeVisible();
+  await expect(critical.getByText('0 / 5')).toBeVisible();
+
+  await page.getByRole('button', { name: `Edit Parked ${run}` }).click();
+  await page.getByLabel('Notes').fill('Ask about the deposit too');
+  // The row opens the task as the board last read it, so wait for the read after the save.
+  const reread = page.waitForResponse((r) => r.url().includes('/api/board'));
+  await page.getByRole('button', { name: 'Save' }).click();
+  await reread;
+  await critical.getByText(`Parked ${run}`).click();
+  await expect(page.getByText('Ask about the deposit too')).toBeVisible();
+});

@@ -137,10 +137,26 @@ class McpToolInputIT extends IntegrationTest {
                 "n".repeat(Task.MAX_NOTES_LENGTH + 1),
                 null,
                 null));
-    assertThat(tools.getBoard(null, null, null, null).tasks())
+    assertThat(tools.getBoard(null, null, null, null, null).tasks())
         .filteredOn(t -> t.id().equals(task.id()))
         .singleElement()
         .satisfies(t -> assertThat(t.title()).isEqualTo("Fix the roof"));
+  }
+
+  @Test
+  @DisplayName(
+      "get_board finds a deferred task only when asked to, in the zone it was deferred from")
+  void boardFindsDeferred() {
+    asSomeone();
+    var task = tools.createTask("Fix the roof", TaskZone.CRITICAL_NOW, null, null, null, null);
+    tools.deferTasks(List.of(task.id()), LocalDate.now().plusMonths(1));
+
+    assertThat(tools.getBoard(null, null, null, null, null).tasks())
+        .noneMatch(t -> t.id().equals(task.id()));
+    assertThat(tools.getBoard(null, null, null, null, true).tasks())
+        .filteredOn(t -> t.id().equals(task.id()))
+        .singleElement()
+        .satisfies(t -> assertThat(t.zone()).isEqualTo(TaskZone.CRITICAL_NOW));
   }
 
   @Test
@@ -187,7 +203,7 @@ class McpToolInputIT extends IntegrationTest {
                     .isInstanceOf(TaskCompletedException.class)
                     .hasMessageContaining("reopen"));
 
-    assertThat(tools.getBoard(null, null, null, true).tasks())
+    assertThat(tools.getBoard(null, null, null, true, null).tasks())
         .filteredOn(t -> t.id().equals(task.id()))
         .singleElement()
         .satisfies(

@@ -76,6 +76,12 @@ describe('a task’s chips', () => {
     expect(await shown()).not.toContain('waiting to sync');
   });
 
+  // The server sends a deferral only while it hides the task, so its today is the one that counts.
+  it('says until when a deferred task is out of sight, by the date the server sent', async () => {
+    expect(await shown({ deferUntil: '2000-01-01' })).toContain('until 2000-01-01');
+    expect(await shown()).not.toContain('until');
+  });
+
   // The board row and the review card both say the zone in their own layout already.
   it('says the zone only where it is asked for', async () => {
     expect(await shown()).not.toContain('Opportunity Now');

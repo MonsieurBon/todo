@@ -2,7 +2,7 @@ package ch.ethy.todo.web;
 
 import ch.ethy.todo.domain.TaskList;
 import ch.ethy.todo.domain.User;
-import ch.ethy.todo.service.BoardFilter;
+import ch.ethy.todo.service.Board;
 import ch.ethy.todo.service.CurrentUserService;
 import ch.ethy.todo.service.TaskListService;
 import ch.ethy.todo.service.TaskService;
@@ -46,11 +46,12 @@ public class TaskListController {
   public Responses.TaskListDetail oneList(@PathVariable Long id) {
     User me = currentUser.current();
     TaskList list = lists.accessible(id, me);
+    Board board = tasks.visibleIn(id, me);
     return new Responses.TaskListDetail(
         Responses.TaskListSummary.of(list, me),
         // Informational only: the caps that matter are the board's, counted across every list.
-        Responses.ZoneLoad.of(tasks.zoneLoads(me, BoardFilter.forList(id))),
-        tasks.visibleIn(id, me).stream().map(Responses.TaskView::of).toList());
+        Responses.ZoneLoad.of(board.loads()),
+        views(board));
   }
 
   @PostMapping
@@ -85,5 +86,9 @@ public class TaskListController {
       @PathVariable Long id, @Valid @RequestBody Requests.Share request) {
     User me = currentUser.current();
     return Responses.TaskListSummary.of(lists.unshare(id, me, request.email()), me);
+  }
+
+  private static List<Responses.TaskView> views(Board board) {
+    return board.tasks().stream().map(task -> Responses.TaskView.of(task, board.today())).toList();
   }
 }

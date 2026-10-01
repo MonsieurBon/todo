@@ -10,6 +10,9 @@
 @for (label of task().labels; track label) {
   <span class="chip topic">{{ label }}</span>
 }
+@if (deferred()) {
+  <span class="chip deferred">until {{ task().deferUntil }}</span>
+}
 @if (task().dueDate) {
   <span class="chip due">due {{ task().dueDate }}</span>
 }

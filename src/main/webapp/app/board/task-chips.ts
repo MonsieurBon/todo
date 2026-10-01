@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { ZONE_NAMES } from '../api/model';
-import { BoardStore, BoardTask } from './board-store';
+import { BoardStore, BoardTask, isDeferred } from './board-store';
 
 /**
  * What a task carries besides its title, in one row. The board row, the review card and the
@@ -26,4 +26,6 @@ export class TaskChips {
   protected readonly showList = computed(() => this.board.lists().length > 1);
 
   protected readonly pending = computed(() => this.task().pendingId !== null);
+
+  protected readonly deferred = computed(() => isDeferred(this.task()));
 }

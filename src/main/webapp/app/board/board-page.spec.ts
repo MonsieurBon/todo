@@ -7,9 +7,11 @@ import { BoardStore } from './board-store';
 
 describe('the board', () => {
   let sync: ReturnType<typeof vi.fn>;
+  let narrowTo: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     sync = vi.fn(async () => undefined);
+    narrowTo = vi.fn();
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
@@ -22,6 +24,7 @@ describe('the board', () => {
             filter: signal({}),
             loading: signal(false),
             sync,
+            narrowTo,
           },
         },
       ],
@@ -34,5 +37,18 @@ describe('the board', () => {
     TestBed.createComponent(BoardPage);
 
     expect(sync).toHaveBeenCalledTimes(2);
+  });
+
+  it('shows deferred tasks only once they are asked for', async () => {
+    const fixture = TestBed.createComponent(BoardPage);
+    await fixture.whenStable();
+    const checkbox = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
+      'input[type="checkbox"]',
+    )!;
+
+    expect(checkbox.checked).toBe(false);
+    checkbox.click();
+
+    expect(narrowTo).toHaveBeenCalledWith({ includeDeferred: true });
   });
 });

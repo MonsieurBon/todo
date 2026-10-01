@@ -321,6 +321,17 @@ class TaskTest {
     }
 
     @Test
+    @DisplayName("a deferral has a date to say only while the task is out of sight")
+    void deferredUntilOnlyWhileHidden() {
+      Task task = task();
+      task.deferUntil(TODAY.plusDays(3), TODAY, NOW);
+
+      assertThat(task.deferredUntil(TODAY.plusDays(2))).isEqualTo(TODAY.plusDays(3));
+      assertThat(task.deferredUntil(TODAY.plusDays(3))).isNull();
+      assertThat(task().deferredUntil(TODAY)).isNull();
+    }
+
+    @Test
     @DisplayName("deciding when to see a task again is a review, so it leaves the sweep")
     void deferringIsReviewing() {
       Task task = task();

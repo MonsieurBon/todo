@@ -249,7 +249,12 @@ public class Task {
   }
 
   public boolean isVisibleOn(LocalDate today) {
-    return deferUntil == null || !deferUntil.isAfter(today);
+    return deferredUntil(today) == null;
+  }
+
+  /** The date that still hides this task; none once it has come, though nothing clears it. */
+  public LocalDate deferredUntil(LocalDate today) {
+    return deferUntil != null && deferUntil.isAfter(today) ? deferUntil : null;
   }
 
   public Set<String> labels() {

@@ -115,6 +115,19 @@ describe('a task row', () => {
     expect(button(fixture.nativeElement, 'Move Fix the tile up').disabled).toBe(true);
   });
 
+  it('greys out a task the server sent as deferred, and no other', async () => {
+    const row = async (deferUntil?: string) => {
+      const fixture = TestBed.createComponent(TaskRow);
+      fixture.componentRef.setInput('task', { ...task, deferUntil });
+      await fixture.whenStable();
+      fixture.detectChanges();
+      return (fixture.nativeElement as HTMLElement).querySelector('.task')!.classList;
+    };
+
+    expect((await row('2000-01-01')).contains('deferred')).toBe(true);
+    expect((await row()).contains('deferred')).toBe(false);
+  });
+
   it('relabels once the edit itself has landed', async () => {
     await edited();
 

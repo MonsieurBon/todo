@@ -1,6 +1,8 @@
 package ch.ethy.todo.web;
 
+import ch.ethy.todo.domain.Task;
 import ch.ethy.todo.domain.TaskZone;
+import ch.ethy.todo.service.Board;
 import ch.ethy.todo.service.BoardFilter;
 import ch.ethy.todo.service.CurrentUserService;
 import ch.ethy.todo.service.NewTask;
@@ -9,6 +11,8 @@ import ch.ethy.todo.service.TaskService;
 import ch.ethy.todo.web.dto.Requests;
 import ch.ethy.todo.web.dto.Responses;
 import jakarta.validation.Valid;
+import java.time.Clock;
+import java.time.LocalDate;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -29,10 +33,12 @@ public class TaskController {
 
   private final TaskService tasks;
   private final CurrentUserService currentUser;
+  private final Clock clock;
 
-  public TaskController(TaskService tasks, CurrentUserService currentUser) {
+  public TaskController(TaskService tasks, CurrentUserService currentUser, Clock clock) {
     this.tasks = tasks;
     this.currentUser = currentUser;
+    this.clock = clock;
   }
 
   @GetMapping("/board")
@@ -40,20 +46,20 @@ public class TaskController {
       @RequestParam(required = false) Long list,
       @RequestParam(required = false) String label,
       @RequestParam(required = false) TaskZone zone,
-      @RequestParam(defaultValue = "false") boolean includeDone) {
+      @RequestParam(defaultValue = "false") boolean includeDone,
+      @RequestParam(defaultValue = "false") boolean includeDeferred) {
     var me = currentUser.current();
-    var filter = new BoardFilter(list, label, zone, includeDone);
-    return new Responses.BoardView(
-        Responses.ZoneLoad.of(tasks.zoneLoads(me, filter)),
-        tasks.board(me, filter).stream().map(Responses.TaskView::of).toList());
+    var filter = new BoardFilter(list, label, zone, includeDone, includeDeferred);
+    Board board = tasks.board(me, filter);
+    return new Responses.BoardView(Responses.ZoneLoad.of(board.loads()), views(board));
   }
 
   @GetMapping("/review")
   public List<Responses.TaskView> review(
       @RequestParam(required = false) Long list, @RequestParam(required = false) String label) {
     var me = currentUser.current();
-    return tasks.reviewQueue(me, new BoardFilter(list, label, null, false)).stream()
-        .map(Responses.TaskView::of)
+    return tasks.reviewQueue(me, new BoardFilter(list, label, null, false, false)).stream()
+        .map(this::view)
         .toList();
   }
 
@@ -65,7 +71,7 @@ public class TaskController {
   @PostMapping("/tasks/capture")
   @ResponseStatus(HttpStatus.CREATED)
   public Responses.TaskView captureTask(@Valid @RequestBody Requests.CaptureTask request) {
-    return Responses.TaskView.of(
+    return view(
         tasks.capture(
             currentUser.current(),
             new NewTask(
@@ -81,7 +87,7 @@ public class TaskController {
   @ResponseStatus(HttpStatus.CREATED)
   public Responses.TaskView addTaskToList(
       @PathVariable Long listId, @Valid @RequestBody Requests.CreateTask request) {
-    return Responses.TaskView.of(
+    return view(
         tasks.addTo(
             listId,
             currentUser.current(),
@@ -96,28 +102,24 @@ public class TaskController {
 
   @GetMapping("/tasklists/{listId}/tasks")
   public List<Responses.TaskView> tasksInList(@PathVariable Long listId) {
-    return tasks.visibleIn(listId, currentUser.current()).stream()
-        .map(Responses.TaskView::of)
-        .toList();
+    return views(tasks.visibleIn(listId, currentUser.current()));
   }
 
   /** The review sweep: what this list is overdue to look at, per its zones' cadences. */
   @GetMapping("/tasklists/{listId}/review")
   public List<Responses.TaskView> reviewInList(@PathVariable Long listId) {
-    return tasks.reviewQueue(listId, currentUser.current()).stream()
-        .map(Responses.TaskView::of)
-        .toList();
+    return tasks.reviewQueue(listId, currentUser.current()).stream().map(this::view).toList();
   }
 
   @GetMapping("/tasks/{id}")
   public Responses.TaskView oneTask(@PathVariable Long id) {
-    return Responses.TaskView.of(tasks.accessible(id, currentUser.current()));
+    return view(tasks.accessible(id, currentUser.current()));
   }
 
   @PatchMapping("/tasks/{id}")
   public Responses.TaskView updateTask(
       @PathVariable Long id, @Valid @RequestBody Requests.UpdateTask request) {
-    return Responses.TaskView.of(
+    return view(
         tasks.update(
             id,
             currentUser.current(),
@@ -130,36 +132,36 @@ public class TaskController {
 
   @PostMapping("/tasks/{id}/complete")
   public Responses.TaskView completeTask(@PathVariable Long id) {
-    return Responses.TaskView.of(tasks.complete(id, currentUser.current()));
+    return view(tasks.complete(id, currentUser.current()));
   }
 
   @PostMapping("/tasks/{id}/reopen")
   public Responses.TaskView reopenTask(@PathVariable Long id) {
-    return Responses.TaskView.of(tasks.reopen(id, currentUser.current()));
+    return view(tasks.reopen(id, currentUser.current()));
   }
 
   @PostMapping("/tasks/{id}/zone")
   public Responses.TaskView moveTaskZone(
       @PathVariable Long id, @Valid @RequestBody Requests.MoveZone request) {
-    return Responses.TaskView.of(tasks.moveTo(id, currentUser.current(), request.zone()));
+    return view(tasks.moveTo(id, currentUser.current(), request.zone()));
   }
 
   @PostMapping("/tasks/{id}/defer")
   public Responses.TaskView deferTask(
       @PathVariable Long id, @Valid @RequestBody Requests.Defer request) {
-    return Responses.TaskView.of(tasks.defer(id, currentUser.current(), request.until()));
+    return view(tasks.defer(id, currentUser.current(), request.until()));
   }
 
   @PostMapping("/tasks/{id}/reviewed")
   public Responses.TaskView markTaskReviewed(@PathVariable Long id) {
-    return Responses.TaskView.of(tasks.markReviewed(id, currentUser.current()));
+    return view(tasks.markReviewed(id, currentUser.current()));
   }
 
   @PostMapping("/tasks/reviewed")
   public List<Responses.TaskView> markTasksReviewed(
       @Valid @RequestBody Requests.Selection request) {
     return tasks.markAllReviewed(request.taskIds(), currentUser.current()).stream()
-        .map(Responses.TaskView::of)
+        .map(this::view)
         .toList();
   }
 
@@ -167,26 +169,34 @@ public class TaskController {
   public List<Responses.TaskView> moveTasksToZone(
       @Valid @RequestBody Requests.MoveSelection request) {
     return tasks.moveAllTo(request.taskIds(), currentUser.current(), request.zone()).stream()
-        .map(Responses.TaskView::of)
+        .map(this::view)
         .toList();
   }
 
   @PostMapping("/tasks/defer")
   public List<Responses.TaskView> deferTasks(@Valid @RequestBody Requests.DeferSelection request) {
     return tasks.deferAll(request.taskIds(), currentUser.current(), request.until()).stream()
-        .map(Responses.TaskView::of)
+        .map(this::view)
         .toList();
   }
 
   @PutMapping("/tasks/{id}/labels")
   public Responses.TaskView setTaskLabels(
       @PathVariable Long id, @Valid @RequestBody Requests.SetLabels request) {
-    return Responses.TaskView.of(tasks.setLabels(id, currentUser.current(), request.labels()));
+    return view(tasks.setLabels(id, currentUser.current(), request.labels()));
   }
 
   @DeleteMapping("/tasks/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void deleteTask(@PathVariable Long id) {
     tasks.delete(id, currentUser.current());
+  }
+
+  private Responses.TaskView view(Task task) {
+    return Responses.TaskView.of(task, LocalDate.now(clock));
+  }
+
+  private static List<Responses.TaskView> views(Board board) {
+    return board.tasks().stream().map(task -> Responses.TaskView.of(task, board.today())).toList();
   }
 }
