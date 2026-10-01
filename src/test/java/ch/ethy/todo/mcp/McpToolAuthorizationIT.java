@@ -359,6 +359,32 @@ class McpToolAuthorizationIT extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("can bring a deferred task back now, but not someone else's")
+    void undefers() {
+      String owner = someone();
+      as(owner);
+      var task =
+          tools.createTask("Call the landlord", TaskZone.CRITICAL_NOW, null, null, null, null);
+      tools.deferTasks(List.of(task.id()), LocalDate.of(2030, 1, 1));
+
+      as(someone());
+      assertThatThrownBy(() -> tools.undeferTask(task.id()))
+          .isInstanceOf(NotFoundException.class)
+          .satisfies(e -> assertThat(e.getMessage()).doesNotContain("landlord"));
+
+      as(owner);
+      assertThat(tools.getBoard(null, null, null, null, null).tasks())
+          .as("a stranger's attempt leaves it deferred")
+          .noneMatch(t -> t.id().equals(task.id()));
+
+      assertThat(tools.undeferTask(task.id()).deferUntil()).isNull();
+      assertThat(tools.getBoard(null, null, null, null, null).tasks())
+          .filteredOn(t -> t.id().equals(task.id()))
+          .singleElement()
+          .satisfies(t -> assertThat(t.zone()).isEqualTo(TaskZone.CRITICAL_NOW));
+    }
+
+    @Test
     @DisplayName("sees the zone loads counted across every list, not per list")
     void capsSpanLists() {
       as(someone());

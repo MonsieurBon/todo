@@ -248,6 +248,13 @@ public class Task {
     this.lastReviewedAt = decidedAt;
   }
 
+  /** Deciding to see a task now is a review, as deciding when to see it again is. */
+  public void undefer(Instant decidedAt) {
+    mustBeOpen();
+    this.deferUntil = null;
+    this.lastReviewedAt = decidedAt;
+  }
+
   public boolean isVisibleOn(LocalDate today) {
     return deferredUntil(today) == null;
   }

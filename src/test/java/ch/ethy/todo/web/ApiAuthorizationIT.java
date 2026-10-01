@@ -130,6 +130,7 @@ class ApiAuthorizationIT extends IntegrationTest {
                   java.util.Map.of("title", "hijacked")),
               post("/api/tasks/" + aliceTask + "/complete").with(as(BOB, API)),
               post("/api/tasks/" + aliceTask + "/reopen").with(as(BOB, API)),
+              post("/api/tasks/" + aliceTask + "/undefer").with(as(BOB, API)),
               withBody(
                   post("/api/tasks/" + aliceTask + "/zone").with(as(BOB, API)),
                   java.util.Map.of("zone", "OVER_THE_HORIZON")),

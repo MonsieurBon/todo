@@ -196,6 +196,10 @@ export class BoardStore {
     return this.online_(() => firstValueFrom(this.api.defer(task.id!, until)));
   }
 
+  async undefer(task: BoardTask): Promise<WriteResult> {
+    return this.online_(() => firstValueFrom(this.api.undefer(task.id!)));
+  }
+
   async edit(task: BoardTask, patch: UpdateTask): Promise<WriteResult> {
     return this.online_(() => firstValueFrom(this.api.update(task.id!, patch)));
   }

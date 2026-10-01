@@ -195,6 +195,7 @@ class McpToolInputIT extends IntegrationTest {
                 () -> tools.updateTask(task.id(), "Fix the ridge", null, null, null),
                 () -> tools.moveTasksToZone(List.of(task.id()), TaskZone.CRITICAL_NOW),
                 () -> tools.deferTasks(List.of(task.id()), LocalDate.of(2030, 1, 1)),
+                () -> tools.undeferTask(task.id()),
                 () -> tools.setTaskLabels(task.id(), List.of("garden")),
                 () -> tools.markTasksReviewed(List.of(task.id()))))
         .allSatisfy(
