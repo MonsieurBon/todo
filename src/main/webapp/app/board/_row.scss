@@ -32,6 +32,10 @@
   opacity: 0.75;
 }
 
+.task.deferred {
+  opacity: 0.6;
+}
+
 // The row's body is a button so a tap anywhere on the task opens it, but it has to read as text.
 .body {
   appearance: none;

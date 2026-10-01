@@ -16,7 +16,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 class BoardFilterTest {
 
   private static String labelOf(String filter) {
-    return new BoardFilter(null, filter, null, false).label();
+    return new BoardFilter(null, filter, null, false, false).label();
   }
 
   @Test

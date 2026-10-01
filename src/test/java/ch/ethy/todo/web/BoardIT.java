@@ -297,6 +297,29 @@ class BoardIT extends IntegrationTest {
     assertThat(zoneCount(board, "OVER_THE_HORIZON")).isZero();
   }
 
+  @Test
+  @DisplayName("asked for, deferred tasks show in their zone and still count towards none")
+  void deferredOnRequest() throws Exception {
+    String me = someone();
+    Long list = createList(me, "Parked");
+    addTask(me, list, "Visible", "CRITICAL_NOW", List.of());
+    JsonNode created =
+        perform(
+            body(
+                post("/api/tasklists/" + list + "/tasks").with(as(me)),
+                Map.of("title", "Deferred", "zone", "CRITICAL_NOW", "labels", List.of())));
+    String until = java.time.LocalDate.now().plusMonths(1).toString();
+    perform(
+        body(
+            post("/api/tasks/" + created.get("id").asLong() + "/defer").with(as(me)),
+            Map.of("until", until)));
+
+    JsonNode board = perform(get("/api/board").param("includeDeferred", "true").with(as(me)));
+    assertThat(titles(board.get("tasks"))).containsExactlyInAnyOrder("Visible", "Deferred");
+    assertThat(board.get("tasks").findValuesAsString("zone")).containsOnly("CRITICAL_NOW");
+    assertThat(zoneCount(board, "CRITICAL_NOW")).isEqualTo(1);
+  }
+
   private List<String> titles(JsonNode tasks) {
     List<String> titles = new java.util.ArrayList<>();
     tasks.forEach(t -> titles.add(t.get("title").asString()));

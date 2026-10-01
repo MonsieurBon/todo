@@ -29,6 +29,10 @@
       }
     </mat-menu>
 
+    <mat-checkbox [checked]="!!filter().includeDeferred" (change)="showDeferred($event)">
+      Deferred
+    </mat-checkbox>
+
     @if (filter().list || filter().label || filter().zone) {
       <button matIconButton type="button" aria-label="Clear filters" (click)="clear()">
         <mat-icon svgIcon="close" />

@@ -75,6 +75,18 @@ describe('the board', () => {
     expect(store.zones()[0].overSoftCap).toBe(true);
   });
 
+  it('shows a deferred task in its zone without counting it, so showing one moves no cap', async () => {
+    await load([
+      task(1),
+      task(2, { deferUntil: '2999-01-01' }),
+      // Sent only while it still hides the task, so the server's today decides, not this device's.
+      task(3, { deferUntil: '2000-01-01' }),
+    ]);
+
+    expect(store.zones()[0].tasks.map((t) => t.id)).toEqual([1, 2, 3]);
+    expect(store.zones()[0].open).toBe(1);
+  });
+
   it('shows a capture the server has acknowledged once, not twice', async () => {
     // The request arrived but the response did not, so the entry is still queued while the task
     // itself is already on the server. This is the case the clientRef exists for.

@@ -3,14 +3,15 @@ package ch.ethy.todo.service;
 import ch.ethy.todo.domain.Task;
 import ch.ethy.todo.domain.TaskZone;
 
-public record BoardFilter(Long listId, String label, TaskZone zone, boolean includeDone) {
+public record BoardFilter(
+    Long listId, String label, TaskZone zone, boolean includeDone, boolean includeDeferred) {
 
   public static BoardFilter everything() {
-    return new BoardFilter(null, null, null, false);
+    return new BoardFilter(null, null, null, false, false);
   }
 
   public static BoardFilter forList(Long listId) {
-    return new BoardFilter(listId, null, null, false);
+    return new BoardFilter(listId, null, null, false, false);
   }
 
   /**

@@ -8,6 +8,7 @@ export interface BoardFilter {
   label?: string | null;
   zone?: Zone | null;
   includeDone?: boolean;
+  includeDeferred?: boolean;
 }
 
 function params(filter: BoardFilter): HttpParams {
@@ -23,6 +24,9 @@ function params(filter: BoardFilter): HttpParams {
   }
   if (filter.includeDone) {
     query = query.set('includeDone', true);
+  }
+  if (filter.includeDeferred) {
+    query = query.set('includeDeferred', true);
   }
   return query;
 }

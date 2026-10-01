@@ -3,6 +3,7 @@ package ch.ethy.todo.mcp;
 import ch.ethy.todo.domain.Task;
 import ch.ethy.todo.domain.TaskList;
 import ch.ethy.todo.domain.TaskZone;
+import ch.ethy.todo.service.Board;
 import ch.ethy.todo.service.BoardFilter;
 import ch.ethy.todo.service.CurrentUserService;
 import ch.ethy.todo.service.NewTask;
@@ -10,6 +11,7 @@ import ch.ethy.todo.service.TaskEdit;
 import ch.ethy.todo.service.TaskListService;
 import ch.ethy.todo.service.TaskService;
 import ch.ethy.todo.web.dto.Responses;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.ai.mcp.annotation.McpTool;
@@ -26,11 +28,14 @@ public class TodoTools {
   private final TaskService tasks;
   private final TaskListService lists;
   private final CurrentUserService currentUser;
+  private final Clock clock;
 
-  public TodoTools(TaskService tasks, TaskListService lists, CurrentUserService currentUser) {
+  public TodoTools(
+      TaskService tasks, TaskListService lists, CurrentUserService currentUser, Clock clock) {
     this.tasks = tasks;
     this.lists = lists;
     this.currentUser = currentUser;
+    this.clock = clock;
   }
 
   @McpTool(
@@ -99,8 +104,7 @@ public class TodoTools {
     var me = currentUser.current();
     TaskZone target = zone == null ? TaskZone.OPPORTUNITY_NOW : zone;
     var draft = new NewTask(title, target, notes, dueDate, labels, null);
-    return Responses.TaskView.of(
-        listId == null ? tasks.capture(me, draft) : tasks.addTo(listId, me, draft));
+    return view(listId == null ? tasks.capture(me, draft) : tasks.addTo(listId, me, draft));
   }
 
   @McpTool(
@@ -141,7 +145,7 @@ public class TodoTools {
               description = "True to remove the due date. Cannot be combined with dueDate.",
               required = false)
           Boolean clearDueDate) {
-    return Responses.TaskView.of(
+    return view(
         tasks.update(
             taskId,
             currentUser.current(),
@@ -166,7 +170,8 @@ public class TodoTools {
           the method says it should hold; if CRITICAL_NOW is over its cap, say so and
           offer to move something out rather than adding more.
 
-          Deferred tasks and completed tasks are hidden by default.
+          Deferred tasks and completed tasks are hidden by default. A deferred task
+          counts towards no zone, even when it is shown.
           """)
   public Responses.BoardView getBoard(
       @McpToolParam(
@@ -179,13 +184,22 @@ public class TodoTools {
           String label,
       @McpToolParam(description = "Only this list id.", required = false) Long listId,
       @McpToolParam(description = "Only this zone.", required = false) TaskZone zone,
-      @McpToolParam(description = "Include completed tasks.", required = false)
-          Boolean includeDone) {
+      @McpToolParam(description = "Include completed tasks.", required = false) Boolean includeDone,
+      @McpToolParam(
+              description =
+                  "Include deferred tasks, in the zone they come back to; deferUntil says when.",
+              required = false)
+          Boolean includeDeferred) {
     var me = currentUser.current();
-    var filter = new BoardFilter(listId, label, zone, Boolean.TRUE.equals(includeDone));
-    return new Responses.BoardView(
-        Responses.ZoneLoad.of(tasks.zoneLoads(me, filter)),
-        tasks.board(me, filter).stream().map(Responses.TaskView::of).toList());
+    var filter =
+        new BoardFilter(
+            listId,
+            label,
+            zone,
+            Boolean.TRUE.equals(includeDone),
+            Boolean.TRUE.equals(includeDeferred));
+    Board board = tasks.board(me, filter);
+    return new Responses.BoardView(Responses.ZoneLoad.of(board.loads()), views(board));
   }
 
   @McpTool(
@@ -250,9 +264,7 @@ public class TodoTools {
           """)
   public List<Responses.TaskView> getReviewQueue(
       @McpToolParam(description = "The list to sweep.", required = true) Long listId) {
-    return tasks.reviewQueue(listId, currentUser.current()).stream()
-        .map(Responses.TaskView::of)
-        .toList();
+    return tasks.reviewQueue(listId, currentUser.current()).stream().map(this::view).toList();
   }
 
   @McpTool(
@@ -271,7 +283,7 @@ public class TodoTools {
           """)
   public Responses.TaskView completeTask(
       @McpToolParam(description = "Id of the task.", required = true) Long taskId) {
-    return Responses.TaskView.of(tasks.complete(taskId, currentUser.current()));
+    return view(tasks.complete(taskId, currentUser.current()));
   }
 
   @McpTool(
@@ -293,7 +305,7 @@ public class TodoTools {
           """)
   public Responses.TaskView reopenTask(
       @McpToolParam(description = "Id of the task.", required = true) Long taskId) {
-    return Responses.TaskView.of(tasks.reopen(taskId, currentUser.current()));
+    return view(tasks.reopen(taskId, currentUser.current()));
   }
 
   @McpTool(
@@ -321,9 +333,7 @@ public class TodoTools {
   public List<Responses.TaskView> moveTasksToZone(
       @McpToolParam(description = "Ids of the tasks.", required = true) List<Long> taskIds,
       @McpToolParam(description = "The zone to move them to.", required = true) TaskZone zone) {
-    return tasks.moveAllTo(taskIds, currentUser.current(), zone).stream()
-        .map(Responses.TaskView::of)
-        .toList();
+    return tasks.moveAllTo(taskIds, currentUser.current(), zone).stream().map(this::view).toList();
   }
 
   @McpTool(
@@ -350,9 +360,7 @@ public class TodoTools {
       @McpToolParam(description = "Ids of the tasks.", required = true) List<Long> taskIds,
       @McpToolParam(description = "Date to bring them back, as YYYY-MM-DD.", required = true)
           LocalDate until) {
-    return tasks.deferAll(taskIds, currentUser.current(), until).stream()
-        .map(Responses.TaskView::of)
-        .toList();
+    return tasks.deferAll(taskIds, currentUser.current(), until).stream().map(this::view).toList();
   }
 
   @McpTool(
@@ -381,7 +389,7 @@ public class TodoTools {
                       + "existing spelling: topics are matched exactly.",
               required = true)
           List<String> labels) {
-    return Responses.TaskView.of(tasks.setLabels(taskId, currentUser.current(), labels));
+    return view(tasks.setLabels(taskId, currentUser.current(), labels));
   }
 
   @McpTool(
@@ -402,9 +410,7 @@ public class TodoTools {
               + "completed task among them refuses the whole call.")
   public List<Responses.TaskView> markTasksReviewed(
       @McpToolParam(description = "Ids of the tasks.", required = true) List<Long> taskIds) {
-    return tasks.markAllReviewed(taskIds, currentUser.current()).stream()
-        .map(Responses.TaskView::of)
-        .toList();
+    return tasks.markAllReviewed(taskIds, currentUser.current()).stream().map(this::view).toList();
   }
 
   @McpTool(
@@ -468,5 +474,13 @@ public class TodoTools {
           String email) {
     var me = currentUser.current();
     return Responses.TaskListSummary.of(lists.share(listId, me, email), me);
+  }
+
+  private Responses.TaskView view(Task task) {
+    return Responses.TaskView.of(task, LocalDate.now(clock));
+  }
+
+  private static List<Responses.TaskView> views(Board board) {
+    return board.tasks().stream().map(task -> Responses.TaskView.of(task, board.today())).toList();
   }
 }

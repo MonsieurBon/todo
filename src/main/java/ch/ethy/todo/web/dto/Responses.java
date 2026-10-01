@@ -42,14 +42,15 @@ public final class Responses {
       // Echoed back so an offline queue can match a response to the entry that produced it.
       String clientRef) {
 
-    public static TaskView of(Task task) {
+    /** {@code today} because a deferral whose date has come no longer hides anything. */
+    public static TaskView of(Task task, LocalDate today) {
       return new TaskView(
           task.id(),
           task.title(),
           task.notes(),
           task.zone(),
           task.state(),
-          task.deferUntil(),
+          task.deferredUntil(today),
           task.dueDate(),
           task.lastReviewedAt(),
           task.taskList() == null ? null : task.taskList().id(),

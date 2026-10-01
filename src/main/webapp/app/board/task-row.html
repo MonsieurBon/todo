@@ -1,4 +1,4 @@
-<div class="task" [class.pending]="pending()">
+<div class="task" [class.pending]="pending()" [class.deferred]="deferred()">
   <!-- Named by its own content, so a screen reader gets the topics and the due date too; the
        hidden word is what says the name is a thing to open. -->
   <button type="button" class="grow body" (click)="details()">
