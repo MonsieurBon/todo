@@ -291,12 +291,12 @@ class TaskTest {
   class Deferral {
 
     @Test
-    @DisplayName("deferring pushes the task over the horizon")
-    void deferMovesOverTheHorizon() {
-      Task task = task();
+    @DisplayName("deferring hides the task in its own zone, so it comes back where it was")
+    void deferKeepsTheZone() {
+      Task task = new Task("Call the landlord", TaskZone.CRITICAL_NOW, NOW);
       task.deferUntil(TODAY.plusDays(10), TODAY, NOW);
 
-      assertThat(task.zone()).isEqualTo(TaskZone.OVER_THE_HORIZON);
+      assertThat(task.zone()).isEqualTo(TaskZone.CRITICAL_NOW);
       assertThat(task.deferUntil()).isEqualTo(TODAY.plusDays(10));
     }
 
