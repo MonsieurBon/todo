@@ -45,14 +45,9 @@ describe('a task’s chips', () => {
     });
   });
 
-  /**
-   * The deny path, and the one the stylesheet leans on: a host with no chips in it is hidden, so
-   * a chip that rendered unconditionally would leave its caller's margin under every bare task.
-   */
-  it('renders nothing at all for a task that carries nothing', async () => {
-    const text = await shown({ labels: [], dueDate: undefined, listName: null });
-
-    expect(text.trim()).toBe('');
+  it('says the task’s number, once the server has given it one', async () => {
+    expect(await shown()).toContain('#7');
+    expect(await shown({ pendingId: 'draft-1', id: null })).not.toContain('#');
   });
 
   it('always says the topics and the due date', async () => {

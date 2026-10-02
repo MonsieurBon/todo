@@ -1,3 +1,6 @@
+@if (task().id; as id) {
+  <span class="chip number">#{{ id }}</span>
+}
 @if (showZone()) {
   <span class="chip zone">{{ zoneName() }}</span>
 }
