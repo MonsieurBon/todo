@@ -84,30 +84,25 @@ class BoardIT extends IntegrationTest {
   }
 
   @Test
-  @DisplayName("the Critical Now cap counts across every list, not once per list")
+  @DisplayName("the Critical Now cap counts across every list, even on a board narrowed to one")
   void capIsCountedAcrossLists() throws Exception {
     String me = someone();
     Long personal = createList(me, "Personal");
     Long family = createList(me, "Family");
 
     for (int i = 0; i < 3; i++) {
-      addTask(me, personal, "Personal urgent " + i, "CRITICAL_NOW", List.of());
+      addTask(me, personal, "Personal urgent " + i, "CRITICAL_NOW", List.of("house"));
       addTask(me, family, "Family urgent " + i, "CRITICAL_NOW", List.of());
     }
 
-    // Each list on its own looks perfectly healthy.
-    JsonNode personalOnly = perform(get("/api/board?list=" + personal).with(as(me)));
-    JsonNode familyOnly = perform(get("/api/board?list=" + family).with(as(me)));
-    assertThat(zoneCount(personalOnly, "CRITICAL_NOW")).isEqualTo(3);
-    assertThat(overCap(personalOnly, "CRITICAL_NOW")).isFalse();
-    assertThat(zoneCount(familyOnly, "CRITICAL_NOW")).isEqualTo(3);
-    assertThat(overCap(familyOnly, "CRITICAL_NOW")).isFalse();
-
-    // Together they are what you have actually committed to today: six, over the cap of five.
-    JsonNode board = perform(get("/api/board").with(as(me)));
-    assertThat(zoneCount(board, "CRITICAL_NOW")).isEqualTo(6);
-    assertThat(overCap(board, "CRITICAL_NOW")).isTrue();
-    assertThat(board.get("tasks")).hasSize(6);
+    // Six is what is committed to today, over the cap of five, whichever part of it is shown.
+    for (String probe :
+        List.of("/api/board", "/api/board?list=" + family, "/api/board?label=house")) {
+      JsonNode board = perform(get(probe).with(as(me)));
+      assertThat(zoneCount(board, "CRITICAL_NOW")).as(probe).isEqualTo(6);
+      assertThat(overCap(board, "CRITICAL_NOW")).as(probe).isTrue();
+    }
+    assertThat(perform(get("/api/board?list=" + family).with(as(me))).get("tasks")).hasSize(3);
   }
 
   @Test
@@ -248,10 +243,11 @@ class BoardIT extends IntegrationTest {
           .doesNotContain("Alice's");
     }
 
-    // And narrowing to her list id by hand returns nothing rather than her tasks.
+    // And narrowing to her list id by hand returns nothing rather than her tasks, and counts only
+    // his own.
     JsonNode byHerListId = perform(get("/api/board?list=" + hers).with(as(bob)));
     assertThat(byHerListId.get("tasks")).isEmpty();
-    assertThat(zoneCount(byHerListId, "CRITICAL_NOW")).isZero();
+    assertThat(zoneCount(byHerListId, "CRITICAL_NOW")).isEqualTo(1);
   }
 
   @Test

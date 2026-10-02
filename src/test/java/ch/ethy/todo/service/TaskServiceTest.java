@@ -103,6 +103,18 @@ class TaskServiceTest {
     verify(tasks, times(1)).findOnBoard(any(), any(), any(), anyBoolean());
   }
 
+  @Test
+  @DisplayName("narrowed to a list or a topic, the loads still count everything visible")
+  void loadsIgnoreTheNarrowing() {
+    Task inTopic = new Task("In the topic", TaskZone.CRITICAL_NOW, NOW);
+    when(tasks.findOnBoard(ME, 7L, "house", false)).thenReturn(List.of(inTopic));
+
+    var board = service.board(ME, new BoardFilter(7L, "house", null, false, false));
+
+    assertThat(board.tasks()).containsExactly(inTopic);
+    assertThat(board.loads()).containsEntry(TaskZone.CRITICAL_NOW, 3L);
+  }
+
   /** Whatever maps the tasks must use the day they were sorted by, or a midnight splits them. */
   @Test
   @DisplayName("the board says which day it decided by")
