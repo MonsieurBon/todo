@@ -70,6 +70,16 @@ export class BoardStore {
 
   readonly pendingCount = computed(() => this.outbox.pending().length);
 
+  /** An acknowledged capture lingers in the outbox; clientRef is how the two copies are one task. */
+  private readonly queuedCaptures = computed(() => {
+    const acknowledged = new Set(
+      this.served()
+        ?.tasks.map((t) => t.clientRef)
+        .filter(Boolean),
+    );
+    return this.outbox.pendingCaptures().filter((entry) => !acknowledged.has(entry.id));
+  });
+
   /**
    * The board's tasks with the outbox folded in, marked, so nothing pretends to be saved that is
    * not.
@@ -77,11 +87,7 @@ export class BoardStore {
   readonly tasks = computed<BoardTask[]>(() => {
     const completing = this.outbox.completingIds();
     const fromServer = (this.served()?.tasks ?? []).filter((t) => !completing.has(t.id));
-    // An acknowledged capture lingers in the outbox; clientRef is how the two copies are one task.
-    const acknowledged = new Set(fromServer.map((t) => t.clientRef).filter(Boolean));
-    const queued = this.outbox
-      .pendingCaptures()
-      .filter((entry) => !acknowledged.has(entry.id))
+    const queued = this.queuedCaptures()
       .filter((entry) => this.matchesFilter(entry.listId, entry.labels, entry.zone))
       .map<BoardTask>((entry) => ({
         id: null,
@@ -97,15 +103,24 @@ export class BoardStore {
   });
 
   /**
-   * Loads counted from what is on screen, so an offline capture counts and a deferred task shown
-   * on request does not; the caps themselves stay the server's.
+   * The server's loads, which count everything visible whatever the filter shows, with the outbox
+   * folded in: a queued capture counts wherever it is filed, and a queued completion no longer
+   * does. Only what is shown can be matched against the outbox, so until it is sent, a completion
+   * of a task the filter hides still counts, and a capture the server already holds counts twice.
    */
   readonly zones = computed<ZoneSection[]>(() => {
-    const caps = new Map(this.served()?.zones.map((load) => [load.zone, load.softCap ?? null]));
+    const served = this.served();
+    const loads = new Map(served?.zones.map((load) => [load.zone, load]));
+    const completing = this.outbox.completingIds();
     return ZONES.map((zone) => {
+      const load = loads.get(zone);
+      const softCap = load?.softCap ?? null;
+      const captured = this.queuedCaptures().filter((entry) => entry.zone === zone).length;
+      const completed = (served?.tasks ?? []).filter(
+        (task) => task.zone === zone && completing.has(task.id) && !task.deferUntil,
+      ).length;
+      const open = (load?.open ?? 0) + captured - completed;
       const tasks = this.tasks().filter((task) => task.zone === zone);
-      const softCap = caps.get(zone) ?? null;
-      const open = tasks.filter((task) => !isDeferred(task)).length;
       return { zone, tasks, open, softCap, overSoftCap: softCap !== null && open > softCap };
     });
   });

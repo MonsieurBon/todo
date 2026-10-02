@@ -48,10 +48,7 @@ public class TaskListController {
     TaskList list = lists.accessible(id, me);
     Board board = tasks.visibleIn(id, me);
     return new Responses.TaskListDetail(
-        Responses.TaskListSummary.of(list, me),
-        // Informational only: the caps that matter are the board's, counted across every list.
-        Responses.ZoneLoad.of(board.loads()),
-        views(board));
+        Responses.TaskListSummary.of(list, me), Responses.ZoneLoad.of(board.loads()), views(board));
   }
 
   @PostMapping

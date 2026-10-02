@@ -131,13 +131,13 @@ class TaskPersistenceIT {
     inbox.add(task);
     tasks.saveAndFlush(task);
 
-    assertThat(tasks.findOnBoard(owner, inbox.id(), null, false)).hasSize(1);
+    assertThat(tasks.findOnBoard(owner, false)).hasSize(1);
 
     task.complete();
     tasks.saveAndFlush(task);
 
-    assertThat(tasks.findOnBoard(owner, inbox.id(), null, false)).isEmpty();
-    assertThat(tasks.findOnBoard(owner, inbox.id(), null, true)).hasSize(1);
+    assertThat(tasks.findOnBoard(owner, false)).isEmpty();
+    assertThat(tasks.findOnBoard(owner, true)).hasSize(1);
   }
 
   @Test
@@ -153,7 +153,7 @@ class TaskPersistenceIT {
     inbox.add(opportunity);
     tasks.saveAllAndFlush(java.util.List.of(horizon, critical, opportunity));
 
-    assertThat(tasks.findOnBoard(owner, inbox.id(), null, false))
+    assertThat(tasks.findOnBoard(owner, false))
         .extracting(Task::zone)
         .containsExactly(
             TaskZone.CRITICAL_NOW, TaskZone.OPPORTUNITY_NOW, TaskZone.OVER_THE_HORIZON);

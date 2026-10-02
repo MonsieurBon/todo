@@ -40,7 +40,7 @@ class TaskServiceTest {
   @BeforeEach
   void board() {
     tasks = mock(TaskRepository.class);
-    when(tasks.findOnBoard(any(), any(), any(), anyBoolean()))
+    when(tasks.findOnBoard(any(), anyBoolean()))
         .thenReturn(
             List.of(
                 new Task("Never deferred", TaskZone.CRITICAL_NOW, NOW),
@@ -83,7 +83,7 @@ class TaskServiceTest {
   void completedIsNoLoad() {
     Task done = new Task("Done already", TaskZone.CRITICAL_NOW, NOW);
     done.complete();
-    when(tasks.findOnBoard(any(), any(), any(), anyBoolean())).thenReturn(List.of(done));
+    when(tasks.findOnBoard(any(), anyBoolean())).thenReturn(List.of(done));
 
     var board = service.board(ME, new BoardFilter(null, null, null, true, false));
 
@@ -92,7 +92,7 @@ class TaskServiceTest {
   }
 
   @Test
-  @DisplayName("the board and its loads come from one read, narrowed to a zone or not")
+  @DisplayName("the board and its loads come from one read, however it is narrowed")
   void oneRead() {
     var oneZone = new BoardFilter(null, null, TaskZone.OPPORTUNITY_NOW, false, false);
 
@@ -100,7 +100,22 @@ class TaskServiceTest {
 
     assertThat(board.tasks()).isEmpty();
     assertThat(board.loads()).containsEntry(TaskZone.CRITICAL_NOW, 3L);
-    verify(tasks, times(1)).findOnBoard(any(), any(), any(), anyBoolean());
+    verify(tasks, times(1)).findOnBoard(any(), anyBoolean());
+  }
+
+  @Test
+  @DisplayName("narrowed to a topic, the loads still count everything visible")
+  void loadsIgnoreTheNarrowing() {
+    Task inTopic = new Task("In the topic", TaskZone.CRITICAL_NOW, NOW);
+    inTopic.labels(List.of("house"));
+    when(tasks.findOnBoard(any(), anyBoolean()))
+        .thenReturn(List.of(inTopic, new Task("Elsewhere", TaskZone.CRITICAL_NOW, NOW)));
+
+    var board = service.board(ME, new BoardFilter(null, "house", null, false, false));
+
+    assertThat(board.tasks()).containsExactly(inTopic);
+    assertThat(board.loads()).containsEntry(TaskZone.CRITICAL_NOW, 2L);
+    verify(tasks, times(1)).findOnBoard(any(), anyBoolean());
   }
 
   /** Whatever maps the tasks must use the day they were sorted by, or a midnight splits them. */
