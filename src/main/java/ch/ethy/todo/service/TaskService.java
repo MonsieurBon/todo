@@ -176,6 +176,12 @@ public class TaskService {
     return task;
   }
 
+  public Task undefer(Long id, User user) {
+    Task task = resolve(id, user);
+    task.undefer(clock.instant());
+    return task;
+  }
+
   public List<Task> moveAllTo(Collection<Long> ids, User user, TaskZone zone) {
     List<Task> selection = resolveAll(ids, user);
     Instant now = clock.instant();

@@ -1120,6 +1120,33 @@
         "tags" : [ "task-controller" ]
       }
     },
+    "/api/tasks/{id}/undefer" : {
+      "post" : {
+        "operationId" : "undeferTask",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TaskView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "task-controller" ]
+      }
+    },
     "/api/tasks/{id}/zone" : {
       "post" : {
         "operationId" : "moveTaskZone",

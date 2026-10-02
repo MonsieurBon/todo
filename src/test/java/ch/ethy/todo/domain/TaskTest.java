@@ -180,10 +180,11 @@ class TaskTest {
     }
 
     @Test
-    @DisplayName("it cannot be deferred")
+    @DisplayName("it cannot be deferred, or brought back from a deferral")
     void noDeferring() {
       assertThatThrownBy(() -> completed().deferUntil(TODAY.plusWeeks(2), TODAY, NOW))
           .isInstanceOf(TaskCompletedException.class);
+      assertThatThrownBy(() -> completed().undefer(NOW)).isInstanceOf(TaskCompletedException.class);
     }
 
     @Test
@@ -318,6 +319,21 @@ class TaskTest {
 
       assertThat(task.isVisibleOn(TODAY.plusDays(3))).isTrue();
       assertThat(task.isVisibleOn(TODAY.plusDays(4))).isTrue();
+    }
+
+    @Test
+    @DisplayName("bringing a deferred task back shows it now, in its zone, and is a review")
+    void undeferring() {
+      Task task = new Task("Call the landlord", TaskZone.CRITICAL_NOW, NOW);
+      task.deferUntil(TODAY.plusDays(10), TODAY, NOW);
+      Instant later = NOW.plusSeconds(3600);
+
+      task.undefer(later);
+
+      assertThat(task.deferUntil()).isNull();
+      assertThat(task.isVisibleOn(TODAY)).isTrue();
+      assertThat(task.zone()).isEqualTo(TaskZone.CRITICAL_NOW);
+      assertThat(task.lastReviewedAt()).isEqualTo(later);
     }
 
     @Test

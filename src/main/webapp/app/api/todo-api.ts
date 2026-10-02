@@ -95,6 +95,10 @@ export class TodoApi {
     return this.http.post<Task>(`/api/tasks/${id}/defer`, { until });
   }
 
+  undefer(id: number): Observable<Task> {
+    return this.http.post<Task>(`/api/tasks/${id}/undefer`, {});
+  }
+
   markReviewed(id: number): Observable<Task> {
     return this.http.post<Task>(`/api/tasks/${id}/reviewed`, {});
   }

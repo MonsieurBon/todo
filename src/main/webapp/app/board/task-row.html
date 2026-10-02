@@ -120,6 +120,9 @@
   </mat-menu>
 
   <mat-menu #deferMenu="matMenu">
+    @if (deferred()) {
+      <button mat-menu-item type="button" (click)="undefer()">Now</button>
+    }
     <button mat-menu-item type="button" (click)="deferBy(1)">Tomorrow</button>
     <button mat-menu-item type="button" (click)="deferBy(7)">Next week</button>
     <button mat-menu-item type="button" (click)="deferBy(30)">In a month</button>

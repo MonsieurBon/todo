@@ -289,6 +289,26 @@ class TaskEditingIT extends IntegrationTest {
   }
 
   @Test
+  @DisplayName("a deferred task can be brought back now, and that counts as looking at it")
+  void undefer() throws Exception {
+    String me = "undefer-" + System.nanoTime();
+    long id = capture(me, Map.of("title", "Call the landlord", "zone", "CRITICAL_NOW"));
+    mvc.perform(
+            withBody(
+                post("/api/tasks/" + id + "/defer").with(as(me)), Map.of("until", "2030-01-01")))
+        .andExpect(status().isOk());
+    String deferredAt = reread(me, id).get("lastReviewedAt").asString();
+    clock.advance(java.time.Duration.ofHours(1));
+
+    mvc.perform(post("/api/tasks/" + id + "/undefer").with(as(me))).andExpect(status().isOk());
+
+    JsonNode back = reread(me, id);
+    assertThat(back.get("deferUntil").isNull()).isTrue();
+    assertThat(back.get("zone").asString()).isEqualTo("CRITICAL_NOW");
+    assertThat(back.get("lastReviewedAt").asString()).isNotEqualTo(deferredAt);
+  }
+
+  @Test
   @DisplayName("one completed task among several refuses the lot, and none of them changes")
   void bulkIsAllOrNothing() throws Exception {
     String me = "bulk-" + System.nanoTime();

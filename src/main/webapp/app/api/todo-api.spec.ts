@@ -28,4 +28,12 @@ describe('the board request', () => {
     expect(query({ includeDeferred: false })).toBe('');
     expect(query({})).toBe('');
   });
+
+  it('brings a task back from its deferral by its own id', () => {
+    api.undefer(7).subscribe();
+
+    const request = http.expectOne('/api/tasks/7/undefer');
+    expect(request.request.method).toBe('POST');
+    request.flush({});
+  });
 });

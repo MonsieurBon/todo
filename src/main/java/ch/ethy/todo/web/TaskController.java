@@ -152,6 +152,11 @@ public class TaskController {
     return view(tasks.defer(id, currentUser.current(), request.until()));
   }
 
+  @PostMapping("/tasks/{id}/undefer")
+  public Responses.TaskView undeferTask(@PathVariable Long id) {
+    return view(tasks.undefer(id, currentUser.current()));
+  }
+
   @PostMapping("/tasks/{id}/reviewed")
   public Responses.TaskView markTaskReviewed(@PathVariable Long id) {
     return view(tasks.markReviewed(id, currentUser.current()));

@@ -60,6 +60,10 @@ export class TaskRow {
     void this.board.defer(this.task(), isoDateIn(days));
   }
 
+  protected undefer(): void {
+    void this.board.undefer(this.task());
+  }
+
   protected remove(): void {
     void this.board.remove(this.task());
   }

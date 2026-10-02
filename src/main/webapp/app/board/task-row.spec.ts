@@ -26,6 +26,7 @@ describe('a task row', () => {
   let complete: ReturnType<typeof vi.fn>;
   let moveZone: ReturnType<typeof vi.fn>;
   let remove: ReturnType<typeof vi.fn>;
+  let undefer: ReturnType<typeof vi.fn>;
   let open: ReturnType<typeof vi.fn>;
   let closedWith: TaskEdit;
 
@@ -48,6 +49,7 @@ describe('a task row', () => {
     complete = vi.fn(async () => 'done');
     moveZone = vi.fn(async () => 'done');
     remove = vi.fn(async () => 'done');
+    undefer = vi.fn(async () => 'done');
     closedWith = { title: 'Fix it', notes: '', dueDate: '2026-10-01', labels: ['diy'] };
     open = vi.fn(() => ({ afterClosed: () => of(closedWith) }));
     TestBed.configureTestingModule({
@@ -63,6 +65,7 @@ describe('a task row', () => {
             complete,
             moveZone,
             remove,
+            undefer,
           },
         },
       ],
@@ -107,6 +110,40 @@ describe('a task row', () => {
 
     expect(button(host, 'Edit Fix the tile')).toBeTruthy();
     expect(button(host, 'Defer Fix the tile')).toBeTruthy();
+  });
+
+  const deferChoices = async (deferUntil?: string): Promise<HTMLButtonElement[]> => {
+    const fixture = TestBed.createComponent(TaskRow);
+    fixture.componentRef.setInput('task', { ...task, deferUntil });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    button(fixture.nativeElement, 'Defer Fix the tile').click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    return [...document.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')];
+  };
+
+  it('offers to bring a deferred task back now, first among the dates', async () => {
+    const choices = await deferChoices('2030-01-01');
+
+    expect(choices.map((c) => c.textContent?.trim())).toEqual([
+      'Now',
+      'Tomorrow',
+      'Next week',
+      'In a month',
+    ]);
+    choices[0].click();
+    expect(undefer).toHaveBeenCalledWith({ ...task, deferUntil: '2030-01-01' });
+  });
+
+  it('offers no "now" for a task that is not deferred: it is already here', async () => {
+    const choices = await deferChoices();
+
+    expect(choices.map((c) => c.textContent?.trim())).toEqual([
+      'Tomorrow',
+      'Next week',
+      'In a month',
+    ]);
   });
 
   it("greys out a step past the zone's edge rather than dropping it, so buttons line up", async () => {

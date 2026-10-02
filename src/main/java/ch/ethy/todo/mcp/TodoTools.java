@@ -351,7 +351,8 @@ public class TodoTools {
           they were in. This is for "not yet", and is different from a due date:
           deferring says when the user wants to see a task again, a due date says when it
           must be finished. The date cannot be in the past. Deferring counts as
-          reviewing a task, so it leaves the review queue.
+          reviewing a task, so it leaves the review queue. undefer_task brings one back
+          sooner.
 
           All of them are deferred or none is. A completed task is read-only, and does
           not need hiding — it is already off the list.
@@ -361,6 +362,31 @@ public class TodoTools {
       @McpToolParam(description = "Date to bring them back, as YYYY-MM-DD.", required = true)
           LocalDate until) {
     return tasks.deferAll(taskIds, currentUser.current(), until).stream().map(this::view).toList();
+  }
+
+  @McpTool(
+      name = "undefer_task",
+      annotations =
+          @McpTool.McpAnnotations(
+              readOnlyHint = false,
+              destructiveHint = true,
+              idempotentHint = true,
+              openWorldHint = false),
+      title = "Bring a deferred task back now",
+      description =
+          """
+          End a task's deferral now rather than on its date, so it is back on the board in
+          the zone it was in. get_board with includeDeferred finds the deferred ones. This
+          counts as reviewing the task, so it leaves the review queue.
+
+          Afterwards, check get_board: if the task's zone is now over its cap, say so
+          and offer to move something out.
+
+          A completed task is read-only; call reopen_task first if it needs changing.
+          """)
+  public Responses.TaskView undeferTask(
+      @McpToolParam(description = "Id of the task.", required = true) Long taskId) {
+    return view(tasks.undefer(taskId, currentUser.current()));
   }
 
   @McpTool(

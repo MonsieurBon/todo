@@ -164,7 +164,7 @@ test('a topic picked from the dropdown is the only one added', async () => {
   await expect(page.getByText(`Second ${run}`)).toBeVisible();
 });
 
-test('a deferred task can be brought into sight and edited, and still counts towards no cap', async () => {
+test('a deferred task can be shown, edited and brought back, and counts only once it is back', async () => {
   const topic = `parked${run}`;
   await capture(`Parked ${run}`, { zone: 'Critical Now', labels: topic });
   await page.getByRole('button', { name: 'All topics' }).click();
@@ -190,4 +190,10 @@ test('a deferred task can be brought into sight and edited, and still counts tow
   await reread;
   await critical.getByText(`Parked ${run}`).click();
   await expect(page.getByText('Ask about the deposit too')).toBeVisible();
+  await page.getByRole('button', { name: 'Close' }).click();
+
+  await page.getByRole('button', { name: `Defer Parked ${run}` }).click();
+  await page.getByRole('menuitem', { name: 'Now' }).click();
+  await expect(critical.getByText('1 / 5')).toBeVisible();
+  await expect(critical.getByText(/^until /)).toBeHidden();
 });

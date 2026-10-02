@@ -96,8 +96,9 @@ with `npm run build`.
   with `mustBeOpen()`, `complete` and `reopen` excepted. No test enumerates them, so a new one has to
   remember. `TaskCompletedException` answers 409 — reuse it for the next state refusal rather than
   inventing a 400.
-- **Deciding where a task belongs is a review.** Filing it in a zone, moving it and deferring it
-  all record that it was looked at, so the sweep never asks again about something just decided.
+- **Deciding where a task belongs is a review.** Filing it in a zone, moving it, deferring it and
+  bringing it back early all record that it was looked at, so the sweep never asks again about
+  something just decided.
   No test enumerates them, so a new change to a task has to decide whether it is such a decision.
 - **A deferral hides a task; it does not move it.** So a task can sit in Critical Now out of sight,
   and anything that reads or counts a zone has to say what it does with deferred tasks. They count
