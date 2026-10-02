@@ -1,3 +1,10 @@
+# [2.7.0](https://github.com/MonsieurBon/todo/compare/v2.6.0...v2.7.0) (2026-10-02)
+
+
+### Features
+
+* bring a deferred task back now ([52697e0](https://github.com/MonsieurBon/todo/commit/52697e006962ef8392c9d9e8a1667bf56a234c91))
+
 # [2.6.0](https://github.com/MonsieurBon/todo/compare/v2.5.1...v2.6.0) (2026-10-01)
 
 
