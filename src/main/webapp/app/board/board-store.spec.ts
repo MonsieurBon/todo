@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { BoardView } from '../api/model';
+import { BoardView, Zone } from '../api/model';
 import { TodoApi } from '../api/todo-api';
 import { Writes } from '../core/writes';
 import { Outbox } from '../offline/outbox';
@@ -10,14 +10,30 @@ import { BoardStore } from './board-store';
 
 /** Folding the outbox in: a task going missing, appearing twice, or not counting towards its cap. */
 describe('the board', () => {
-  const board = (tasks: BoardView['tasks']): BoardView => ({
-    zones: [
-      { zone: 'CRITICAL_NOW', open: 0, softCap: 5, overSoftCap: false },
-      { zone: 'OPPORTUNITY_NOW', open: 0, softCap: 20, overSoftCap: false },
-      { zone: 'OVER_THE_HORIZON', open: 0, softCap: undefined, overSoftCap: false },
-    ],
-    tasks,
-  });
+  /** Counted the way the server counts an unfiltered board, unless a test says otherwise. */
+  const board = (tasks: BoardView['tasks'], critical?: number): BoardView => {
+    const open = (zone: Zone) =>
+      tasks.filter((task) => task.zone === zone && !task.deferUntil).length;
+    const criticalNow = critical ?? open('CRITICAL_NOW');
+    return {
+      zones: [
+        { zone: 'CRITICAL_NOW', open: criticalNow, softCap: 5, overSoftCap: criticalNow > 5 },
+        {
+          zone: 'OPPORTUNITY_NOW',
+          open: open('OPPORTUNITY_NOW'),
+          softCap: 20,
+          overSoftCap: false,
+        },
+        {
+          zone: 'OVER_THE_HORIZON',
+          open: open('OVER_THE_HORIZON'),
+          softCap: undefined,
+          overSoftCap: false,
+        },
+      ],
+      tasks,
+    };
+  };
 
   const task = (id: number, over: Partial<BoardView['tasks'][number]> = {}) => ({
     id,
@@ -73,6 +89,35 @@ describe('the board', () => {
     // Five saved plus one still on its way is six commitments for today either way.
     expect(store.zones()[0].open).toBe(6);
     expect(store.zones()[0].overSoftCap).toBe(true);
+  });
+
+  it('counts the whole zone under a filter, so a narrowed view cannot report itself healthy', async () => {
+    store.narrowTo({ label: 'house' });
+    api['board'] = vi.fn(() => of(board([task(1), task(2), task(3)], 12)));
+    await store.refresh();
+
+    expect(store.zones()[0].tasks).toHaveLength(3);
+    expect(store.zones()[0].open).toBe(12);
+    expect(store.zones()[0].overSoftCap).toBe(true);
+  });
+
+  it('counts a queued capture the filter hides, since it is a commitment all the same', async () => {
+    store.narrowTo({ label: 'house' });
+    await load([task(1)]);
+    api['capture'] = vi.fn(() => {
+      throw { status: 0 };
+    });
+
+    await store.capture({
+      title: 'Not about the house',
+      notes: '',
+      zone: 'CRITICAL_NOW',
+      labels: [],
+      listId: null,
+    });
+
+    expect(store.zones()[0].tasks.map((t) => t.id)).toEqual([1]);
+    expect(store.zones()[0].open).toBe(2);
   });
 
   it('shows a deferred task in its zone without counting it, so showing one moves no cap', async () => {

@@ -75,8 +75,9 @@ public class TaskService {
   }
 
   /**
-   * One read for the tasks and the loads: the loads cover every zone whatever the filter shows, and
-   * count no completed or deferred task even when it is shown.
+   * The loads count everything the user can see, whatever the filter shows: a cap counted within a
+   * list or a topic would report itself healthy. They count no completed or deferred task even when
+   * it is shown.
    */
   @Transactional(readOnly = true)
   public Board board(User user, BoardFilter filter) {
@@ -88,8 +89,12 @@ public class TaskService {
             .filter(task -> filter.zone() == null || task.zone() == filter.zone())
             .filter(task -> filter.includeDeferred() || task.isVisibleOn(today))
             .toList();
+    List<Task> visible =
+        filter.listId() == null && filter.label() == null
+            ? read
+            : tasks.findOnBoard(user, null, null, false);
     Map<TaskZone, Long> counted =
-        read.stream()
+        visible.stream()
             .filter(task -> task.isOpen() && task.isVisibleOn(today))
             .collect(Collectors.groupingBy(Task::zone, Collectors.counting()));
     Map<TaskZone, Long> loads =
