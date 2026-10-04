@@ -1,3 +1,10 @@
+## [2.8.1](https://github.com/MonsieurBon/todo/compare/v2.8.0...v2.8.1) (2026-10-04)
+
+
+### Bug Fixes
+
+* count a zone's whole load on a board narrowed to a list or topic ([81a8380](https://github.com/MonsieurBon/todo/commit/81a8380eb7cf695c21d46091842cc19109748d73))
+
 # [2.8.0](https://github.com/MonsieurBon/todo/compare/v2.7.0...v2.8.0) (2026-10-02)
 
 
