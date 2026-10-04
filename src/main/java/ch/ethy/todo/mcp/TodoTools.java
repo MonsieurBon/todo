@@ -166,9 +166,10 @@ public class TodoTools {
           Read the user's tasks, grouped into the three urgency zones.
 
           Returns every task the user can see across all their lists unless narrowed.
-          Each zone reports how many open tasks it holds and whether that is over what
-          the method says it should hold; if CRITICAL_NOW is over its cap, say so and
-          offer to move something out rather than adding more.
+          Each zone reports how many open tasks it holds across all lists and topics,
+          however the tasks are narrowed, and whether that is over what the method says
+          it should hold; if CRITICAL_NOW is over its cap, say so and offer to move
+          something out rather than adding more.
 
           Deferred tasks and completed tasks are hidden by default. A deferred task
           counts towards no zone, even when it is shown.

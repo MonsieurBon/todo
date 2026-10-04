@@ -11,8 +11,9 @@ import org.springframework.data.repository.query.Param;
 public interface TaskRepository extends JpaRepository<Task, Long> {
 
   /**
-   * Every zone and deferred tasks included, so one read serves the board and its loads alike: what
-   * is out of sight is {@link Task#isVisibleOn}'s to say.
+   * Everything the user can see, every zone and deferred tasks included, so one read serves the
+   * board and its loads alike: the loads count across every list and topic, and what is out of
+   * sight is {@link Task#isVisibleOn}'s to say.
    */
   @Query(
       """
@@ -20,16 +21,11 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
       left join t.taskList.members m
       where (t.taskList.owner = :user or m = :user)
         and (:includeDone = true or t.state = ch.ethy.todo.domain.TaskState.TODO)
-        and (:listId is null or t.taskList.id = :listId)
-        and (:label is null or :label member of t.labels)
       order by t.zone, t.position, t.createdAt desc
       """)
   @EntityGraph(attributePaths = {"labels", "taskList"})
   List<Task> findOnBoard(
-      @Param("user") ch.ethy.todo.domain.User user,
-      @Param("listId") Long listId,
-      @Param("label") String label,
-      @Param("includeDone") boolean includeDone);
+      @Param("user") ch.ethy.todo.domain.User user, @Param("includeDone") boolean includeDone);
 
   @Query(
       """
