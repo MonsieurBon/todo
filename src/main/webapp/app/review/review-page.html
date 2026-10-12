@@ -13,7 +13,14 @@
     </p>
   }
 
-  @if (!loading() && remaining() === 0) {
+  @if (!loading() && !answered()) {
+    <div class="empty unanswered">
+      <p>Could not find out what is due for review.</p>
+      <button matButton="tonal" type="button" [disabled]="!online()" (click)="askAgain()">
+        Try again
+      </button>
+    </div>
+  } @else if (!loading() && remaining() === 0) {
     <div class="empty">
       <p>Nothing is due for review.</p>
       <p class="muted">

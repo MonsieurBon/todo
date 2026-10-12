@@ -94,6 +94,19 @@ describe('the review sweep', () => {
     expect(horizon.open).toBe(83);
   });
 
+  /** An empty sweep because nobody answered is not a sweep with nothing due. */
+  it('does not count as answered until the server has said what is due', async () => {
+    api['reviewQueue'].mockReturnValue(unreachable());
+    const review = await store();
+
+    expect(review.answered()).toBe(false);
+
+    api['reviewQueue'].mockReturnValue(of([]));
+    await review.load();
+
+    expect(review.answered()).toBe(true);
+  });
+
   /** Tasks are weighed against each other across topics and lists, and the caps count them all. */
   it('sweeps everything, whatever the board happens to be narrowed to', async () => {
     await store();
