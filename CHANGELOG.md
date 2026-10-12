@@ -1,3 +1,10 @@
+## [2.8.2](https://github.com/MonsieurBon/todo/compare/v2.8.1...v2.8.2) (2026-10-12)
+
+
+### Bug Fixes
+
+* tell a review sweep that could not load apart from one with nothing due ([2174795](https://github.com/MonsieurBon/todo/commit/2174795196dabfbdb436a901e0642129c45fbbba))
+
 ## [2.8.1](https://github.com/MonsieurBon/todo/compare/v2.8.0...v2.8.1) (2026-10-04)
 
 
