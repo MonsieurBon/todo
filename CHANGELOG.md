@@ -1,3 +1,10 @@
+## [2.8.3](https://github.com/MonsieurBon/todo/compare/v2.8.2...v2.8.3) (2026-10-12)
+
+
+### Bug Fixes
+
+* keep a task just completed on the board, crossed out, so it can be reopened ([de26ec7](https://github.com/MonsieurBon/todo/commit/de26ec79a9da8e73e061dab24a61d765112a28ed))
+
 ## [2.8.2](https://github.com/MonsieurBon/todo/compare/v2.8.1...v2.8.2) (2026-10-12)
 
 
