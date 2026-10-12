@@ -88,7 +88,7 @@
         {
           "prepareCmd": "./mvnw -B versions:set -DnewVersion=\"${nextRelease.version}\" -DgenerateBackupPoms=false",
           "publishCmd": "./mvnw -B clean package -DskipTests=true && docker build --tag ghcr.io/monsieurbon/todo:\"${nextRelease.version}\" --tag ghcr.io/monsieurbon/todo:latest . && docker push ghcr.io/monsieurbon/todo:\"${nextRelease.version}\" && docker push ghcr.io/monsieurbon/todo:latest",
-          "successCmd": "NEXT_VERSION=$(npm version patch --no-git-tag-version | sed \"s/^v//\")-SNAPSHOT && npm pkg set version=\"$NEXT_VERSION\" && ./mvnw -B versions:set -DnewVersion=\"$NEXT_VERSION\" -DgenerateBackupPoms=false && git commit -am \"chore(release): $NEXT_VERSION [skip ci]\" && git push"
+          "successCmd": "NEXT_VERSION=$(npm version patch --no-git-tag-version | sed \"s/^v//\")-SNAPSHOT && npm pkg set version=\"$NEXT_VERSION\" && ./mvnw -B versions:set -DnewVersion=\"$NEXT_VERSION\" -DgenerateBackupPoms=false && git commit package.json package-lock.json pom.xml -m \"chore(release): $NEXT_VERSION [skip ci]\" && git push"
         }
       ],
       [
