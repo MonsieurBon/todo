@@ -1,4 +1,9 @@
-<div class="task" [class.pending]="pending()" [class.deferred]="deferred()">
+<div
+  class="task"
+  [class.pending]="pending()"
+  [class.deferred]="deferred()"
+  [class.done]="task().done"
+>
   <!-- Named by its own content, so a screen reader gets the topics and the due date too; the
        hidden word is what says the name is a thing to open. -->
   <button type="button" class="grow body" (click)="details()">
@@ -7,17 +12,31 @@
     <app-task-chips class="meta" [task]="task()" />
   </button>
 
-  <button
-    matIconButton
-    type="button"
-    [attr.aria-label]="'Complete ' + task().title"
-    matTooltip="Complete"
-    (click)="complete()"
-  >
-    <mat-icon svgIcon="check" />
-  </button>
+  <!-- A completed task is read-only, so reopening it is all it offers. -->
+  @if (task().done) {
+    <button
+      matIconButton
+      type="button"
+      [disabled]="!reopenable()"
+      [attr.aria-label]="'Reopen ' + task().title"
+      matTooltip="Reopen"
+      (click)="reopen()"
+    >
+      <mat-icon svgIcon="undo" />
+    </button>
+  } @else {
+    <button
+      matIconButton
+      type="button"
+      [attr.aria-label]="'Complete ' + task().title"
+      matTooltip="Complete"
+      (click)="complete()"
+    >
+      <mat-icon svgIcon="check" />
+    </button>
+  }
 
-  @if (!pending()) {
+  @if (!pending() && !task().done) {
     <!-- The menu's actions, for a row with room to show them; the stylesheet shows one or the
          other. -->
     <span class="unfolded">
@@ -74,15 +93,17 @@
     </span>
   }
 
-  <button
-    matIconButton
-    type="button"
-    [class.folded]="!pending()"
-    [attr.aria-label]="'Actions for ' + task().title"
-    [matMenuTriggerFor]="menu"
-  >
-    <mat-icon svgIcon="more" />
-  </button>
+  @if (!task().done) {
+    <button
+      matIconButton
+      type="button"
+      [class.folded]="!pending()"
+      [attr.aria-label]="'Actions for ' + task().title"
+      [matMenuTriggerFor]="menu"
+    >
+      <mat-icon svgIcon="more" />
+    </button>
+  }
 
   <mat-menu #menu="matMenu">
     @if (pending()) {

@@ -19,6 +19,8 @@ export interface BoardTask {
   dueDate?: string;
   deferUntil?: string;
   lastReviewedAt?: string;
+  /** Completed while the board was open: kept in sight so an accidental complete can be undone. */
+  done?: true;
 }
 
 export interface ZoneSection {
@@ -29,12 +31,20 @@ export interface ZoneSection {
   overSoftCap: boolean;
 }
 
+/** Where it stood among its zone's rows, so it stays put when the server no longer sends it. */
+interface Completed {
+  task: BoardTask;
+  at: number;
+}
+
 const RECOVERY_CHECK_MS = 20_000;
 
 export const GONE = 'That task was completed or deleted elsewhere.';
 
 /** The server sends a deferral only while it still hides the task. */
 export const isDeferred = (task: BoardTask): boolean => !!task.deferUntil;
+
+const keyOf = (task: BoardTask): number | string => task.id ?? task.pendingId!;
 
 export const asBoardTask = (task: Task): BoardTask => ({
   id: task.id,
@@ -59,6 +69,7 @@ export class BoardStore {
 
   private readonly served = signal<BoardView | null>(null);
   private readonly busy = signal(false);
+  private readonly completed = signal<Completed[]>([]);
 
   readonly filter = signal<BoardFilter>({});
   readonly lists = signal<TaskList[]>([]);
@@ -99,7 +110,17 @@ export class BoardStore {
         listId: entry.listId,
         listName: this.lists().find((l) => l.id === entry.listId)?.name ?? null,
       }));
-    return [...fromServer.map(asBoardTask), ...queued];
+    const kept = new Set(this.completed().map(({ task }) => keyOf(task)));
+    const rows = [...fromServer.map(asBoardTask), ...queued].filter((t) => !kept.has(keyOf(t)));
+    // In the order they stood, so each one's place counts the ones before it that are also done.
+    const completed = this.completed()
+      .filter(({ task }) => this.matchesFilter(task.listId, task.labels, task.zone))
+      .sort((a, b) => a.at - b.at);
+    for (const { task, at } of completed) {
+      const next = rows.filter((row) => row.zone === task.zone)[at];
+      rows.splice(next ? rows.indexOf(next) : rows.length, 0, task);
+    }
+    return rows;
   });
 
   /**
@@ -192,6 +213,12 @@ export class BoardStore {
    * server to complete.
    */
   async complete(task: BoardTask): Promise<WriteResult> {
+    const at = this.tasks()
+      .filter((row) => row.zone === task.zone)
+      .findIndex((row) => keyOf(row) === keyOf(task));
+    // Completing ends a deferral, and reopening does not bring it back.
+    const done: BoardTask = { ...task, deferUntil: undefined, done: true };
+    this.completed.update((current) => [...current, { task: done, at }]);
     if (task.pendingId) {
       await this.outbox.discard(task.pendingId);
       return 'done';
@@ -199,6 +226,54 @@ export class BoardStore {
     await this.outbox.enqueue({ kind: 'complete', taskId: task.id! });
     await this.refresh();
     return 'done';
+  }
+
+  /**
+   * Reopening is a change to a task like moving it, so it needs a connection, and it is not offered
+   * until the completion has been sent, so that it can only follow it to the server, never overtake
+   * it. A capture that was never sent is only captured again, which works offline.
+   */
+  reopenable(task: BoardTask): boolean {
+    return !!task.pendingId || (this.online() && !this.completionQueued(task));
+  }
+
+  async reopen(task: BoardTask): Promise<WriteResult> {
+    if (task.pendingId) {
+      this.forget(task);
+      const draft = {
+        kind: 'capture' as const,
+        title: task.title,
+        notes: task.notes ?? '',
+        zone: task.zone,
+        labels: task.labels,
+        listId: task.listId,
+      };
+      await this.outbox.enqueue(draft, task.pendingId);
+      await this.refresh();
+      return 'done';
+    }
+    if (this.completionQueued(task)) {
+      return 'refused';
+    }
+    const result = await this.online_(() => firstValueFrom(this.api.reopen(task.id!)));
+    // Settled means it was deleted elsewhere, so there is nothing left to reopen.
+    if (result !== 'refused') {
+      this.forget(task);
+    }
+    return result;
+  }
+
+  /** Opening the board again is what lets go of the tasks completed on it. */
+  forgetCompleted(): void {
+    this.completed.set([]);
+  }
+
+  private forget(task: BoardTask): void {
+    this.completed.update((current) => current.filter((c) => keyOf(c.task) !== keyOf(task)));
+  }
+
+  private completionQueued(task: BoardTask): boolean {
+    return this.outbox.completingIds().has(task.id!);
   }
 
   // ------------------------------------------------------------- writes that need a connection

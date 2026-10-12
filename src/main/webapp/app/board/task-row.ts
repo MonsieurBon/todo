@@ -31,6 +31,8 @@ export class TaskRow {
 
   protected readonly deferred = computed(() => isDeferred(this.task()));
 
+  protected readonly reopenable = computed(() => this.board.reopenable(this.task()));
+
   protected readonly promoteTo = computed(() => zoneAfter(this.task().zone, -1));
   protected readonly demoteTo = computed(() => zoneAfter(this.task().zone, 1));
   protected readonly zoneName = (zone: Zone) => ZONE_NAMES[zone];
@@ -48,6 +50,10 @@ export class TaskRow {
 
   protected complete(): void {
     void this.board.complete(this.task());
+  }
+
+  protected reopen(): void {
+    void this.board.reopen(this.task());
   }
 
   protected move(zone: Zone | null): void {

@@ -64,14 +64,15 @@ export class Outbox {
     this.entries.set(await this.readAll());
   }
 
-  async enqueue(entry: OutboxDraft): Promise<string> {
+  /** An `id` already used is the same capture again, which the server resolves to one task. */
+  async enqueue(entry: OutboxDraft, id: string = crypto.randomUUID()): Promise<string> {
     // Strictly increasing: order is recovered from the store, whose keys are random, so two
     // entries in the same millisecond would otherwise sort either way round.
     this.lastAt = Math.max(Date.now(), this.lastAt + 1);
     const stored = {
       ...entry,
       // Doubles as the clientRef the server deduplicates on, so a retry resolves to the same task.
-      id: crypto.randomUUID(),
+      id,
       createdAt: this.lastAt,
     } as OutboxEntry;
     await (await this.open()).put(STORE, stored);

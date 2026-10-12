@@ -84,10 +84,19 @@ test('the cap warns when a zone is over what the method says it holds', async ()
   await expect(critical.getByText(/Over the 5 this zone is meant to hold/)).toBeVisible();
 });
 
-test('completing a task takes it off the board', async () => {
+test('a task just completed stays in sight until the board is opened again', async () => {
+  const critical = zoneSection('Critical Now');
   await page.getByRole('button', { name: `Complete Urgent 0 ${run}` }).click();
+  await expect(critical.getByText('5 / 5')).toBeVisible();
+
+  // An accidental complete is taken back from where it happened.
+  await page.getByRole('button', { name: `Reopen Urgent 0 ${run}` }).click();
+  await expect(critical.getByText('6 / 5')).toBeVisible();
+
+  await page.getByRole('button', { name: `Complete Urgent 0 ${run}` }).click();
+  await expect(critical.getByText('5 / 5')).toBeVisible();
+  await page.goto('/');
   await expect(page.getByText(`Urgent 0 ${run}`)).toBeHidden();
-  await expect(zoneSection('Critical Now').getByText('5 / 5')).toBeVisible();
 });
 
 test('a task just filed is not asked about again: choosing its zone was the review', async () => {

@@ -54,6 +54,7 @@ export class BoardPage {
 
   /** What the device holds when the connection goes is all the board has until it is back. */
   constructor() {
+    this.board.forgetCompleted();
     void this.board.sync();
   }
 

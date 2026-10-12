@@ -1,9 +1,11 @@
 import 'fake-indexeddb/auto';
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { Subject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { BoardView, Zone } from '../api/model';
+import { signal } from '@angular/core';
+import { BoardView, Task, Zone } from '../api/model';
 import { TodoApi } from '../api/todo-api';
+import { Connectivity } from '../core/connectivity';
 import { Writes } from '../core/writes';
 import { Outbox } from '../offline/outbox';
 import { BoardStore } from './board-store';
@@ -49,6 +51,7 @@ describe('the board', () => {
   let api: Record<string, ReturnType<typeof vi.fn>>;
   let store: BoardStore;
   let writes: Writes;
+  const online = signal(true);
 
   const load = async (tasks: BoardView['tasks']) => {
     api['board'] = vi.fn(() => of(board(tasks)));
@@ -63,7 +66,16 @@ describe('the board', () => {
       capture: vi.fn(() => of({})),
       complete: vi.fn(() => of({})),
     };
-    TestBed.configureTestingModule({ providers: [{ provide: TodoApi, useValue: api }] });
+    online.set(true);
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: TodoApi, useValue: api },
+        {
+          provide: Connectivity,
+          useValue: { online, probe: async () => online(), onReconnect: () => undefined },
+        },
+      ],
+    });
     store = TestBed.inject(BoardStore);
     writes = TestBed.inject(Writes);
     // Shared with the previous test, and flush() reads it rather than this instance's signal.
@@ -224,7 +236,7 @@ describe('the board', () => {
     expect(writes.problem()).toBe('Critical Now is full; finish something first');
   });
 
-  it('takes a task off the board the moment its completion is queued', async () => {
+  it('stops counting a task the moment its completion is queued', async () => {
     api['complete'] = vi.fn(() => {
       throw { status: 0 };
     });
@@ -232,7 +244,177 @@ describe('the board', () => {
 
     await store.complete(store.tasks()[0]);
 
-    expect(store.tasks().map((t) => t.id)).toEqual([2]);
     expect(store.zones()[0].open).toBe(1);
+  });
+
+  /** An accidental complete is undone from where it happened, so the row has to stay there. */
+  describe('a task completed from it', () => {
+    const shown = () => store.tasks().map((t) => [t.id, !!t.done]);
+
+    it('stays where it was, done, until the board is opened again', async () => {
+      await load([task(1), task(2), task(3)]);
+
+      api['board'] = vi.fn(() => of(board([task(1), task(3)])));
+      await store.complete(store.tasks()[1]);
+
+      expect(shown()).toEqual([
+        [1, false],
+        [2, true],
+        [3, false],
+      ]);
+      expect(store.zones()[0].open).toBe(2);
+
+      store.forgetCompleted();
+      expect(shown()).toEqual([
+        [1, false],
+        [3, false],
+      ]);
+    });
+
+    it('keeps its place when the one after it is completed too', async () => {
+      await load([task(1), task(2), task(3), task(4)]);
+
+      api['board'] = vi.fn(() => of(board([task(1), task(2), task(4)])));
+      await store.complete(store.tasks()[2]);
+      api['board'] = vi.fn(() => of(board([task(1), task(4)])));
+      await store.complete(store.tasks()[1]);
+
+      expect(shown()).toEqual([
+        [1, false],
+        [2, true],
+        [3, true],
+        [4, false],
+      ]);
+    });
+
+    it('is reopened by the server once the completion was sent', async () => {
+      await load([task(1)]);
+      api['board'] = vi.fn(() => of(board([])));
+      await store.complete(store.tasks()[0]);
+
+      api['reopen'] = vi.fn(() => of({}));
+      api['board'] = vi.fn(() => of(board([task(1)])));
+      const result = await store.reopen(store.tasks()[0]);
+
+      expect(result).toBe('done');
+      expect(api['reopen']).toHaveBeenCalledWith(1);
+      expect(shown()).toEqual([[1, false]]);
+    });
+
+    it('stays done when the reopen does not get through, so it can be tried again', async () => {
+      await load([task(1)]);
+      api['board'] = vi.fn(() => of(board([])));
+      await store.complete(store.tasks()[0]);
+
+      api['reopen'] = vi.fn(() => {
+        throw { status: 0 };
+      });
+      const result = await store.reopen(store.tasks()[0]);
+
+      expect(result).toBe('refused');
+      expect(shown()).toEqual([[1, true]]);
+    });
+
+    /** Reopening can then only follow its completion to the server, never race it there. */
+    it('waits for its completion to be sent before it can be reopened', async () => {
+      api['complete'] = vi.fn(() => {
+        throw { status: 0 };
+      });
+      await load([task(1)]);
+      await store.complete(store.tasks()[0]);
+      expect(store.reopenable(store.tasks()[0])).toBe(false);
+
+      api['reopen'] = vi.fn(() => of({}));
+      expect(await store.reopen(store.tasks()[0])).toBe('refused');
+
+      expect(api['reopen']).not.toHaveBeenCalled();
+      expect(TestBed.inject(Outbox).pending()).toHaveLength(1);
+      expect(shown()).toEqual([[1, true]]);
+    });
+
+    it('needs a connection to be reopened once its completion was sent', async () => {
+      await load([task(1)]);
+      api['board'] = vi.fn(() => of(board([])));
+      await store.complete(store.tasks()[0]);
+
+      expect(store.reopenable(store.tasks()[0])).toBe(true);
+      online.set(false);
+      expect(store.reopenable(store.tasks()[0])).toBe(false);
+    });
+
+    /** Taking it back off the device then would not stop it landing, and the row would be gone. */
+    it('cannot be reopened while its completion is being sent', async () => {
+      await load([task(1)]);
+      const sent = new Subject<Task>();
+      api['complete'] = vi.fn(() => sent);
+      api['reopen'] = vi.fn(() => of({}));
+      api['board'] = vi.fn(() => of(board([])));
+
+      const completing = store.complete(store.tasks()[0]);
+      await vi.waitFor(() => expect(api['complete']).toHaveBeenCalled());
+      expect(store.reopenable(store.tasks()[0])).toBe(false);
+      expect(await store.reopen(store.tasks()[0])).toBe('refused');
+      expect(api['reopen']).not.toHaveBeenCalled();
+      expect(shown()).toEqual([[1, true]]);
+
+      sent.next(task(1, { state: 'DONE' }));
+      sent.complete();
+      await completing;
+      expect(store.reopenable(store.tasks()[0])).toBe(true);
+    });
+
+    /** Completing ended the deferral on the server, so the row must not suggest a reopen keeps it. */
+    it('is no longer deferred', async () => {
+      await load([task(1, { deferUntil: '2999-01-01' })]);
+      api['board'] = vi.fn(() => of(board([])));
+
+      await store.complete(store.tasks()[0]);
+
+      expect(store.tasks()[0].deferUntil).toBeUndefined();
+    });
+
+    it('is queued again when it was a capture that had not been sent', async () => {
+      api['addToList'] = vi.fn(() => {
+        throw { status: 0 };
+      });
+      await store.capture({
+        title: 'Fix the tile',
+        notes: 'the loose one',
+        zone: 'OPPORTUNITY_NOW',
+        labels: ['house'],
+        listId: 1,
+      });
+      await store.complete(store.tasks()[0]);
+      expect(store.tasks().map((t) => [t.title, !!t.done])).toEqual([['Fix the tile', true]]);
+      online.set(false);
+      expect(store.reopenable(store.tasks()[0])).toBe(true);
+
+      await store.reopen(store.tasks()[0]);
+
+      // The same clientRef, so if the first one reached the server after all, this one is it.
+      const [first, again] = api['addToList'].mock.calls.map(([, body]) => body.clientRef);
+      expect(again).toBe(first);
+      expect(store.tasks()).toEqual([
+        expect.objectContaining({
+          title: 'Fix the tile',
+          notes: 'the loose one',
+          zone: 'OPPORTUNITY_NOW',
+          labels: ['house'],
+          listId: 1,
+        }),
+      ]);
+      expect(store.tasks()[0].done).toBeUndefined();
+      expect(store.zones()[1].open).toBe(1);
+    });
+
+    it('is not shown under a filter that does not match it', async () => {
+      await load([task(1, { labels: ['house'] })]);
+      api['board'] = vi.fn(() => of(board([])));
+      await store.complete(store.tasks()[0]);
+
+      store.narrowTo({ label: 'garden' });
+
+      expect(store.tasks()).toEqual([]);
+    });
   });
 });

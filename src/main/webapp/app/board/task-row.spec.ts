@@ -27,6 +27,8 @@ describe('a task row', () => {
   let moveZone: ReturnType<typeof vi.fn>;
   let remove: ReturnType<typeof vi.fn>;
   let undefer: ReturnType<typeof vi.fn>;
+  let reopen: ReturnType<typeof vi.fn>;
+  let reopenable: ReturnType<typeof vi.fn>;
   let open: ReturnType<typeof vi.fn>;
   let closedWith: TaskEdit;
 
@@ -50,6 +52,8 @@ describe('a task row', () => {
     moveZone = vi.fn(async () => 'done');
     remove = vi.fn(async () => 'done');
     undefer = vi.fn(async () => 'done');
+    reopen = vi.fn(async () => 'done');
+    reopenable = vi.fn(() => true);
     closedWith = { title: 'Fix it', notes: '', dueDate: '2026-10-01', labels: ['diy'] };
     open = vi.fn(() => ({ afterClosed: () => of(closedWith) }));
     TestBed.configureTestingModule({
@@ -66,6 +70,8 @@ describe('a task row', () => {
             moveZone,
             remove,
             undefer,
+            reopen,
+            reopenable,
           },
         },
       ],
@@ -193,5 +199,35 @@ describe('a task row', () => {
 
     expect(edit).toHaveBeenCalledWith(task, expect.objectContaining({ dueDate: '2026-10-01' }));
     expect(edit.mock.calls[0][1]).not.toHaveProperty('clearDueDate');
+  });
+
+  /** A completed task is read-only, so taking the completion back is all it offers. */
+  describe('for a task just completed', () => {
+    const done = async () => {
+      const fixture = TestBed.createComponent(TaskRow);
+      fixture.componentRef.setInput('task', { ...task, done: true });
+      await fixture.whenStable();
+      fixture.detectChanges();
+      return fixture.nativeElement as HTMLElement;
+    };
+
+    it('offers to reopen it where the complete button was, and nothing else', async () => {
+      const host = await done();
+
+      expect(host.querySelector('.task')!.classList.contains('done')).toBe(true);
+      expect(button(host, 'Complete Fix the tile')).toBeNull();
+      expect(button(host, 'Delete Fix the tile')).toBeNull();
+      expect(button(host, 'Actions for Fix the tile')).toBeNull();
+
+      button(host, 'Reopen Fix the tile').click();
+      expect(reopen).toHaveBeenCalledWith({ ...task, done: true });
+    });
+
+    it('greys out reopening when the board cannot take the completion back', async () => {
+      expect(button(await done(), 'Reopen Fix the tile').disabled).toBe(false);
+
+      reopenable.mockReturnValue(false);
+      expect(button(await done(), 'Reopen Fix the tile').disabled).toBe(true);
+    });
   });
 });
