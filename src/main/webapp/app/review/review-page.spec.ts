@@ -1,6 +1,6 @@
 import { WritableSignal, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Zone } from '../api/model';
 import { TodoApi } from '../api/todo-api';
@@ -150,5 +150,26 @@ describe('the review board', () => {
     const fixture = await render();
 
     expect(text(fixture)).toContain('Nothing is due for review.');
+  });
+
+  it('says it could not ask, rather than that nothing is due, and offers to ask again', async () => {
+    reviewQueue.mockReturnValue(throwError(() => ({ status: 503 })));
+    const fixture = await render();
+
+    expect(text(fixture)).not.toContain('Nothing is due for review.');
+    expect(text(fixture)).toContain('Could not find out what is due for review.');
+
+    reviewQueue.mockReturnValue(of([card(1, 'CRITICAL_NOW')]));
+    await click(fixture, '.unanswered button');
+
+    expect(text(fixture)).toContain('Task 1');
+  });
+
+  it('does not offer to ask again without a connection', async () => {
+    reviewQueue.mockReturnValue(throwError(() => ({ status: 0 })));
+    online.set(false);
+    const fixture = await render();
+
+    expect(fixture.nativeElement.querySelector('.unanswered button').disabled).toBe(true);
   });
 });

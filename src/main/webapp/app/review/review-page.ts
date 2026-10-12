@@ -32,6 +32,7 @@ export class ReviewPage {
 
   protected readonly zones = this.review.zones;
   protected readonly loading = this.review.loading;
+  protected readonly answered = this.review.answered;
   protected readonly online = this.review.online;
   protected readonly remaining = this.review.remaining;
   protected readonly progress = this.review.progress;
@@ -42,6 +43,10 @@ export class ReviewPage {
   protected readonly zoneName = (zone: Zone) => ZONE_NAMES[zone];
 
   constructor() {
+    void this.review.load();
+  }
+
+  protected askAgain(): void {
     void this.review.load();
   }
 

@@ -24,11 +24,14 @@ export class ReviewStore {
   private readonly loads = signal<ZoneLoad[]>([]);
   private readonly settled = signal(0);
   private readonly working = signal(true);
+  private readonly heard = signal(false);
   private asked = 0;
 
   readonly selected = signal<ReadonlySet<number>>(new Set());
 
   readonly loading = this.working.asReadonly();
+  /** Until the server has said what is due, an empty sweep means nothing. */
+  readonly answered = this.heard.asReadonly();
   readonly online = this.board.online;
   readonly remaining = computed(() => this.queue().length);
   /** Against what has been settled so far, since a task that falls due mid-sweep joins in. */
@@ -84,6 +87,7 @@ export class ReviewStore {
         const present = new Set(due.map((task) => task.id));
         this.queue.set(due.map(asBoardTask));
         this.loads.set(board.zones);
+        this.heard.set(true);
         this.selected.update((ids) => new Set([...ids].filter((id) => present.has(id))));
       }
     } catch {
