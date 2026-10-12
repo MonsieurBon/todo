@@ -8,10 +8,12 @@ import { BoardStore } from './board-store';
 describe('the board', () => {
   let sync: ReturnType<typeof vi.fn>;
   let narrowTo: ReturnType<typeof vi.fn>;
+  let forgetCompleted: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     sync = vi.fn(async () => undefined);
     narrowTo = vi.fn();
+    forgetCompleted = vi.fn();
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
@@ -25,6 +27,7 @@ describe('the board', () => {
             loading: signal(false),
             sync,
             narrowTo,
+            forgetCompleted,
           },
         },
       ],
@@ -37,6 +40,12 @@ describe('the board', () => {
     TestBed.createComponent(BoardPage);
 
     expect(sync).toHaveBeenCalledTimes(2);
+  });
+
+  it('lets go of the tasks completed on it each time it is opened', () => {
+    TestBed.createComponent(BoardPage);
+
+    expect(forgetCompleted).toHaveBeenCalled();
   });
 
   it('shows deferred tasks only once they are asked for', async () => {
