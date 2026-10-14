@@ -7,7 +7,6 @@ import { defineConfig } from '@playwright/test';
  * exist when all three are present.
  *
  * <p>Start the stack first: `docker compose up -d`, then `mvn spring-boot:run -Dspring-boot.run.profiles=dev`.
- * These are a local gate, not a CI one: CI has no browser and no Keycloak.
  */
 export default defineConfig({
   testDir: './e2e',

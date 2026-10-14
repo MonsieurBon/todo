@@ -87,27 +87,64 @@ jobs:
       # OpenApiContractIT rewrites src/main/webapp/api/openapi.json when the API has
       # changed and fails once; on CI that failure is the point, because it means the
       # checked-in contract the web app generates its types from is out of date.
-      #
-      # The Playwright suite deliberately does not run here: it needs a browser and a
-      # Keycloak, and it is a local gate.
       - name: verify
         run: ./mvnw -B -Pintegration-tests verify -Dskip.npm=true -Dskip.installnodenpm=true
 
-  package:
-    name: package + image
+  e2e:
+    name: package + e2e
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24.16.0'
+          cache: 'npm'
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           java-version: '25'
           distribution: 'temurin'
           cache: maven
-      # Packaging builds the web app into the jar, so this job runs the frontend chain
-      # rather than skipping it like the backend jobs do.
-      - name: build
-        run: ./mvnw -B clean package -DskipTests=true
 
-      # Proves the release will be able to build its image before master depends on it.
+      # Started first and waited for last, so Keycloak boots while the jar builds.
+      - name: start stack
+        run: docker compose up -d
+      # Packaging builds the web app into the jar, in the production configuration that
+      # alone has the service worker, so this job runs the frontend chain rather than
+      # skipping it like the backend jobs do.
+      - name: build
+        run: ./mvnw -B package -DskipTests=true
+      # Proves the release will be able to build its image before main depends on it.
       - name: build image
         run: docker build -t todo:ci .
+      - name: wait for stack
+        run: docker compose up -d --wait
+
+      # The image, not the jar, so the suite runs on the Java that ships. The realm's
+      # redirect URIs and audience are literally http://localhost:8090.
+      - name: start app
+        run: |
+          docker run -d --name todo --network host \
+            -e DB_PORT=3307 -e SERVER_PORT=8090 -e TODO_CANONICAL_URI=http://localhost:8090 \
+            todo:ci
+          timeout 120 bash -c 'until curl -sf http://localhost:8090/actuator/health; do sleep 2; done'
+
+      # Playwright comes from the node_modules the Maven build's `npm ci` left behind, and
+      # drives the runner's own Google Chrome, so no browser is downloaded.
+      - name: e2e
+        run: npm run e2e
+
+      - name: collect logs
+        if: failure()
+        run: |
+          docker logs todo > app.log 2>&1 || true
+          docker compose logs --no-color > compose.log 2>&1
+      - name: keep traces and logs
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e
+          path: |
+            test-results/
+            app.log
+            compose.log

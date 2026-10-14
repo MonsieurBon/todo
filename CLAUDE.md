@@ -152,8 +152,8 @@ The frontend build is wired into the Maven lifecycle, so every goal runs `npm ci
 first unless skipped. Integration tests share one container and context, so none may assume an empty
 database — each invents its own user. Locally that container can outlive the run: with
 `testcontainers.reuse.enable=true` in `~/.testcontainers.properties` MySQL's startup is skipped, and
-the schema is still rebuilt from the migrations every time. Playwright is a local gate; CI has
-neither a browser nor an IdP.
+the schema is still rebuilt from the migrations every time. CI runs Playwright too, against the
+compose stack and the image, on every pull request, Dependabot's included.
 
 Prefer a unit test. An integration test earns its container only when what it checks exists nowhere
 but in a real schema or the running application — a query, a migration, structural authorization,
