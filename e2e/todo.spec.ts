@@ -74,7 +74,7 @@ test('the cap warns when a zone is over what the method says it holds', async ()
   for (let i = 0; i < 5; i++) {
     await capture(`Urgent ${i} ${run}`, { zone: 'Critical Now', labels: run });
   }
-  // Narrowed to this run's topic, so the count is exactly what these tests put there.
+  // The account is this run's own, so the count is exactly what these tests put there.
   await page.goto('/');
   await page.getByRole('button', { name: 'All topics' }).click();
   await page.getByRole('menuitem', { name: run }).click();
@@ -179,17 +179,20 @@ test('a deferred task can be shown, edited and brought back, and counts only onc
   await page.getByRole('button', { name: 'All topics' }).click();
   await page.getByRole('menuitem', { name: topic }).click();
   const critical = zoneSection('Critical Now');
-  await expect(critical.getByText('1 / 5')).toBeVisible();
+  await expect(critical.getByText(`Parked ${run}`)).toBeVisible();
+  // The load counts the whole zone, whatever the filter shows, so earlier tests are in it too.
+  const load = critical.locator('.load');
+  const open = parseInt((await load.textContent()) ?? '', 10);
 
   await page.getByRole('button', { name: `Defer Parked ${run}` }).click();
   await page.getByRole('menuitem', { name: 'Tomorrow' }).click();
   await expect(page.getByText(`Parked ${run}`)).toBeHidden();
-  await expect(critical.getByText('0 / 5')).toBeVisible();
+  await expect(load).toHaveText(`${open - 1} / 5`);
 
   await page.getByRole('checkbox', { name: 'Deferred' }).check();
   await expect(critical.getByText(`Parked ${run}`)).toBeVisible();
   await expect(critical.getByText(/^until /)).toBeVisible();
-  await expect(critical.getByText('0 / 5')).toBeVisible();
+  await expect(load).toHaveText(`${open - 1} / 5`);
 
   await page.getByRole('button', { name: `Edit Parked ${run}` }).click();
   await page.getByLabel('Notes').fill('Ask about the deposit too');
@@ -203,6 +206,6 @@ test('a deferred task can be shown, edited and brought back, and counts only onc
 
   await page.getByRole('button', { name: `Defer Parked ${run}` }).click();
   await page.getByRole('menuitem', { name: 'Now' }).click();
-  await expect(critical.getByText('1 / 5')).toBeVisible();
+  await expect(load).toHaveText(`${open} / 5`);
   await expect(critical.getByText(/^until /)).toBeHidden();
 });
