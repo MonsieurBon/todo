@@ -1,6 +1,6 @@
 # Pinned by digest, not by tag: a tag is a moving target, and an image that changed
 # underneath a release would make that release unreproducible.
-FROM eclipse-temurin:27_35-jre@sha256:387922dd341a11a06f39375e6b13f3cb865e09aa409789cd4f7a5a6577cd2290
+FROM eclipse-temurin:25.0.4.1_1-jre@sha256:fd4b1c02c64eef378212e23656fc0b0caa41a357876fa0b60e51ceda94a3db64
 
 # Nothing here needs root. The app writes no files - everything durable is in MySQL -
 # so it does not even need to own its own directory.

@@ -10,6 +10,12 @@ updates:
       interval: "daily"
     cooldown:
       default-days: 7
+    # The runtime stays on the LTS the workflows build and test with (JAVA_VERSION).
+    # Moving to the next LTS is a deliberate change to both, not a bump.
+    ignore:
+      - dependency-name: "eclipse-temurin"
+        versions:
+          - ">= 26"
 
   # "/" covers .github/workflows only; the glob keeps new composite actions
   # covered without an edit here.
