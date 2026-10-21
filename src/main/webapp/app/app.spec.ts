@@ -7,10 +7,6 @@ import { AuthService } from './auth/auth.service';
 import { BoardStore } from './board/board-store';
 import { Writes } from './core/writes';
 
-/**
- * The one place a failed write is shown. Every screen reports through it, so the board and the
- * lists tests assert the signal and leave the rendering to this one.
- */
 describe('the app shell', () => {
   let writes: Writes;
 
@@ -79,6 +75,15 @@ describe('the app shell', () => {
     await fixture.whenStable();
 
     expect(shown(fixture)).toBeNull();
+  });
+
+  it('offers the sections as Board, Review, Capture, Lists', async () => {
+    const fixture = await render();
+    const tabs = [...fixture.nativeElement.querySelectorAll('nav.tabs a')].map((tab: Element) =>
+      tab.textContent?.trim(),
+    );
+
+    expect(tabs).toEqual(['Board', 'Review', 'Capture', 'Lists']);
   });
 
   it('drops the complaint once it is dismissed', async () => {
