@@ -1,10 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { MatButton, MatFabButton, MatIconButton } from '@angular/material/button';
+import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatCheckbox, MatCheckboxChange } from '@angular/material/checkbox';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { MatProgressBar } from '@angular/material/progress-bar';
-import { RouterLink } from '@angular/router';
 import { ZONE_MEANINGS, ZONE_NAMES, Zone } from '../api/model';
 import { BoardStore, ZoneSection } from './board-store';
 import { TaskRow } from './task-row';
@@ -14,14 +13,12 @@ import { TaskRow } from './task-row';
   imports: [
     MatButton,
     MatCheckbox,
-    MatFabButton,
     MatIcon,
     MatIconButton,
     MatMenu,
     MatMenuItem,
     MatMenuTrigger,
     MatProgressBar,
-    RouterLink,
     TaskRow,
   ],
   templateUrl: './board-page.html',
