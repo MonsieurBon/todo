@@ -1,3 +1,10 @@
+## [2.8.4](https://github.com/MonsieurBon/todo/compare/v2.8.3...v2.8.4) (2026-10-21)
+
+
+### Bug Fixes
+
+* capture from the bottom row only, with Review before Capture ([476fe67](https://github.com/MonsieurBon/todo/commit/476fe67abd9e04f7a05c8df41a6edbd1e2602a71))
+
 ## [2.8.3](https://github.com/MonsieurBon/todo/compare/v2.8.2...v2.8.3) (2026-10-12)
 
 
