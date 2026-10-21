@@ -20,8 +20,10 @@ in one jar, plus an MCP server.
 - Every change goes through a PR that Claude reviews. The review is one comment; answer it point by
   point — fix it or say why not. Silence is not an answer. The review may reject the approach, not
   only the diff.
-- Read your own diff before every push — the first one and every round of review fixes alike.
-  Nothing reaches the remote that you haven't reviewed yourself.
+- Review your own diff before every push, the first one and every round of review fixes alike, the
+  way the PR's reviewer would, by its instructions in `.claude/agents/pr-code-reviewer.md`: not only
+  whether it is what you meant to change, but whatever the review would raise. A finding caught
+  here is a review round saved. Nothing reaches the remote that you haven't reviewed yourself.
 - First round: implement, review your own diff, push, open the PR.
 - Every round after: summarise the review's points and discuss them with Fabian *before* touching
   code — the fix is not yours to choose alone. Then implement, review your own diff, reply to the
