@@ -1,3 +1,10 @@
+# [2.9.0](https://github.com/MonsieurBon/todo/compare/v2.8.4...v2.9.0) (2026-10-22)
+
+
+### Features
+
+* a task can repeat every N days, weeks or months, and completing it adds the next one ([01e8fb9](https://github.com/MonsieurBon/todo/commit/01e8fb9c21d0a45d2f98864a7034d3201786568f))
+
 ## [2.8.4](https://github.com/MonsieurBon/todo/compare/v2.8.3...v2.8.4) (2026-10-21)
 
 
