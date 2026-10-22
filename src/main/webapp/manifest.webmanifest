@@ -1,6 +1,6 @@
 {
-  "name": "One Minute To-Do List",
-  "short_name": "To-Do",
+  "name": "Todo",
+  "short_name": "Todo",
   "description": "Three zones, honest caps, and a review sweep.",
   "start_url": "/",
   "scope": "/",

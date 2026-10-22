@@ -4,7 +4,7 @@ import { signedInGuard } from './auth/auth.guard';
 export const routes: Routes = [
   {
     path: '',
-    title: 'To-Do',
+    title: 'Todo',
     loadComponent: () => import('./board/board-page').then((m) => m.BoardPage),
     canActivate: [signedInGuard],
   },

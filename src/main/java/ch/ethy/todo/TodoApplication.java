@@ -6,7 +6,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-@OpenAPIDefinition(info = @Info(title = "One Minute To-Do List", version = "1"))
+@OpenAPIDefinition(info = @Info(title = "Todo", version = "1"))
 public class TodoApplication {
 
   public static void main(String[] args) {

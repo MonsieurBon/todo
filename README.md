@@ -1,7 +1,8 @@
-# todo
+# Todo
 
-A [One Minute To-Do List](https://www.michaellinenberger.com/1MTD.html): three urgency zones, soft
-caps, and a review sweep. One container — REST API, MCP server and the web app in a single jar.
+Todo is a [One Minute To-Do List](https://www.michaellinenberger.com/1MTD.html): three urgency
+zones, soft caps, and a review sweep. One container — REST API, MCP server and the web app in a
+single jar.
 
 This README is the **operator contract**. Deploying this should not require reading the source; if
 something here is missing, that is a bug in this file.
@@ -130,34 +131,8 @@ importable with `--import-realm`. It also defines clients for AI assistants over
 > import — a placeholder is stored verbatim, becomes the expected audience, and rejects every token
 > ever issued. Substitute the real origin as part of whatever applies the file.
 
-### Upgrading a deployment that still has the four capability scopes
-
-Until the surface scopes replaced them, clients were granted `todo:read`, `todo:write`, `todo:admin`
-and `todo:capture`. `--import-realm` will not update a realm that already exists, so an existing
-IdP has to be changed by hand. Add before removing and no client is ever locked out:
-
-1. Create the client scopes `todo:api` and `todo:mcp`, both with `include.in.token.scope` on.
-2. Give `todo-web` `todo:api` and `todo-mcp` `todo:mcp`, both as **default** client scopes, so that
-   neither client has to name one. Leave the old scopes assigned: a token then carries both sets,
-   which the old and the new app each accept, and that overlap is the window to deploy in.
-3. Deploy the app.
-4. Unassign the four old scopes and delete them, along with the capture-only client — without
-   `todo:capture` it can no longer obtain a scope that opens anything. **Only once nothing asks for
-   them any more**: a browser still running the pre-deploy bundle names `todo:read` in its
-   authorization request, and Keycloak refuses that request outright, so the user cannot sign in at
-   all — not even to recover. A hard reload is the way out for a client that missed the window.
-
-Do it in the other order and every client is refused until the IdP catches up. Tokens minted before
-step 2 carry no `todo:api` and are answered `403`; whether a refresh repairs that depends on how
-your Keycloak applies default scopes on refresh, so expect users to sign in again.
-
-There is no waiting period that makes step 4 provably safe — a device that has not opened the app
-since before the deploy still holds the old bundle. It is a one-off: the current bundle names no
-`todo:` scope, relying on the default grant instead, so nothing cached can pin a name again.
-
-The realm file also renames the full-access MCP client from `todo-claude-code` to `todo-mcp`, since
-the MCP server is not Claude Code's. Renaming an existing one is optional — keeping the old client
-id spares you re-pointing every assistant.
+`--import-realm` leaves a realm that already exists alone, so a change to the file reaches an
+existing IdP only by hand; [Upgrading](#upgrading) lists the ones a release needs.
 
 **Ordering: none required.** Measured, not assumed:
 
@@ -225,3 +200,43 @@ version. Staying on an old tag means keeping its bugs. To get a fix, update.
 
 Found a security problem? **Please don't report it in a public issue** — [SECURITY.md](SECURITY.md)
 explains how to report it privately, and what falls outside that.
+
+## Upgrading
+
+What a release needs beyond replacing the image, newest first. A version not listed needs nothing,
+and upgrading across several means doing each listed step on the way, oldest first.
+
+### 2.10.0
+
+- **Optional:** the realm file names the realm *Todo*, which is what the login page shows. An
+  existing realm keeps the old name until it is changed under Realm settings → Display name; nothing
+  depends on it.
+
+### 2.0.0
+
+The four capability scopes `todo:read`, `todo:write`, `todo:admin` and `todo:capture` are replaced
+by one scope per surface, `todo:api` and `todo:mcp`. Add before removing and no client is ever
+locked out:
+
+1. Create the client scopes `todo:api` and `todo:mcp`, both with `include.in.token.scope` on.
+2. Give `todo-web` `todo:api` and `todo-mcp` `todo:mcp`, both as **default** client scopes, so that
+   neither client has to name one. Leave the old scopes assigned: a token then carries both sets,
+   which the old and the new app each accept, and that overlap is the window to deploy in.
+3. Deploy the app.
+4. Unassign the four old scopes and delete them, along with the capture-only client — without
+   `todo:capture` it can no longer obtain a scope that opens anything. **Only once nothing asks for
+   them any more**: a browser still running the pre-deploy bundle names `todo:read` in its
+   authorization request, and Keycloak refuses that request outright, so the user cannot sign in at
+   all — not even to recover. A hard reload is the way out for a client that missed the window.
+
+Do it in the other order and every client is refused until the IdP catches up. Tokens minted before
+step 2 carry no `todo:api` and are answered `403`; whether a refresh repairs that depends on how
+your Keycloak applies default scopes on refresh, so expect users to sign in again.
+
+There is no waiting period that makes step 4 provably safe — a device that has not opened the app
+since before the deploy still holds the old bundle. It is a one-off: the current bundle names no
+`todo:` scope, relying on the default grant instead, so nothing cached can pin a name again.
+
+- **Optional:** the realm file renames the full-access MCP client from `todo-claude-code` to
+  `todo-mcp`, since the MCP server is not Claude Code's. Keeping the old client id spares you
+  re-pointing every assistant.

@@ -1,7 +1,7 @@
 {
   "realm": "todo",
   "enabled": true,
-  "displayName": "One Minute To-Do List",
+  "displayName": "Todo",
   "registrationAllowed": true,
   "registrationEmailAsUsername": true,
   "resetPasswordAllowed": true,

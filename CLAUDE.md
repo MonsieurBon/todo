@@ -1,7 +1,7 @@
 # todo.ethy.ch
 
-A One Minute To-Do List: three urgency zones, soft caps, a review sweep. Spring Boot 4 + Angular 22
-in one jar, plus an MCP server.
+Todo is a One Minute To-Do List: three urgency zones, soft caps, a review sweep. Spring Boot 4 +
+Angular 22 in one jar, plus an MCP server.
 
 ## How we work
 
@@ -191,3 +191,7 @@ A breaking change is a `BREAKING CHANGE:` footer — with a space, its own parag
 `BREAKING-CHANGE:` and a subject-line mention both fail to produce a major here. One commit in the
 range carrying it is enough, whatever its type. Squash merge is off, so when squashing locally the
 prefix must describe the whole.
+
+A step an operator has to take by hand goes in the README's Upgrading section, under the version the
+change ships in. semantic-release only picks that number at merge, so predict it from the prefix and
+check the heading once the release is out.
