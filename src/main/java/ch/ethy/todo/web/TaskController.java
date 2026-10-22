@@ -153,7 +153,7 @@ public class TaskController {
   @PostMapping("/tasks/{id}/defer")
   public Responses.TaskView deferTask(
       @PathVariable Long id, @Valid @RequestBody Requests.Defer request) {
-    return view(tasks.defer(id, currentUser.current(), request.until()));
+    return view(tasks.defer(id, currentUser.current(), request.date(clock)));
   }
 
   @PostMapping("/tasks/{id}/undefer")
@@ -184,7 +184,7 @@ public class TaskController {
 
   @PostMapping("/tasks/defer")
   public List<Responses.TaskView> deferTasks(@Valid @RequestBody Requests.DeferSelection request) {
-    return tasks.deferAll(request.taskIds(), currentUser.current(), request.until()).stream()
+    return tasks.deferAll(request.taskIds(), currentUser.current(), request.date(clock)).stream()
         .map(this::view)
         .toList();
   }

@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import ch.ethy.todo.IntegrationTest;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
@@ -372,6 +373,43 @@ class TaskEditingIT extends IntegrationTest {
     for (long id : both) {
       assertThat(reread(me, id).get("deferUntil").asString()).isEqualTo("2030-01-01");
     }
+  }
+
+  @Test
+  @DisplayName("a deferral by days ends on the date the server's day makes of them")
+  void deferByDays() throws Exception {
+    String me = "defer-days-" + System.nanoTime();
+    long one = capture(me, Map.of("title", "Fix the tile", "zone", "OPPORTUNITY_NOW"));
+    long other = capture(me, Map.of("title", "Fix the gutter", "zone", "OPPORTUNITY_NOW"));
+    LocalDate today = LocalDate.now(clock);
+
+    mvc.perform(withBody(post("/api/tasks/" + one + "/defer").with(as(me)), Map.of("days", 1)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.deferUntil").value(today.plusDays(1).toString()));
+    mvc.perform(
+            withBody(
+                post("/api/tasks/defer").with(as(me)),
+                Map.of("taskIds", List.of(other), "days", 7)))
+        .andExpect(status().isOk());
+
+    assertThat(reread(me, other).get("deferUntil").asString())
+        .isEqualTo(today.plusDays(7).toString());
+  }
+
+  @Test
+  @DisplayName("a deferral by days and to a date at once is refused, and changes nothing")
+  void deferByDaysAndDateAtOnce() throws Exception {
+    String me = "defer-both-" + System.nanoTime();
+    long id = capture(me, Map.of("title", "Fix the tile", "zone", "OPPORTUNITY_NOW"));
+
+    mvc.perform(
+            withBody(
+                post("/api/tasks/" + id + "/defer").with(as(me)),
+                Map.of("days", 1, "until", "2030-01-01")))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error").value("invalid_request"));
+
+    assertThat(reread(me, id).get("deferUntil").isNull()).isTrue();
   }
 
   @Test

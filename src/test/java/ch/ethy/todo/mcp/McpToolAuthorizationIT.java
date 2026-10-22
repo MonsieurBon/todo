@@ -308,7 +308,7 @@ class McpToolAuthorizationIT extends IntegrationTest {
           .extracting(t -> t.zone())
           .containsOnly(TaskZone.OPPORTUNITY_NOW);
 
-      tools.deferTasks(ids, LocalDate.of(2030, 1, 1));
+      tools.deferTasks(ids, LocalDate.of(2030, 1, 1), null);
       assertThat(tools.getBoard(null, list.id(), null, null, null).tasks()).isEmpty();
     }
 
@@ -331,7 +331,7 @@ class McpToolAuthorizationIT extends IntegrationTest {
               List.<org.assertj.core.api.ThrowableAssert.ThrowingCallable>of(
                   () -> tools.markTasksReviewed(mixed),
                   () -> tools.moveTasksToZone(mixed, TaskZone.CRITICAL_NOW),
-                  () -> tools.deferTasks(mixed, LocalDate.of(2030, 1, 1))))
+                  () -> tools.deferTasks(mixed, LocalDate.of(2030, 1, 1), null)))
           .allSatisfy(
               call ->
                   assertThatThrownBy(call)
@@ -396,7 +396,7 @@ class McpToolAuthorizationIT extends IntegrationTest {
       var task =
           tools.createTask(
               "Call the landlord", TaskZone.CRITICAL_NOW, null, null, null, null, null, null);
-      tools.deferTasks(List.of(task.id()), LocalDate.of(2030, 1, 1));
+      tools.deferTasks(List.of(task.id()), LocalDate.of(2030, 1, 1), null);
 
       as(someone());
       assertThatThrownBy(() -> tools.undeferTask(task.id()))

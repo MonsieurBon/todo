@@ -45,6 +45,7 @@ Every variable the app reads. There are no others.
 | `DB_PASSWORD` | `todo` | **yes** | The default is a development password. Set it. |
 | `OIDC_ISSUER_URI` | `http://localhost:8081/realms/todo` | **yes** | The identity provider's **public** realm URL. Both halves of that matter — see below. |
 | `TODO_CANONICAL_URI` | `http://localhost:8080` | **yes** | **The public origin of this app, and the audience it demands.** See below. |
+| `TODO_TIME_ZONE` | `Europe/Zurich` | no | Whose midnight ends a day: when a deferral is over, and what "in a week" counts from. An IANA zone id. Timestamps stay UTC. |
 | `SERVER_PORT` | `8080` | no | The healthcheck follows it. |
 | `LOG_LEVEL_SECURITY` | `INFO` | no | `DEBUG` to see why a token was rejected. |
 | `JAVA_OPTS` | `-XX:MaxRAMPercentage=75.0` | no | Replaces the default entirely, so repeat the heap setting if you add to it. |

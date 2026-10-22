@@ -111,16 +111,25 @@
       },
       "Defer" : {
         "properties" : {
+          "days" : {
+            "format" : "int32",
+            "minimum" : 0,
+            "type" : "integer"
+          },
           "until" : {
             "format" : "date",
             "type" : "string"
           }
         },
-        "required" : [ "until" ],
         "type" : "object"
       },
       "DeferSelection" : {
         "properties" : {
+          "days" : {
+            "format" : "int32",
+            "minimum" : 0,
+            "type" : "integer"
+          },
           "taskIds" : {
             "items" : {
               "format" : "int64",
@@ -134,7 +143,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "taskIds", "until" ],
+        "required" : [ "taskIds" ],
         "type" : "object"
       },
       "MoveSelection" : {

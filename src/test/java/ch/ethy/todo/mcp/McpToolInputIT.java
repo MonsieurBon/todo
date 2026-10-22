@@ -206,6 +206,22 @@ class McpToolInputIT extends IntegrationTest {
         .satisfies(t -> assertThat(t.title()).isEqualTo("Fix the roof"));
   }
 
+  /** An assistant often cannot say what day it is, let alone in which zone; the server can. */
+  @Test
+  @DisplayName("defer_tasks counts days from the app's day, and takes a date or days, not both")
+  void deferByDays() {
+    asSomeone();
+    var task =
+        tools.createTask("Fix the roof", TaskZone.CRITICAL_NOW, null, null, null, null, null, null);
+
+    assertThat(tools.deferTasks(List.of(task.id()), null, 7))
+        .singleElement()
+        .satisfies(t -> assertThat(t.deferUntil()).isEqualTo(LocalDate.now(clock).plusDays(7)));
+    assertThatThrownBy(
+            () -> tools.deferTasks(List.of(task.id()), LocalDate.now(clock).plusDays(1), 1))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
   @Test
   @DisplayName(
       "get_board finds a deferred task only when asked to, in the zone it was deferred from")
@@ -213,7 +229,7 @@ class McpToolInputIT extends IntegrationTest {
     asSomeone();
     var task =
         tools.createTask("Fix the roof", TaskZone.CRITICAL_NOW, null, null, null, null, null, null);
-    tools.deferTasks(List.of(task.id()), LocalDate.now().plusMonths(1));
+    tools.deferTasks(List.of(task.id()), LocalDate.now().plusMonths(1), null);
 
     assertThat(tools.getBoard(null, null, null, null, null).tasks())
         .noneMatch(t -> t.id().equals(task.id()));
@@ -273,7 +289,7 @@ class McpToolInputIT extends IntegrationTest {
                     tools.updateTask(
                         task.id(), "Fix the ridge", null, null, null, null, null, null),
                 () -> tools.moveTasksToZone(List.of(task.id()), TaskZone.CRITICAL_NOW),
-                () -> tools.deferTasks(List.of(task.id()), LocalDate.of(2030, 1, 1)),
+                () -> tools.deferTasks(List.of(task.id()), LocalDate.of(2030, 1, 1), null),
                 () -> tools.undeferTask(task.id()),
                 () -> tools.setTaskLabels(task.id(), List.of("garden")),
                 () -> tools.markTasksReviewed(List.of(task.id()))))
@@ -361,7 +377,7 @@ class McpToolInputIT extends IntegrationTest {
                 () -> tools.markTasksReviewed(List.of()),
                 () -> tools.markTasksReviewed(null),
                 () -> tools.moveTasksToZone(List.of(), TaskZone.CRITICAL_NOW),
-                () -> tools.deferTasks(null, LocalDate.of(2030, 1, 1))))
+                () -> tools.deferTasks(null, LocalDate.of(2030, 1, 1), null)))
         .allSatisfy(
             call ->
                 assertThatThrownBy(call)

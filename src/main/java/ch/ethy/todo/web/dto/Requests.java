@@ -6,13 +6,14 @@ import ch.ethy.todo.domain.TaskList;
 import ch.ethy.todo.domain.TaskZone;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -77,7 +78,16 @@ public final class Requests {
 
   public record MoveZone(@NotNull TaskZone zone) {}
 
-  public record Defer(@NotNull @FutureOrPresent LocalDate until) {}
+  /**
+   * A date, or a number of days for the server to count from its own today: a browser's clock runs
+   * in whatever zone the device is in, not the app's. Whether a date is past is the domain's to
+   * judge, by the app's day; a validator here would judge it by the JVM's.
+   */
+  public record Defer(LocalDate until, @PositiveOrZero Integer days) {
+    public LocalDate date(Clock clock) {
+      return deferralDate(until, days, clock);
+    }
+  }
 
   public record SetLabels(@NotNull List<@Size(max = Task.MAX_LABEL_LENGTH) String> labels) {}
 
@@ -85,6 +95,18 @@ public final class Requests {
 
   public record MoveSelection(@NotEmpty List<@NotNull Long> taskIds, @NotNull TaskZone zone) {}
 
+  /** A date or a number of days, as {@link Defer} takes them. */
   public record DeferSelection(
-      @NotEmpty List<@NotNull Long> taskIds, @NotNull @FutureOrPresent LocalDate until) {}
+      @NotEmpty List<@NotNull Long> taskIds, LocalDate until, @PositiveOrZero Integer days) {
+    public LocalDate date(Clock clock) {
+      return deferralDate(until, days, clock);
+    }
+  }
+
+  private static LocalDate deferralDate(LocalDate until, Integer days, Clock clock) {
+    if ((until == null) == (days == null)) {
+      throw new IllegalArgumentException("Defer to a date or by a number of days, one of them");
+    }
+    return until != null ? until : LocalDate.now(clock).plusDays(days);
+  }
 }

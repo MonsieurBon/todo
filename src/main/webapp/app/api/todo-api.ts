@@ -91,8 +91,9 @@ export class TodoApi {
     return this.http.post<Task>(`/api/tasks/${id}/zone`, { zone });
   }
 
-  defer(id: number, until: string): Observable<Task> {
-    return this.http.post<Task>(`/api/tasks/${id}/defer`, { until });
+  /** By days rather than to a date: the server's day decides which date that is. */
+  defer(id: number, days: number): Observable<Task> {
+    return this.http.post<Task>(`/api/tasks/${id}/defer`, { days });
   }
 
   undefer(id: number): Observable<Task> {
@@ -111,8 +112,8 @@ export class TodoApi {
     return this.http.post<Task[]>('/api/tasks/zone', { taskIds: ids, zone });
   }
 
-  deferAll(ids: number[], until: string): Observable<Task[]> {
-    return this.http.post<Task[]>('/api/tasks/defer', { taskIds: ids, until });
+  deferAll(ids: number[], days: number): Observable<Task[]> {
+    return this.http.post<Task[]>('/api/tasks/defer', { taskIds: ids, days });
   }
 
   update(id: number, patch: UpdateTask): Observable<Task> {

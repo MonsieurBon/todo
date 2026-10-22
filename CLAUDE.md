@@ -79,6 +79,10 @@ with `npm run build`.
 - **A public URL is built from `TODO_CANONICAL_URI`, never from the request.** TLS terminates at
   the proxy, so the request only knows the app's own address, and forwarded headers are not
   trusted.
+- **"Today" is decided on the server, in the app's time zone.** A client runs in whatever zone its
+  device is in, and an assistant often cannot say what day it is, so "tomorrow" travels as a number
+  of days and never as a date the client worked out itself; a date the user named is sent as it is.
+  Timestamps are untouched by this and stay UTC.
 - **Entities handed back by a service are detached** (`open-in-view` off, reads are
   `@Transactional(readOnly = true)`). Mutating one outside its service writes nothing and still
   answers 200 — so writes live in the service and every mutator resolves its own id privately.

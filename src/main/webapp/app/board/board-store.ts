@@ -293,8 +293,8 @@ export class BoardStore {
     return this.online_(() => firstValueFrom(this.api.moveZone(task.id!, zone)));
   }
 
-  async defer(task: BoardTask, until: string): Promise<WriteResult> {
-    return this.online_(() => firstValueFrom(this.api.defer(task.id!, until)));
+  async defer(task: BoardTask, days: number): Promise<WriteResult> {
+    return this.online_(() => firstValueFrom(this.api.defer(task.id!, days)));
   }
 
   async undefer(task: BoardTask): Promise<WriteResult> {
