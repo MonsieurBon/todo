@@ -1,3 +1,10 @@
+## [2.9.1](https://github.com/MonsieurBon/todo/compare/v2.9.0...v2.9.1) (2026-10-22)
+
+
+### Bug Fixes
+
+* a day ends at midnight in the app's time zone, Europe/Zurich unless configured ([6ae628f](https://github.com/MonsieurBon/todo/commit/6ae628f9881eeac9b8135d21c6b6bdfb28f43e7e))
+
 # [2.9.0](https://github.com/MonsieurBon/todo/compare/v2.8.4...v2.9.0) (2026-10-22)
 
 
