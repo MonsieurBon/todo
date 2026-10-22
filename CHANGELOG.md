@@ -1,3 +1,10 @@
+# [2.10.0](https://github.com/MonsieurBon/todo/compare/v2.9.1...v2.10.0) (2026-10-22)
+
+
+### Features
+
+* the app is called Todo ([a055cd7](https://github.com/MonsieurBon/todo/commit/a055cd7a6b59b98312859128522a7d19fa7f69b9))
+
 ## [2.9.1](https://github.com/MonsieurBon/todo/compare/v2.9.0...v2.9.1) (2026-10-22)
 
 
