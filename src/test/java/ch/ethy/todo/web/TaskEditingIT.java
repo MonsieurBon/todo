@@ -132,6 +132,70 @@ class TaskEditingIT extends IntegrationTest {
   }
 
   @Test
+  @DisplayName("a capture can repeat, and an edit can change how often or stop it")
+  void recurrenceIsEditable() throws Exception {
+    String me = "subject-repeat-" + System.nanoTime();
+    long id =
+        capture(
+            me,
+            Map.of(
+                "title", "Water the plants",
+                "zone", "OPPORTUNITY_NOW",
+                "recurrence", Map.of("every", 2, "unit", "WEEKS")));
+    assertThat(reread(me, id).get("recurrence").get("every").asInt()).isEqualTo(2);
+
+    mvc.perform(
+            withBody(
+                patch("/api/tasks/" + id).with(as(me)),
+                Map.of("recurrence", Map.of("every", 3, "unit", "DAYS"))))
+        .andExpect(status().isOk());
+    var changed = reread(me, id).get("recurrence");
+    assertThat(changed.get("every").asInt()).isEqualTo(3);
+    assertThat(changed.get("unit").asString()).isEqualTo("DAYS");
+
+    mvc.perform(withBody(patch("/api/tasks/" + id).with(as(me)), Map.of("title", "Water them")))
+        .andExpect(status().isOk());
+    assertThat(reread(me, id).get("recurrence").isNull()).isFalse();
+
+    mvc.perform(withBody(patch("/api/tasks/" + id).with(as(me)), Map.of("clearRecurrence", true)))
+        .andExpect(status().isOk());
+    assertThat(reread(me, id).get("recurrence").isNull()).isTrue();
+  }
+
+  @Test
+  @DisplayName("completing a repeating task leaves the next one, hidden, in the same list")
+  void completingLeavesTheNextOne() throws Exception {
+    String me = "subject-next-" + System.nanoTime();
+    long id =
+        capture(
+            me,
+            Map.of(
+                "title", "Water the plants",
+                "zone", "OPPORTUNITY_NOW",
+                "recurrence", Map.of("every", 1, "unit", "WEEKS")));
+    long list = reread(me, id).get("listId").asLong();
+
+    mvc.perform(post("/api/tasks/" + id + "/complete").with(as(me)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.recurrence").isEmpty());
+
+    var board =
+        json.readTree(
+            mvc.perform(get("/api/board?includeDeferred=true").with(as(me)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString());
+    var next = board.get("tasks").valueStream().toList();
+    assertThat(next).hasSize(1);
+    assertThat(next.get(0).get("id").asLong()).isNotEqualTo(id);
+    assertThat(next.get(0).get("title").asString()).isEqualTo("Water the plants");
+    assertThat(next.get(0).get("listId").asLong()).isEqualTo(list);
+    assertThat(next.get(0).get("deferUntil").isNull()).isFalse();
+    assertThat(next.get(0).get("recurrence").get("unit").asString()).isEqualTo("WEEKS");
+  }
+
+  @Test
   @DisplayName("a completed task refuses every change until it is reopened")
   void completedIsReadOnly() throws Exception {
     String me = "subject-done-" + System.nanoTime();
@@ -250,6 +314,28 @@ class TaskEditingIT extends IntegrationTest {
         .andExpect(jsonPath("$.error").value("invalid_request"));
 
     assertThat(reread(me, id).get("dueDate").asString()).isEqualTo("2026-10-01");
+  }
+
+  @Test
+  @DisplayName("setting a repeat and stopping it in one request is refused, and changes nothing")
+  void recurrenceSetAndClearedAtOnce() throws Exception {
+    String me = "subject-undecided-" + System.nanoTime();
+    long id =
+        capture(
+            me,
+            Map.of(
+                "title", "Water the plants",
+                "zone", "OPPORTUNITY_NOW",
+                "recurrence", Map.of("every", 1, "unit", "WEEKS")));
+
+    mvc.perform(
+            withBody(
+                patch("/api/tasks/" + id).with(as(me)),
+                Map.of("recurrence", Map.of("every", 2, "unit", "DAYS"), "clearRecurrence", true)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error").value("invalid_request"));
+
+    assertThat(reread(me, id).get("recurrence").get("unit").asString()).isEqualTo("WEEKS");
   }
 
   @Test

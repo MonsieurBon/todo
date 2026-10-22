@@ -64,6 +64,25 @@ describe('the task editor', () => {
     expect(close).not.toHaveBeenCalled();
   });
 
+  it('hands back how often the task repeats, as it was given', async () => {
+    await open({ recurrence: { every: 2, unit: 'WEEKS' } });
+    save().click();
+
+    expect(close).toHaveBeenCalledWith(
+      expect.objectContaining({ recurrence: { every: 2, unit: 'WEEKS' } }),
+    );
+  });
+
+  it('will not save an interval the server would refuse', async () => {
+    await open({ recurrence: { every: 2, unit: 'WEEKS' } });
+    await set('every', '0');
+
+    expect(save().disabled).toBe(true);
+    save().click();
+
+    expect(close).not.toHaveBeenCalled();
+  });
+
   it('will not save without a title', async () => {
     await open();
     await set('title', '  ');

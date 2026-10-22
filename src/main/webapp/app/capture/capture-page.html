@@ -73,6 +73,8 @@
 
   <app-topics-field [(topics)]="labels" [known]="knownTopics()" />
 
+  <app-repeat-field [(recurrence)]="recurrence" />
+
   <button matButton="filled" type="button" [disabled]="!canSave()" (click)="save()">
     Add to the list
   </button>

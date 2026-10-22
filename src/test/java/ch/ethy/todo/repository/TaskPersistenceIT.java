@@ -3,6 +3,8 @@ package ch.ethy.todo.repository;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import ch.ethy.todo.IntegrationTest;
+import ch.ethy.todo.domain.Recurrence;
+import ch.ethy.todo.domain.RecurrenceUnit;
 import ch.ethy.todo.domain.Task;
 import ch.ethy.todo.domain.TaskList;
 import ch.ethy.todo.domain.TaskState;
@@ -115,6 +117,24 @@ class TaskPersistenceIT {
   }
 
   @Test
+  @DisplayName("a task keeps how often it repeats, and one that does not repeat reads back so")
+  void recurrenceRoundTrip() {
+    Task repeating =
+        new Task("Water the plants", TaskZone.OPPORTUNITY_NOW, java.time.Instant.now());
+    repeating.recurrence(new Recurrence(2, RecurrenceUnit.WEEKS));
+    Task once = new Task("Renew passport", TaskZone.OPPORTUNITY_NOW, java.time.Instant.now());
+    inbox.add(repeating);
+    inbox.add(once);
+    tasks.saveAndFlush(repeating);
+    tasks.saveAndFlush(once);
+    entityManager.clear();
+
+    assertThat(tasks.findById(repeating.id()).orElseThrow().recurrence())
+        .isEqualTo(new Recurrence(2, RecurrenceUnit.WEEKS));
+    assertThat(tasks.findById(once.id()).orElseThrow().recurrence()).isNull();
+  }
+
+  @Test
   @DisplayName("emoji survive, which they did not under the old 3-byte utf8 schema")
   void utf8mb4() {
     Task task = new Task("Buy 🎂 for the party", TaskZone.CRITICAL_NOW, java.time.Instant.now());
@@ -133,7 +153,7 @@ class TaskPersistenceIT {
 
     assertThat(tasks.findOnBoard(owner, false)).hasSize(1);
 
-    task.complete();
+    task.complete(LocalDate.now(), java.time.Instant.now());
     tasks.saveAndFlush(task);
 
     assertThat(tasks.findOnBoard(owner, false)).isEmpty();

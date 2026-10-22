@@ -79,6 +79,7 @@ public class TaskController {
                 request.zoneOrDefault(),
                 request.notes(),
                 request.dueDate(),
+                Requests.Recurrence.toDomain(request.recurrence()),
                 request.labels(),
                 request.clientRef())));
   }
@@ -96,6 +97,7 @@ public class TaskController {
                 request.zone(),
                 request.notes(),
                 request.dueDate(),
+                Requests.Recurrence.toDomain(request.recurrence()),
                 request.labels(),
                 request.clientRef())));
   }
@@ -127,7 +129,9 @@ public class TaskController {
                 request.title(),
                 request.notes(),
                 request.dueDate(),
-                Boolean.TRUE.equals(request.clearDueDate()))));
+                Boolean.TRUE.equals(request.clearDueDate()),
+                Requests.Recurrence.toDomain(request.recurrence()),
+                Boolean.TRUE.equals(request.clearRecurrence()))));
   }
 
   @PostMapping("/tasks/{id}/complete")

@@ -67,6 +67,33 @@ describe('the outbox', () => {
     expect(sent.clientRef).toBeTruthy();
   });
 
+  it('sends how often a captured task repeats', async () => {
+    await outbox.enqueue({
+      kind: 'capture',
+      title: 'Water the plants',
+      notes: '',
+      zone: 'OPPORTUNITY_NOW',
+      labels: [],
+      listId: null,
+      recurrence: { every: 1, unit: 'WEEKS' },
+    });
+
+    expect(api.capture.mock.calls[0][0]).toEqual(
+      expect.objectContaining({ recurrence: { every: 1, unit: 'WEEKS' } }),
+    );
+  });
+
+  // Queued before repeats existed, so stored without the field at all.
+  it('sends a capture queued without a repeat as one that does not repeat', async () => {
+    const db = await openDB('todo-outbox', 1);
+    await db.put('entries', stored('old-1', 1, 'Fix the tile'));
+
+    await outbox.flush();
+
+    expect(api.capture).toHaveBeenCalledTimes(1);
+    expect(api.capture.mock.calls[0][0].recurrence).toBeUndefined();
+  });
+
   it('keeps a write that could not be delivered', async () => {
     // Status 0 is what a fetch with no connection reports.
     api.capture = fails(0);

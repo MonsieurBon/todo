@@ -4,8 +4,10 @@ import {
   MAX_LABEL_LENGTH,
   unusableLabel,
   MAX_NOTES_LENGTH,
+  MAX_RECURRENCE_EVERY,
   MAX_TITLE_LENGTH,
   cutTo,
+  describeRecurrence,
   openingLine,
   parseLabels,
   tooLongLabel,
@@ -32,6 +34,26 @@ describe('the limits the form enforces', () => {
     expect(properties['title'].maxLength).toBe(MAX_TITLE_LENGTH);
     expect(properties['notes'].maxLength).toBe(MAX_NOTES_LENGTH);
     expect(properties['labels'].items?.maxLength).toBe(MAX_LABEL_LENGTH);
+  });
+
+  it('match the interval a repeat publishes', () => {
+    const every = schemas['Recurrence'].properties['every'] as {
+      minimum?: number;
+      maximum?: number;
+    };
+    expect(every.minimum).toBe(1);
+    expect(every.maximum).toBe(MAX_RECURRENCE_EVERY);
+  });
+});
+
+describe('saying how often a task repeats', () => {
+  it('leaves the number out of an interval of one', () => {
+    expect(describeRecurrence({ every: 1, unit: 'DAYS' })).toBe('every day');
+    expect(describeRecurrence({ every: 1, unit: 'MONTHS' })).toBe('every month');
+  });
+
+  it('counts a longer interval', () => {
+    expect(describeRecurrence({ every: 2, unit: 'WEEKS' })).toBe('every 2 weeks');
   });
 });
 

@@ -301,6 +301,32 @@ describe('the board', () => {
       expect(shown()).toEqual([[1, false]]);
     });
 
+    // Completing hands the repeat on to the next one, and undoing it takes neither back.
+    it('stops repeating, and undoing it leaves the next one where it is', async () => {
+      const monthly = { every: 1, unit: 'MONTHS' as const };
+      await load([task(1, { recurrence: monthly, dueDate: '2026-11-01' })]);
+
+      const next = task(2, { title: 'Task 1', recurrence: monthly, dueDate: '2026-12-01' });
+      api['board'] = vi.fn(() => of(board([next])));
+      await store.complete(store.tasks()[0]);
+
+      expect(shown()).toEqual([
+        [1, true],
+        [2, false],
+      ]);
+      expect(store.tasks()[0].recurrence).toBeUndefined();
+
+      api['reopen'] = vi.fn(() => of({}));
+      api['board'] = vi.fn(() => of(board([task(1, { dueDate: '2026-11-01' }), next])));
+      await store.reopen(store.tasks()[0]);
+
+      expect(shown()).toEqual([
+        [1, false],
+        [2, false],
+      ]);
+      expect(store.tasks().map((t) => t.recurrence)).toEqual([undefined, monthly]);
+    });
+
     it('stays done when the reopen does not get through, so it can be tried again', async () => {
       await load([task(1)]);
       api['board'] = vi.fn(() => of(board([])));
@@ -383,6 +409,7 @@ describe('the board', () => {
         zone: 'OPPORTUNITY_NOW',
         labels: ['house'],
         listId: 1,
+        recurrence: { every: 1, unit: 'WEEKS' },
       });
       await store.complete(store.tasks()[0]);
       expect(store.tasks().map((t) => [t.title, !!t.done])).toEqual([['Fix the tile', true]]);
@@ -401,8 +428,10 @@ describe('the board', () => {
           zone: 'OPPORTUNITY_NOW',
           labels: ['house'],
           listId: 1,
+          recurrence: { every: 1, unit: 'WEEKS' },
         }),
       ]);
+      expect(api['addToList'].mock.calls[1][1].recurrence).toEqual({ every: 1, unit: 'WEEKS' });
       expect(store.tasks()[0].done).toBeUndefined();
       expect(store.zones()[1].open).toBe(1);
     });

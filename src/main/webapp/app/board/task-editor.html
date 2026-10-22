@@ -28,6 +28,8 @@
   </mat-form-field>
 
   <app-topics-field [(topics)]="labels" [known]="knownTopics()" />
+
+  <app-repeat-field [(recurrence)]="recurrence" />
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button matButton type="button" mat-dialog-close>Cancel</button>

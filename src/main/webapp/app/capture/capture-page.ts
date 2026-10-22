@@ -19,6 +19,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import {
   MAX_NOTES_LENGTH,
   MAX_TITLE_LENGTH,
+  Recurrence,
   ZONE_MEANINGS,
   ZONE_NAMES,
   ZONES,
@@ -27,6 +28,7 @@ import {
   openingLine,
 } from '../api/model';
 import { BoardStore } from '../board/board-store';
+import { RepeatField } from '../core/repeat-field';
 import { TopicsField } from '../core/topics-field';
 
 /**
@@ -46,6 +48,7 @@ import { TopicsField } from '../core/topics-field';
     MatLabel,
     MatOption,
     MatSelect,
+    RepeatField,
     TopicsField,
   ],
   templateUrl: './capture-page.html',
@@ -68,6 +71,7 @@ export class CapturePage {
   protected readonly notes = signal('');
   protected readonly labels = signal<string[]>([]);
   protected readonly zone = signal<Zone>('OPPORTUNITY_NOW');
+  protected readonly recurrence = signal<Recurrence | null>(null);
 
   /**
    * A sentinel rather than null, because a select shows nothing at all for null. Null is still
@@ -88,6 +92,7 @@ export class CapturePage {
   protected readonly maxNotesLength = MAX_NOTES_LENGTH;
 
   private readonly topicsField = viewChild.required(TopicsField);
+  private readonly repeatField = viewChild.required(RepeatField);
 
   /**
    * Told, not enforced: no `maxlength`, because a paste it silently cuts is the same silent loss
@@ -101,7 +106,8 @@ export class CapturePage {
       !!this.title().trim() &&
       !this.titleTooLong() &&
       !this.notesTooLong() &&
-      !this.topicsField().invalid(),
+      !this.topicsField().invalid() &&
+      !this.repeatField().invalid(),
   );
 
   private readonly titleField = viewChild<ElementRef<HTMLInputElement>>('titleField');
@@ -163,6 +169,7 @@ export class CapturePage {
       zone: this.zone(),
       labels: this.labels(),
       listId: this.listId() === this.INBOX ? null : this.listId(),
+      recurrence: this.recurrence(),
     });
     this.saved.set(true);
     await this.router.navigateByUrl('/');

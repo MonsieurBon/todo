@@ -1,5 +1,6 @@
 package ch.ethy.todo.service;
 
+import ch.ethy.todo.domain.Recurrence;
 import ch.ethy.todo.domain.TaskZone;
 import java.time.LocalDate;
 import java.util.Collection;
@@ -10,6 +11,7 @@ public record NewTask(
     TaskZone zone,
     String notes,
     LocalDate dueDate,
+    Recurrence recurrence,
     Collection<String> labels,
     String clientRef) {
 

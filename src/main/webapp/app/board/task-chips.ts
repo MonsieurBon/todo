@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { ZONE_NAMES } from '../api/model';
+import { ZONE_NAMES, describeRecurrence } from '../api/model';
 import { BoardStore, BoardTask, isDeferred } from './board-store';
 
 /**
@@ -21,6 +21,7 @@ export class TaskChips {
   readonly showZone = input(false);
 
   protected readonly zoneName = computed(() => ZONE_NAMES[this.task().zone]);
+  protected readonly describe = describeRecurrence;
 
   /** With one list its name says nothing, wherever the task is shown. */
   protected readonly showList = computed(() => this.board.lists().length > 1);

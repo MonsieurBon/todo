@@ -42,6 +42,9 @@
             "minLength" : 0,
             "type" : "string"
           },
+          "recurrence" : {
+            "$ref" : "#/components/schemas/Recurrence"
+          },
           "title" : {
             "maxLength" : 255,
             "minLength" : 0,
@@ -78,6 +81,9 @@
             "maxLength" : 10000,
             "minLength" : 0,
             "type" : "string"
+          },
+          "recurrence" : {
+            "$ref" : "#/components/schemas/Recurrence"
           },
           "title" : {
             "maxLength" : 255,
@@ -157,6 +163,22 @@
           }
         },
         "required" : [ "zone" ],
+        "type" : "object"
+      },
+      "Recurrence" : {
+        "properties" : {
+          "every" : {
+            "format" : "int32",
+            "maximum" : 999,
+            "minimum" : 1,
+            "type" : "integer"
+          },
+          "unit" : {
+            "enum" : [ "DAYS", "WEEKS", "MONTHS" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "every", "unit" ],
         "type" : "object"
       },
       "RenameTaskList" : {
@@ -290,6 +312,9 @@
           "notes" : {
             "type" : "string"
           },
+          "recurrence" : {
+            "$ref" : "#/components/schemas/Recurrence"
+          },
           "state" : {
             "enum" : [ "TODO", "DONE" ],
             "type" : "string"
@@ -309,6 +334,9 @@
           "clearDueDate" : {
             "type" : "boolean"
           },
+          "clearRecurrence" : {
+            "type" : "boolean"
+          },
           "dueDate" : {
             "format" : "date",
             "type" : "string"
@@ -317,6 +345,9 @@
             "maxLength" : 10000,
             "minLength" : 0,
             "type" : "string"
+          },
+          "recurrence" : {
+            "$ref" : "#/components/schemas/Recurrence"
           },
           "title" : {
             "maxLength" : 255,

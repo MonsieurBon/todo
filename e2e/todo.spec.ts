@@ -209,3 +209,31 @@ test('a deferred task can be shown, edited and brought back, and counts only onc
   await expect(load).toHaveText(`${open} / 5`);
   await expect(critical.getByText(/^until /)).toBeHidden();
 });
+
+test('a repeating task leaves the next one behind when completed, hidden until it is due', async () => {
+  const topic = `weekly${run}`;
+  const title = `Water the plants ${run}`;
+  await page.goto('/capture');
+  await page.getByLabel('What needs doing?').fill(title);
+  await page.getByLabel('Topics').fill(topic);
+  await page.getByLabel('Repeats').click();
+  await page.getByRole('option', { name: 'Weekly' }).click();
+  await page.getByRole('button', { name: 'Add to the list' }).click();
+  await expect(page.getByRole('heading', { name: 'Critical Now' })).toBeVisible();
+
+  await page.goto(`/?label=${topic}`);
+  const rows = page.locator('app-task-row').filter({ hasText: title });
+  await expect(rows.getByText('every week')).toBeVisible();
+
+  // Reloading before the completion is sent would read the board without it.
+  const sent = page.waitForResponse((r) => r.url().endsWith('/complete'));
+  await page.getByRole('button', { name: `Complete ${title}` }).click();
+  await sent;
+  await page.goto(`/?label=${topic}`);
+  await expect(page.getByText(title)).toBeHidden();
+
+  await page.getByRole('checkbox', { name: 'Deferred' }).check();
+  await expect(rows).toHaveCount(1);
+  await expect(rows.getByText(/^until /)).toBeVisible();
+  await expect(rows.getByText('every week')).toBeVisible();
+});

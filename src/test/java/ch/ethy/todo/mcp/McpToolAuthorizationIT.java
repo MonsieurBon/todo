@@ -184,7 +184,9 @@ class McpToolAuthorizationIT extends IntegrationTest {
               List.of("house"),
               list.id(),
               "The loose one by the shower",
-              LocalDate.of(2030, 3, 1));
+              LocalDate.of(2030, 3, 1),
+              null,
+              null);
       assertThat(task.notes()).isEqualTo("The loose one by the shower");
       assertThat(task.dueDate()).isEqualTo(LocalDate.of(2030, 3, 1));
 
@@ -211,20 +213,34 @@ class McpToolAuthorizationIT extends IntegrationTest {
       as(someone());
       var task =
           tools.createTask(
-              "Tile", TaskZone.OPPORTUNITY_NOW, null, null, "Old", LocalDate.of(2030, 3, 1));
+              "Tile",
+              TaskZone.OPPORTUNITY_NOW,
+              null,
+              null,
+              "Old",
+              LocalDate.of(2030, 3, 1),
+              null,
+              null);
 
       var edited =
           tools.updateTask(
-              task.id(), "Fix the tile", "By the shower", LocalDate.of(2030, 4, 1), null);
+              task.id(),
+              "Fix the tile",
+              "By the shower",
+              LocalDate.of(2030, 4, 1),
+              null,
+              null,
+              null,
+              null);
       assertThat(edited.title()).isEqualTo("Fix the tile");
       assertThat(edited.notes()).isEqualTo("By the shower");
       assertThat(edited.dueDate()).isEqualTo(LocalDate.of(2030, 4, 1));
 
-      var notesOnly = tools.updateTask(task.id(), null, "Grout too", null, null);
+      var notesOnly = tools.updateTask(task.id(), null, "Grout too", null, null, null, null, null);
       assertThat(notesOnly.title()).as("an omitted field is left alone").isEqualTo("Fix the tile");
       assertThat(notesOnly.dueDate()).isEqualTo(LocalDate.of(2030, 4, 1));
 
-      tools.updateTask(task.id(), null, "", null, true);
+      tools.updateTask(task.id(), null, "", null, true, null, null, null);
       assertThat(tools.getBoard(null, null, null, null, null).tasks())
           .filteredOn(t -> t.id().equals(task.id()))
           .singleElement()
@@ -240,10 +256,13 @@ class McpToolAuthorizationIT extends IntegrationTest {
     void cannotEditForeignTask() {
       String owner = someone();
       as(owner);
-      var task = tools.createTask("Private", TaskZone.OPPORTUNITY_NOW, null, null, "Mine", null);
+      var task =
+          tools.createTask(
+              "Private", TaskZone.OPPORTUNITY_NOW, null, null, "Mine", null, null, null);
 
       as(someone());
-      assertThatThrownBy(() -> tools.updateTask(task.id(), "Taken", "Theirs", null, null))
+      assertThatThrownBy(
+              () -> tools.updateTask(task.id(), "Taken", "Theirs", null, null, null, null, null))
           .isInstanceOf(NotFoundException.class)
           .satisfies(e -> assertThat(e.getMessage()).doesNotContain("Private", "Mine"));
 
@@ -269,7 +288,14 @@ class McpToolAuthorizationIT extends IntegrationTest {
                   i ->
                       tools
                           .createTask(
-                              "Task " + i, TaskZone.OVER_THE_HORIZON, null, list.id(), null, null)
+                              "Task " + i,
+                              TaskZone.OVER_THE_HORIZON,
+                              null,
+                              list.id(),
+                              null,
+                              null,
+                              null,
+                              null)
                           .id())
               .toList();
       clock.advance(java.time.Duration.ofDays(7));
@@ -291,11 +317,13 @@ class McpToolAuthorizationIT extends IntegrationTest {
     void cannotHideForeignTaskAmongOwn() {
       String owner = someone();
       as(owner);
-      var theirs = tools.createTask("Private", TaskZone.OPPORTUNITY_NOW, null, null, null, null);
+      var theirs =
+          tools.createTask("Private", TaskZone.OPPORTUNITY_NOW, null, null, null, null, null, null);
       var theirStamp = reviewedAt(theirs.id());
 
       as(someone());
-      var mine = tools.createTask("Mine", TaskZone.OPPORTUNITY_NOW, null, null, null, null);
+      var mine =
+          tools.createTask("Mine", TaskZone.OPPORTUNITY_NOW, null, null, null, null, null, null);
       var myStamp = reviewedAt(mine.id());
       var mixed = List.of(mine.id(), theirs.id());
       clock.advance(java.time.Duration.ofHours(1));
@@ -339,7 +367,9 @@ class McpToolAuthorizationIT extends IntegrationTest {
     void reopens() {
       String owner = someone();
       as(owner);
-      var task = tools.createTask("Water plants", TaskZone.OPPORTUNITY_NOW, null, null, null, null);
+      var task =
+          tools.createTask(
+              "Water plants", TaskZone.OPPORTUNITY_NOW, null, null, null, null, null, null);
       tools.completeTask(task.id());
 
       as(someone());
@@ -364,7 +394,8 @@ class McpToolAuthorizationIT extends IntegrationTest {
       String owner = someone();
       as(owner);
       var task =
-          tools.createTask("Call the landlord", TaskZone.CRITICAL_NOW, null, null, null, null);
+          tools.createTask(
+              "Call the landlord", TaskZone.CRITICAL_NOW, null, null, null, null, null, null);
       tools.deferTasks(List.of(task.id()), LocalDate.of(2030, 1, 1));
 
       as(someone());
@@ -391,8 +422,10 @@ class McpToolAuthorizationIT extends IntegrationTest {
       var personal = tools.createTaskList("Personal " + System.nanoTime());
       var family = tools.createTaskList("Family " + System.nanoTime());
       for (int i = 0; i < 3; i++) {
-        tools.createTask("P" + i, TaskZone.CRITICAL_NOW, List.of(), personal.id(), null, null);
-        tools.createTask("F" + i, TaskZone.CRITICAL_NOW, List.of(), family.id(), null, null);
+        tools.createTask(
+            "P" + i, TaskZone.CRITICAL_NOW, List.of(), personal.id(), null, null, null, null);
+        tools.createTask(
+            "F" + i, TaskZone.CRITICAL_NOW, List.of(), family.id(), null, null, null, null);
       }
 
       var criticalOnBoard =

@@ -58,6 +58,11 @@ describe('a task’s chips', () => {
     expect(text).toContain('2026-10-01');
   });
 
+  it('says how often a repeating task comes back, and nothing for one that does not', async () => {
+    expect(await shown({ recurrence: { every: 2, unit: 'WEEKS' } })).toContain('every 2 weeks');
+    expect(await shown()).not.toContain('every');
+  });
+
   it('names the list only when there is more than one list to be in', async () => {
     expect(await shown()).not.toContain('Inbox');
 

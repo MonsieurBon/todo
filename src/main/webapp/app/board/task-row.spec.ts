@@ -54,7 +54,13 @@ describe('a task row', () => {
     undefer = vi.fn(async () => 'done');
     reopen = vi.fn(async () => 'done');
     reopenable = vi.fn(() => true);
-    closedWith = { title: 'Fix it', notes: '', dueDate: '2026-10-01', labels: ['diy'] };
+    closedWith = {
+      title: 'Fix it',
+      notes: '',
+      dueDate: '2026-10-01',
+      labels: ['diy'],
+      recurrence: null,
+    };
     open = vi.fn(() => ({ afterClosed: () => of(closedWith) }));
     TestBed.configureTestingModule({
       providers: [
@@ -199,6 +205,25 @@ describe('a task row', () => {
 
     expect(edit).toHaveBeenCalledWith(task, expect.objectContaining({ dueDate: '2026-10-01' }));
     expect(edit.mock.calls[0][1]).not.toHaveProperty('clearDueDate');
+  });
+
+  it('asks for the repeat to be stopped when the editor comes back with none', async () => {
+    await edited();
+
+    expect(edit).toHaveBeenCalledWith(task, expect.objectContaining({ clearRecurrence: true }));
+    expect(edit.mock.calls[0][1]).not.toHaveProperty('recurrence');
+  });
+
+  it('sends the repeat the editor came back with, and asks for nothing to be stopped', async () => {
+    closedWith = { ...closedWith, recurrence: { every: 3, unit: 'DAYS' } };
+
+    await edited();
+
+    expect(edit).toHaveBeenCalledWith(
+      task,
+      expect.objectContaining({ recurrence: { every: 3, unit: 'DAYS' } }),
+    );
+    expect(edit.mock.calls[0][1]).not.toHaveProperty('clearRecurrence');
   });
 
   /** A completed task is read-only, so taking the completion back is all it offers. */
