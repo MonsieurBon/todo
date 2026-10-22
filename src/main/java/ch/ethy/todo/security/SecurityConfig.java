@@ -66,7 +66,7 @@ public class SecurityConfig {
                                 builder ->
                                     builder
                                         .resource(canonicalUri)
-                                        .resourceName("One Minute To-Do List")
+                                        .resourceName("Todo")
                                         // MCP requires at least one authorization server here.
                                         .authorizationServer(issuerUri)
                                         .scope("todo:mcp"))))

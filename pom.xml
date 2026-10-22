@@ -12,7 +12,7 @@
   <artifactId>todo</artifactId>
   <version>2.9.2-SNAPSHOT</version>
   <name>todo</name>
-  <description>One Minute To-Do List</description>
+  <description>Todo, a One Minute To-Do List</description>
 
   <properties>
     <java.version>25</java.version>

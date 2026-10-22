@@ -77,6 +77,12 @@ describe('the app shell', () => {
     expect(shown(fixture)).toBeNull();
   });
 
+  it('calls the app Todo', async () => {
+    const fixture = await render();
+
+    expect(fixture.nativeElement.querySelector('mat-toolbar').textContent.trim()).toBe('Todo');
+  });
+
   it('offers the sections as Board, Review, Capture, Lists', async () => {
     const fixture = await render();
     const tabs = [...fixture.nativeElement.querySelectorAll('nav.tabs a')].map((tab: Element) =>

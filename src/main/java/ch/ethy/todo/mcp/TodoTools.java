@@ -52,7 +52,7 @@ public class TodoTools {
       title = "Add a task",
       description =
           """
-          Add a task to the user's One Minute To-Do List.
+          Add a task to Todo, the user's One Minute To-Do List.
 
           Choose the zone by urgency, not by importance:
             CRITICAL_NOW     - must genuinely be done today. Meant to hold about five
