@@ -93,11 +93,11 @@
     </span>
   }
 
-  @if (!task().done) {
+  @if (!pending() && !task().done) {
     <button
       matIconButton
       type="button"
-      [class.folded]="!pending()"
+      class="folded"
       [attr.aria-label]="'Actions for ' + task().title"
       [matMenuTriggerFor]="menu"
     >
@@ -106,38 +106,30 @@
   }
 
   <mat-menu #menu="matMenu">
-    @if (pending()) {
-      <div class="hint muted">Captured offline. It can be sent or taken back, nothing else.</div>
-      <button mat-menu-item type="button" (click)="remove()">
-        <mat-icon svgIcon="trash" />
-        <span>Take back</span>
-      </button>
-    } @else {
-      @if (promoteTo(); as zone) {
-        <button mat-menu-item type="button" [disabled]="!online()" (click)="move(zone)">
-          <mat-icon svgIcon="up" />
-          <span>Move to {{ zoneName(zone) }}</span>
-        </button>
-      }
-      @if (demoteTo(); as zone) {
-        <button mat-menu-item type="button" [disabled]="!online()" (click)="move(zone)">
-          <mat-icon svgIcon="down" />
-          <span>Move to {{ zoneName(zone) }}</span>
-        </button>
-      }
-      <button mat-menu-item type="button" [disabled]="!online()" [matMenuTriggerFor]="deferMenu">
-        <mat-icon svgIcon="later" />
-        <span>Defer</span>
-      </button>
-      <button mat-menu-item type="button" [disabled]="!online()" (click)="edit()">
-        <mat-icon svgIcon="edit" />
-        <span>Edit</span>
-      </button>
-      <button mat-menu-item type="button" [disabled]="!online()" (click)="remove()">
-        <mat-icon svgIcon="trash" />
-        <span>Delete</span>
+    @if (promoteTo(); as zone) {
+      <button mat-menu-item type="button" [disabled]="!online()" (click)="move(zone)">
+        <mat-icon svgIcon="up" />
+        <span>Move to {{ zoneName(zone) }}</span>
       </button>
     }
+    @if (demoteTo(); as zone) {
+      <button mat-menu-item type="button" [disabled]="!online()" (click)="move(zone)">
+        <mat-icon svgIcon="down" />
+        <span>Move to {{ zoneName(zone) }}</span>
+      </button>
+    }
+    <button mat-menu-item type="button" [disabled]="!online()" [matMenuTriggerFor]="deferMenu">
+      <mat-icon svgIcon="later" />
+      <span>Defer</span>
+    </button>
+    <button mat-menu-item type="button" [disabled]="!online()" (click)="edit()">
+      <mat-icon svgIcon="edit" />
+      <span>Edit</span>
+    </button>
+    <button mat-menu-item type="button" [disabled]="!online()" (click)="remove()">
+      <mat-icon svgIcon="trash" />
+      <span>Delete</span>
+    </button>
   </mat-menu>
 
   <mat-menu #deferMenu="matMenu">

@@ -90,7 +90,26 @@ export class BoardStore {
         ?.tasks.map((t) => t.clientRef)
         .filter(Boolean),
     );
-    return this.outbox.pendingCaptures().filter((entry) => !acknowledged.has(entry.id));
+    const completing = this.outbox.completingCaptures();
+    return this.outbox
+      .pendingCaptures()
+      .filter((entry) => !acknowledged.has(entry.id) && !completing.has(entry.id));
+  });
+
+  /** Served, but completed on this device and not yet on the server. */
+  private readonly completing = computed(() => {
+    const ids = this.outbox.completingIds();
+    const captures = this.outbox.completingCaptures();
+    return (task: Task) => ids.has(task.id) || (!!task.clientRef && captures.has(task.clientRef));
+  });
+
+  /** A capture completed here is the task the server made of it, once that completion was sent. */
+  private readonly resolve = computed(() => {
+    const delivered = this.outbox.delivered();
+    return (task: BoardTask): BoardTask => {
+      const id = task.pendingId ? delivered.get(task.pendingId) : undefined;
+      return id === undefined ? task : { ...task, id, pendingId: null };
+    };
   });
 
   /**
@@ -98,8 +117,8 @@ export class BoardStore {
    * not.
    */
   readonly tasks = computed<BoardTask[]>(() => {
-    const completing = this.outbox.completingIds();
-    const fromServer = (this.served()?.tasks ?? []).filter((t) => !completing.has(t.id));
+    const completing = this.completing();
+    const fromServer = (this.served()?.tasks ?? []).filter((t) => !completing(t));
     const queued = this.queuedCaptures()
       .filter((entry) => this.matchesFilter(entry.listId, entry.labels, entry.zone))
       .map<BoardTask>((entry) => ({
@@ -113,10 +132,12 @@ export class BoardStore {
         listName: this.lists().find((l) => l.id === entry.listId)?.name ?? null,
         recurrence: entry.recurrence ?? undefined,
       }));
-    const kept = new Set(this.completed().map(({ task }) => keyOf(task)));
+    const resolve = this.resolve();
+    const done = this.completed().map(({ task, at }) => ({ task: resolve(task), at }));
+    const kept = new Set(done.map(({ task }) => keyOf(task)));
     const rows = [...fromServer.map(asBoardTask), ...queued].filter((t) => !kept.has(keyOf(t)));
     // In the order they stood, so each one's place counts the ones before it that are also done.
-    const completed = this.completed()
+    const completed = done
       .filter(({ task }) => this.matchesFilter(task.listId, task.labels, task.zone))
       .sort((a, b) => a.at - b.at);
     for (const { task, at } of completed) {
@@ -135,13 +156,13 @@ export class BoardStore {
   readonly zones = computed<ZoneSection[]>(() => {
     const served = this.served();
     const loads = new Map(served?.zones.map((load) => [load.zone, load]));
-    const completing = this.outbox.completingIds();
+    const completing = this.completing();
     return ZONES.map((zone) => {
       const load = loads.get(zone);
       const softCap = load?.softCap ?? null;
       const captured = this.queuedCaptures().filter((entry) => entry.zone === zone).length;
       const completed = (served?.tasks ?? []).filter(
-        (task) => task.zone === zone && completing.has(task.id) && !task.deferUntil,
+        (task) => task.zone === zone && completing(task) && !task.deferUntil,
       ).length;
       const open = (load?.open ?? 0) + captured - completed;
       const tasks = this.tasks().filter((task) => task.zone === zone);
@@ -213,27 +234,34 @@ export class BoardStore {
   }
 
   /**
-   * Completing a task that has not synced takes the capture back instead — there is nothing on the
-   * server to complete.
+   * A task that has not synced is completed by the capture itself, which the server resolves to the
+   * task whether or not the capture queued ahead of it got there first.
    */
   async complete(task: BoardTask): Promise<WriteResult> {
     const at = this.tasks()
       .filter((row) => row.zone === task.zone)
       .findIndex((row) => keyOf(row) === keyOf(task));
     // Completing ends a deferral, and the server hands a repeat on to the next one; reopening
-    // brings back neither. A capture taken back keeps its repeat for when it is queued again.
-    const done: BoardTask = {
-      ...task,
-      deferUntil: undefined,
-      recurrence: task.pendingId ? task.recurrence : undefined,
-      done: true,
-    };
+    // brings back neither.
+    const done: BoardTask = { ...task, deferUntil: undefined, recurrence: undefined, done: true };
     this.completed.update((current) => [...current, { task: done, at }]);
-    if (task.pendingId) {
-      await this.outbox.discard(task.pendingId);
-      return 'done';
-    }
-    await this.outbox.enqueue({ kind: 'complete', taskId: task.id! });
+    await this.outbox.enqueue(
+      task.pendingId
+        ? {
+            kind: 'complete',
+            capture: {
+              id: task.pendingId,
+              kind: 'capture',
+              title: task.title,
+              notes: task.notes ?? '',
+              zone: task.zone,
+              labels: task.labels,
+              listId: task.listId,
+              recurrence: task.recurrence ?? null,
+            },
+          }
+        : { kind: 'complete', taskId: task.id! },
+    );
     await this.refresh();
     return 'done';
   }
@@ -241,29 +269,14 @@ export class BoardStore {
   /**
    * Reopening is a change to a task like moving it, so it needs a connection, and it is not offered
    * until the completion has been sent, so that it can only follow it to the server, never overtake
-   * it. A capture that was never sent is only captured again, which works offline.
+   * it.
    */
   reopenable(task: BoardTask): boolean {
-    return !!task.pendingId || (this.online() && !this.completionQueued(task));
+    return this.online() && !task.pendingId && !this.completionQueued(task);
   }
 
   async reopen(task: BoardTask): Promise<WriteResult> {
-    if (task.pendingId) {
-      this.forget(task);
-      const draft = {
-        kind: 'capture' as const,
-        title: task.title,
-        notes: task.notes ?? '',
-        zone: task.zone,
-        labels: task.labels,
-        listId: task.listId,
-        recurrence: task.recurrence ?? null,
-      };
-      await this.outbox.enqueue(draft, task.pendingId);
-      await this.refresh();
-      return 'done';
-    }
-    if (this.completionQueued(task)) {
+    if (task.pendingId || this.completionQueued(task)) {
       return 'refused';
     }
     const result = await this.online_(() => firstValueFrom(this.api.reopen(task.id!)));
@@ -280,7 +293,10 @@ export class BoardStore {
   }
 
   private forget(task: BoardTask): void {
-    this.completed.update((current) => current.filter((c) => keyOf(c.task) !== keyOf(task)));
+    const resolve = this.resolve();
+    this.completed.update((current) =>
+      current.filter((c) => keyOf(resolve(c.task)) !== keyOf(task)),
+    );
   }
 
   private completionQueued(task: BoardTask): boolean {
@@ -310,10 +326,6 @@ export class BoardStore {
   }
 
   async remove(task: BoardTask): Promise<WriteResult> {
-    if (task.pendingId) {
-      await this.outbox.discard(task.pendingId);
-      return 'done';
-    }
     return this.online_(() => firstValueFrom(this.api.delete(task.id!)));
   }
 

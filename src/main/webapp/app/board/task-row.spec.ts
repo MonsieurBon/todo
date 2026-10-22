@@ -124,6 +124,19 @@ describe('a task row', () => {
     expect(button(host, 'Defer Fix the tile')).toBeTruthy();
   });
 
+  /** Deleting one needs a connection like any other task, and then it has been sent. */
+  it('offers nothing but completing a capture that has not been sent', async () => {
+    const fixture = TestBed.createComponent(TaskRow);
+    fixture.componentRef.setInput('task', { ...task, id: null, pendingId: 'queued-1' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const host: HTMLElement = fixture.nativeElement;
+
+    expect(button(host, 'Complete Fix the tile')).toBeTruthy();
+    expect(button(host, 'Actions for Fix the tile')).toBeNull();
+    expect(button(host, 'Delete Fix the tile')).toBeNull();
+  });
+
   const deferChoices = async (deferUntil?: string): Promise<HTMLButtonElement[]> => {
     const fixture = TestBed.createComponent(TaskRow);
     fixture.componentRef.setInput('task', { ...task, deferUntil });

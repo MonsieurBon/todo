@@ -399,7 +399,7 @@ describe('the board', () => {
       expect(store.tasks()[0].deferUntil).toBeUndefined();
     });
 
-    it('is queued again when it was a capture that had not been sent', async () => {
+    const captureUnsent = async () => {
       api['addToList'] = vi.fn(() => {
         throw { status: 0 };
       });
@@ -411,29 +411,56 @@ describe('the board', () => {
         listId: 1,
         recurrence: { every: 1, unit: 'WEEKS' },
       });
+      return (api['addToList'].mock.calls[0][1] as { clientRef: string }).clientRef;
+    };
+
+    /** A capture of something already done is a record of it, and a repeat hands itself on. */
+    it('reaches the server completed when it was a capture that had not been sent', async () => {
+      const ref = await captureUnsent();
       await store.complete(store.tasks()[0]);
       expect(store.tasks().map((t) => [t.title, !!t.done])).toEqual([['Fix the tile', true]]);
-      online.set(false);
+
+      api['addToList'] = vi.fn(() => of(task(9, { clientRef: ref })));
+      await store.sync();
+
+      expect(api['addToList']).toHaveBeenLastCalledWith(
+        1,
+        expect.objectContaining({ clientRef: ref, recurrence: { every: 1, unit: 'WEEKS' } }),
+      );
+      expect(api['complete']).toHaveBeenCalledWith(9);
+    });
+
+    it('is reopened by the server once that capture and its completion were sent', async () => {
+      const ref = await captureUnsent();
+      await store.complete(store.tasks()[0]);
+      expect(store.reopenable(store.tasks()[0])).toBe(false);
+
+      api['addToList'] = vi.fn(() => of(task(9, { clientRef: ref })));
+      await store.sync();
+      // No longer waiting to sync, so it is shown as the task the server holds.
+      expect(store.tasks()).toEqual([expect.objectContaining({ id: 9, pendingId: null })]);
       expect(store.reopenable(store.tasks()[0])).toBe(true);
 
-      await store.reopen(store.tasks()[0]);
+      api['reopen'] = vi.fn(() => of({}));
+      api['board'] = vi.fn(() => of(board([task(9, { zone: 'OPPORTUNITY_NOW' })])));
+      expect(await store.reopen(store.tasks()[0])).toBe('done');
+      expect(api['reopen']).toHaveBeenCalledWith(9);
+      expect(shown()).toEqual([[9, false]]);
+    });
 
-      // The same clientRef, so if the first one reached the server after all, this one is it.
-      const [first, again] = api['addToList'].mock.calls.map(([, body]) => body.clientRef);
-      expect(again).toBe(first);
-      expect(store.tasks()).toEqual([
-        expect.objectContaining({
-          title: 'Fix the tile',
-          notes: 'the loose one',
-          zone: 'OPPORTUNITY_NOW',
-          labels: ['house'],
-          listId: 1,
-          recurrence: { every: 1, unit: 'WEEKS' },
-        }),
-      ]);
-      expect(api['addToList'].mock.calls[1][1].recurrence).toEqual({ every: 1, unit: 'WEEKS' });
-      expect(store.tasks()[0].done).toBeUndefined();
-      expect(store.zones()[1].open).toBe(1);
+    it('is neither shown nor counted while that completion waits to be sent', async () => {
+      const ref = await captureUnsent();
+      await store.complete(store.tasks()[0]);
+      store.forgetCompleted();
+
+      expect(store.tasks()).toEqual([]);
+      expect(store.zones()[1].open).toBe(0);
+
+      // The capture reached the server after all, and only its answer was lost.
+      await load([task(9, { zone: 'OPPORTUNITY_NOW', clientRef: ref })]);
+
+      expect(store.tasks()).toEqual([]);
+      expect(store.zones()[1].open).toBe(0);
     });
 
     it('is not shown under a filter that does not match it', async () => {

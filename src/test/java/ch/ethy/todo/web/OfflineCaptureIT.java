@@ -99,6 +99,22 @@ class OfflineCaptureIT extends IntegrationTest {
     assertThat(titlesOnBoard(me)).containsExactly("Call the roofer");
   }
 
+  /** A queued completion names an unsent task by its capture, and may be replayed itself. */
+  @Test
+  @DisplayName("replaying a capture whose task was completed resolves to it, still completed")
+  void captureOfCompletedTaskIsIdempotent() throws Exception {
+    String me = someone();
+    String ref = UUID.randomUUID().toString();
+    long id = captured(me, "Paid the invoice", ref).get("id").asLong();
+    mvc.perform(post("/api/tasks/" + id + "/complete").with(as(me))).andExpect(status().isOk());
+
+    JsonNode replay = captured(me, "Paid the invoice", ref);
+
+    assertThat(replay.get("id").asLong()).isEqualTo(id);
+    assertThat(replay.get("state").asString()).isEqualTo("DONE");
+    assertThat(titlesOnBoard(me)).isEmpty();
+  }
+
   @Test
   @DisplayName("the reference comes back, so the queue can reconcile what it sent")
   void referenceIsEchoed() throws Exception {

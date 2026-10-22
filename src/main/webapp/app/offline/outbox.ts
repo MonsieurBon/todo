@@ -4,24 +4,31 @@ import { firstValueFrom } from 'rxjs';
 import { TodoApi } from '../api/todo-api';
 import { Recurrence, Zone } from '../api/model';
 
+export interface CaptureEntry {
+  id: string;
+  kind: 'capture';
+  createdAt: number;
+  listId: number | null;
+  title: string;
+  notes: string;
+  zone: Zone;
+  labels: string[];
+  /** Missing from entries queued before tasks could repeat. */
+  recurrence?: Recurrence | null;
+}
+
 /**
  * Two kinds by design, not an unfinished list: creating is append-only and completing idempotent,
  * so both replay blind. Moving, deferring and editing would be silent overwrites.
+ *
+ * Nothing but sending one takes an entry out again: a click that withdrew one could not tell
+ * whether it was already on its way.
  */
 export type OutboxEntry =
-  | {
-      id: string;
-      kind: 'capture';
-      createdAt: number;
-      listId: number | null;
-      title: string;
-      notes: string;
-      zone: Zone;
-      labels: string[];
-      /** Missing from entries queued before tasks could repeat. */
-      recurrence?: Recurrence | null;
-    }
-  | { id: string; kind: 'complete'; createdAt: number; taskId: number };
+  | CaptureEntry
+  | { id: string; kind: 'complete'; createdAt: number; taskId: number }
+  /** A task with no id yet, named by the capture the server resolves to it. */
+  | { id: string; kind: 'complete'; createdAt: number; capture: Omit<CaptureEntry, 'createdAt'> };
 
 /** Distributes over the union, so each kind keeps its own fields. */
 export type OutboxDraft = OutboxEntry extends infer E
@@ -45,36 +52,34 @@ export class Outbox {
   private flushing = false;
   private lastAt = 0;
 
+  private readonly sent = signal<ReadonlyMap<string, number>>(new Map());
+
   readonly pending = this.entries.asReadonly();
-  readonly pendingCaptures = computed(
-    () =>
-      this.entries().filter((e) => e.kind === 'capture') as Extract<
-        OutboxEntry,
-        { kind: 'capture' }
-      >[],
+  readonly pendingCaptures = computed(() =>
+    this.entries().filter((e): e is CaptureEntry => e.kind === 'capture'),
   );
   readonly completingIds = computed(
-    () =>
-      new Set(
-        this.entries()
-          .filter((e) => e.kind === 'complete')
-          .map((e) => (e as Extract<OutboxEntry, { kind: 'complete' }>).taskId),
-      ),
+    () => new Set(this.entries().flatMap((e) => ('taskId' in e ? [e.taskId] : []))),
   );
+  /** By the capture's id, which is also the clientRef the server holds the task under. */
+  readonly completingCaptures = computed(
+    () => new Set(this.entries().flatMap((e) => ('capture' in e ? [e.capture.id] : []))),
+  );
+  /** The server's id for each capture whose completion this tab sent. */
+  readonly delivered = this.sent.asReadonly();
 
   async load(): Promise<void> {
     this.entries.set(await this.readAll());
   }
 
-  /** An `id` already used is the same capture again, which the server resolves to one task. */
-  async enqueue(entry: OutboxDraft, id: string = crypto.randomUUID()): Promise<string> {
+  async enqueue(entry: OutboxDraft): Promise<string> {
     // Strictly increasing: order is recovered from the store, whose keys are random, so two
     // entries in the same millisecond would otherwise sort either way round.
     this.lastAt = Math.max(Date.now(), this.lastAt + 1);
     const stored = {
       ...entry,
       // Doubles as the clientRef the server deduplicates on, so a retry resolves to the same task.
-      id,
+      id: crypto.randomUUID(),
       createdAt: this.lastAt,
     } as OutboxEntry;
     await (await this.open()).put(STORE, stored);
@@ -89,11 +94,6 @@ export class Outbox {
     this.entries.set([]);
   }
 
-  async discard(id: string): Promise<void> {
-    await (await this.open()).delete(STORE, id);
-    this.entries.update((current) => current.filter((entry) => entry.id !== id));
-  }
-
   /**
    * Strictly in order: a task captured and completed in the same offline stretch would otherwise
    * have its completion refer to a task the server has not heard of.
@@ -104,36 +104,42 @@ export class Outbox {
     }
     this.flushing = true;
     try {
-      // From the store, not the signal: another tab may have emptied it, and each tab holds its
-      // own copy that nothing tells.
-      const queued = await this.readAll();
-      this.entries.set(queued);
-      for (const entry of queued) {
-        const outcome = await this.send(entry);
-        if (outcome === 'unreachable') {
+      // Until the store is empty: what is queued while one pass is sending is not in that pass,
+      // and nothing else would send it before the next capture or reconnect.
+      for (;;) {
+        // From the store, not the signal: another tab may have emptied it, and each tab holds its
+        // own copy that nothing tells.
+        const queued = await this.readAll();
+        this.entries.set(queued);
+        if (!queued.length) {
           return;
         }
-        await this.discard(entry.id);
+        for (const entry of queued) {
+          const outcome = await this.send(entry);
+          if (outcome === 'unreachable') {
+            return;
+          }
+          await this.discard(entry.id);
+        }
       }
     } finally {
       this.flushing = false;
     }
   }
 
+  private async discard(id: string): Promise<void> {
+    await (await this.open()).delete(STORE, id);
+    this.entries.update((current) => current.filter((entry) => entry.id !== id));
+  }
+
   private async send(entry: OutboxEntry): Promise<'done' | 'unreachable'> {
     try {
       if (entry.kind === 'capture') {
-        const body = {
-          title: entry.title,
-          notes: entry.notes,
-          zone: entry.zone,
-          labels: entry.labels,
-          recurrence: entry.recurrence ?? undefined,
-          clientRef: entry.id,
-        };
-        await firstValueFrom(
-          entry.listId == null ? this.api.capture(body) : this.api.addToList(entry.listId, body),
-        );
+        await this.capture(entry);
+      } else if ('capture' in entry) {
+        const id = await this.capture(entry.capture);
+        await firstValueFrom(this.api.complete(id));
+        this.sent.update((sent) => new Map(sent).set(entry.capture.id, id));
       } else {
         await firstValueFrom(this.api.complete(entry.taskId));
       }
@@ -147,6 +153,21 @@ export class Outbox {
         ? 'unreachable'
         : 'done';
     }
+  }
+
+  private async capture(entry: Omit<CaptureEntry, 'createdAt'>): Promise<number> {
+    const body = {
+      title: entry.title,
+      notes: entry.notes,
+      zone: entry.zone,
+      labels: entry.labels,
+      recurrence: entry.recurrence ?? undefined,
+      clientRef: entry.id,
+    };
+    const task = await firstValueFrom(
+      entry.listId == null ? this.api.capture(body) : this.api.addToList(entry.listId, body),
+    );
+    return task.id;
   }
 
   /** The one place the order is established, so `load` and `flush` cannot disagree about it. */
