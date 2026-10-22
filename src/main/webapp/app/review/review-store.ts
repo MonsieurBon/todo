@@ -3,7 +3,6 @@ import { Observable, firstValueFrom } from 'rxjs';
 import { ZONES, Zone, ZoneLoad } from '../api/model';
 import { TodoApi } from '../api/todo-api';
 import { BoardStore, BoardTask, GONE, ZoneSection, asBoardTask } from '../board/board-store';
-import { isoDateIn } from '../core/dates';
 import { Writes } from '../core/writes';
 
 const SOME_GONE = 'One of those tasks was completed or deleted elsewhere, so none of them changed.';
@@ -106,7 +105,7 @@ export class ReviewStore {
   }
 
   defer(task: BoardTask, days: number): Promise<void> {
-    return this.decide(task, () => this.api.defer(task.id!, isoDateIn(days)));
+    return this.decide(task, () => this.api.defer(task.id!, days));
   }
 
   remove(task: BoardTask): Promise<void> {
@@ -168,7 +167,7 @@ export class ReviewStore {
   }
 
   deferAll(days: number): Promise<void> {
-    return this.decideAll((ids) => this.api.deferAll(ids, isoDateIn(days)));
+    return this.decideAll((ids) => this.api.deferAll(ids, days));
   }
 
   /**

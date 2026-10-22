@@ -467,6 +467,20 @@ class TaskTest {
       assertThatThrownBy(() -> task().deferUntil(TODAY.minusDays(1), TODAY, NOW))
           .isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    @DisplayName("a deferral past the last date the column holds is refused, and changes nothing")
+    void noFurtherThanTheColumn() {
+      Task task = task();
+      task.deferUntil(Task.LAST_DATE, TODAY, NOW);
+      assertThat(task.deferUntil()).isEqualTo(Task.LAST_DATE);
+
+      Task other = task();
+      assertThatThrownBy(() -> other.deferUntil(Task.LAST_DATE.plusDays(1), TODAY, NOW))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining(Task.LAST_DATE.toString());
+      assertThat(other.deferUntil()).isNull();
+    }
   }
 
   @Nested

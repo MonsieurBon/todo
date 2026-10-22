@@ -162,7 +162,7 @@ describe('the review sweep', () => {
     await review.defer(second, 7);
 
     expect(api['moveZone']).toHaveBeenCalledWith(2, 'CRITICAL_NOW');
-    expect(api['defer']).toHaveBeenCalledWith(3, expect.any(String));
+    expect(api['defer']).toHaveBeenCalledWith(3, 7);
     expect(api['markReviewed']).not.toHaveBeenCalled();
     expect(ids(review)).toEqual([1]);
   });
@@ -216,7 +216,7 @@ describe('the review sweep', () => {
     await review.deferAll(30);
 
     expect(api['moveAllTo']).toHaveBeenCalledWith([1], 'OVER_THE_HORIZON');
-    expect(api['deferAll']).toHaveBeenCalledWith([2], expect.any(String));
+    expect(api['deferAll']).toHaveBeenCalledWith([2], 30);
     expect(ids(review)).toEqual([3]);
   });
 

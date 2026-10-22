@@ -43,6 +43,9 @@ public class Task {
 
   public static final int MAX_NOTES_LENGTH = 10_000;
 
+  /** The last day a MySQL {@code DATE} holds. */
+  public static final LocalDate LAST_DATE = LocalDate.of(9999, 12, 31);
+
   /** Letters, digits and hyphens. Anything else is refused rather than rewritten. */
   private static final Pattern ALLOWED = Pattern.compile("[\\p{L}\\p{Nd}-]+");
 
@@ -282,6 +285,9 @@ public class Task {
     }
     if (until.isBefore(today)) {
       throw new IllegalArgumentException("Cannot defer into the past: " + until);
+    }
+    if (until.isAfter(LAST_DATE)) {
+      throw new IllegalArgumentException("Cannot defer beyond " + LAST_DATE + ": " + until);
     }
     this.deferUntil = until;
     this.lastReviewedAt = decidedAt;

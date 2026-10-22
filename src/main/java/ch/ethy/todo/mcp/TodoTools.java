@@ -12,6 +12,7 @@ import ch.ethy.todo.service.NewTask;
 import ch.ethy.todo.service.TaskEdit;
 import ch.ethy.todo.service.TaskListService;
 import ch.ethy.todo.service.TaskService;
+import ch.ethy.todo.web.dto.Requests;
 import ch.ethy.todo.web.dto.Responses;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -383,21 +384,33 @@ public class TodoTools {
       title = "Hide tasks until a date",
       description =
           """
-          Hide tasks until the given date, when they come back by themselves in the zone
-          they were in. This is for "not yet", and is different from a due date:
-          deferring says when the user wants to see a task again, a due date says when it
-          must be finished. The date cannot be in the past. Deferring counts as
-          reviewing a task, so it leaves the review queue. undefer_task brings one back
-          sooner.
+          Hide tasks until a date, when they come back by themselves in the zone they
+          were in. This is for "not yet", and is different from a due date: deferring
+          says when the user wants to see a task again, a due date says when it must be
+          finished. Deferring counts as reviewing a task, so it leaves the review queue.
+          undefer_task brings one back sooner.
+
+          Pass until for a date the user named, and days for "tomorrow", "next week" or
+          "in a month": the server counts days from its own today, so there is no need to
+          know what day it is. One of them, never both. The date cannot be in the past.
 
           All of them are deferred or none is. A completed task is read-only, and does
           not need hiding — it is already off the list.
           """)
   public List<Responses.TaskView> deferTasks(
       @McpToolParam(description = "Ids of the tasks.", required = true) List<Long> taskIds,
-      @McpToolParam(description = "Date to bring them back, as YYYY-MM-DD.", required = true)
-          LocalDate until) {
-    return tasks.deferAll(taskIds, currentUser.current(), until).stream().map(this::view).toList();
+      @McpToolParam(
+              description = "Date to bring them back, as YYYY-MM-DD. Cannot be combined with days.",
+              required = false)
+          LocalDate until,
+      @McpToolParam(
+              description =
+                  "Days from today to bring them back, e.g. 1 for tomorrow. Cannot be combined"
+                      + " with until.",
+              required = false)
+          Integer days) {
+    LocalDate date = new Requests.DeferSelection(taskIds, until, days).date(clock);
+    return tasks.deferAll(taskIds, currentUser.current(), date).stream().map(this::view).toList();
   }
 
   @McpTool(

@@ -5,7 +5,6 @@ import { MatIcon } from '@angular/material/icon';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { MatTooltip } from '@angular/material/tooltip';
 import { ZONE_NAMES, Zone, moveLabel, zoneAfter } from '../api/model';
-import { isoDateIn } from '../core/dates';
 import { BoardStore, BoardTask, isDeferred } from './board-store';
 import { TaskChips } from './task-chips';
 import { TaskDetail } from './task-detail';
@@ -63,7 +62,7 @@ export class TaskRow {
   }
 
   protected deferBy(days: number): void {
-    void this.board.defer(this.task(), isoDateIn(days));
+    void this.board.defer(this.task(), days);
   }
 
   protected undefer(): void {
