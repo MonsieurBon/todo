@@ -18,9 +18,12 @@ type Narrow<T, K extends keyof T, V> = Omit<T, K> & Record<K, V>;
 export type Zone = NonNullable<Schemas['TaskView']['zone']>;
 export type TaskState = NonNullable<Schemas['TaskView']['state']>;
 
+export type Recurrence = Sent<Schemas['Recurrence'], never>;
+export type RecurrenceUnit = Recurrence['unit'];
+
 export type Task = Sent<
   Schemas['TaskView'],
-  'notes' | 'dueDate' | 'deferUntil' | 'lastReviewedAt' | 'clientRef'
+  'notes' | 'dueDate' | 'deferUntil' | 'lastReviewedAt' | 'clientRef' | 'recurrence'
 >;
 export type ZoneLoad = Sent<Schemas['ZoneLoad'], 'softCap'>;
 // The generated element types are optional all the way down, so the collections are narrowed to
@@ -70,6 +73,21 @@ export function moveLabel(title: string, zone: Zone | null, direction: 'up' | 'd
 export const MAX_TITLE_LENGTH = 255;
 export const MAX_NOTES_LENGTH = 10_000;
 export const MAX_LABEL_LENGTH = 64;
+export const MAX_RECURRENCE_EVERY = 999;
+
+const UNIT_NAMES: Record<RecurrenceUnit, [one: string, many: string]> = {
+  DAYS: ['day', 'days'],
+  WEEKS: ['week', 'weeks'],
+  MONTHS: ['month', 'months'],
+};
+
+export function unitName(unit: RecurrenceUnit, count: number): string {
+  return UNIT_NAMES[unit][count === 1 ? 0 : 1];
+}
+
+export function describeRecurrence({ every, unit }: Recurrence): string {
+  return every === 1 ? `every ${unitName(unit, 1)}` : `every ${every} ${unitName(unit, every)}`;
+}
 
 /**
  * The one rewriting a topic gets, matching the entity: a composed and a combining accent are the

@@ -1,7 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { BoardFilter, TodoApi } from '../api/todo-api';
-import { BoardView, Task, TaskList, UpdateTask, ZONES, Zone } from '../api/model';
+import { BoardView, Recurrence, Task, TaskList, UpdateTask, ZONES, Zone } from '../api/model';
 import { Connectivity } from '../core/connectivity';
 import { WriteResult, Writes } from '../core/writes';
 import { Outbox } from '../offline/outbox';
@@ -19,6 +19,7 @@ export interface BoardTask {
   dueDate?: string;
   deferUntil?: string;
   lastReviewedAt?: string;
+  recurrence?: Recurrence;
   /** Completed while the board was open: kept in sight so an accidental complete can be undone. */
   done?: true;
 }
@@ -58,6 +59,7 @@ export const asBoardTask = (task: Task): BoardTask => ({
   dueDate: task.dueDate,
   deferUntil: task.deferUntil,
   lastReviewedAt: task.lastReviewedAt,
+  recurrence: task.recurrence,
 });
 
 @Injectable({ providedIn: 'root' })
@@ -109,6 +111,7 @@ export class BoardStore {
         labels: entry.labels,
         listId: entry.listId,
         listName: this.lists().find((l) => l.id === entry.listId)?.name ?? null,
+        recurrence: entry.recurrence ?? undefined,
       }));
     const kept = new Set(this.completed().map(({ task }) => keyOf(task)));
     const rows = [...fromServer.map(asBoardTask), ...queued].filter((t) => !kept.has(keyOf(t)));
@@ -203,6 +206,7 @@ export class BoardStore {
     zone: Zone;
     labels: string[];
     listId: number | null;
+    recurrence?: Recurrence | null;
   }): Promise<void> {
     await this.outbox.enqueue({ kind: 'capture', ...draft });
     await this.refresh();
@@ -216,8 +220,14 @@ export class BoardStore {
     const at = this.tasks()
       .filter((row) => row.zone === task.zone)
       .findIndex((row) => keyOf(row) === keyOf(task));
-    // Completing ends a deferral, and reopening does not bring it back.
-    const done: BoardTask = { ...task, deferUntil: undefined, done: true };
+    // Completing ends a deferral, and the server hands a repeat on to the next one; reopening
+    // brings back neither. A capture taken back keeps its repeat for when it is queued again.
+    const done: BoardTask = {
+      ...task,
+      deferUntil: undefined,
+      recurrence: task.pendingId ? task.recurrence : undefined,
+      done: true,
+    };
     this.completed.update((current) => [...current, { task: done, at }]);
     if (task.pendingId) {
       await this.outbox.discard(task.pendingId);
@@ -247,6 +257,7 @@ export class BoardStore {
         zone: task.zone,
         labels: task.labels,
         listId: task.listId,
+        recurrence: task.recurrence ?? null,
       };
       await this.outbox.enqueue(draft, task.pendingId);
       await this.refresh();

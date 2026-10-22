@@ -114,7 +114,7 @@ class TaskTest {
     @DisplayName("completing a task closes it")
     void complete() {
       Task task = task();
-      task.complete();
+      task.complete(TODAY, NOW);
       assertThat(task.state()).isEqualTo(TaskState.DONE);
       assertThat(task.isOpen()).isFalse();
     }
@@ -123,7 +123,7 @@ class TaskTest {
     @DisplayName("reopening a completed task makes it open again")
     void reopen() {
       Task task = task();
-      task.complete();
+      task.complete(TODAY, NOW);
       task.reopen();
       assertThat(task.state()).isEqualTo(TaskState.TODO);
       assertThat(task.isOpen()).isTrue();
@@ -134,7 +134,7 @@ class TaskTest {
     void completingClearsDeferral() {
       Task task = task();
       task.deferUntil(TODAY.plusWeeks(2), TODAY, NOW);
-      task.complete();
+      task.complete(TODAY, NOW);
 
       assertThat(task.deferUntil()).isNull();
       task.reopen();
@@ -145,9 +145,112 @@ class TaskTest {
     @DisplayName("completing twice is harmless")
     void completeIsIdempotent() {
       Task task = task();
-      task.complete();
-      task.complete();
+      task.complete(TODAY, NOW);
+      task.complete(TODAY, NOW);
       assertThat(task.state()).isEqualTo(TaskState.DONE);
+    }
+  }
+
+  @Nested
+  @DisplayName("a repeating task")
+  class Repeating {
+
+    private static final Recurrence WEEKLY = new Recurrence(1, RecurrenceUnit.WEEKS);
+    private static final Instant LATER = NOW.plus(Duration.ofDays(2));
+
+    private static Task weekly() {
+      Task task = task();
+      task.recurrence(WEEKLY);
+      return task;
+    }
+
+    @Test
+    @DisplayName("completing it adds a copy that carries everything but the completion")
+    void copies() {
+      Task task = weekly();
+      task.notes("Both of them");
+      task.labels(List.of("house", "paperwork"));
+      task.moveTo(TaskZone.CRITICAL_NOW, NOW);
+      task.clientRef("offline-1");
+
+      Task copy = task.complete(TODAY, LATER).orElseThrow();
+
+      assertThat(copy.title()).isEqualTo("Renew passport");
+      assertThat(copy.notes()).isEqualTo("Both of them");
+      assertThat(copy.labels()).containsExactly("house", "paperwork");
+      assertThat(copy.zone()).isEqualTo(TaskZone.CRITICAL_NOW);
+      assertThat(copy.recurrence()).isEqualTo(WEEKLY);
+      assertThat(copy.isOpen()).isTrue();
+      assertThat(copy.lastReviewedAt()).isEqualTo(LATER);
+      // Unique per list: the copy is not the capture that reference identifies.
+      assertThat(copy.clientRef()).isNull();
+    }
+
+    @Test
+    @DisplayName("without a due date, the copy is hidden for one interval from today")
+    void withoutDueDateDeferred() {
+      Task copy = weekly().complete(TODAY, NOW).orElseThrow();
+
+      assertThat(copy.deferUntil()).isEqualTo(TODAY.plusWeeks(1));
+      assertThat(copy.dueDate()).isNull();
+    }
+
+    @Test
+    @DisplayName("with a due date, the copy is due one interval later and not hidden")
+    void withDueDateNotDeferred() {
+      Task task = weekly();
+      task.dueDate(TODAY.plusDays(3));
+
+      Task copy = task.complete(TODAY, NOW).orElseThrow();
+
+      assertThat(copy.dueDate()).isEqualTo(TODAY.plusDays(3).plusWeeks(1));
+      assertThat(copy.deferUntil()).isNull();
+    }
+
+    @Test
+    @DisplayName("a copy of a task completed late is due when the interval says, even if past")
+    void lateCopyStaysOverdue() {
+      Task task = weekly();
+      task.dueDate(TODAY.minusWeeks(3));
+
+      assertThat(task.complete(TODAY, NOW).orElseThrow().dueDate()).isEqualTo(TODAY.minusWeeks(2));
+    }
+
+    @Test
+    @DisplayName("completing it clears the setting, so reopening it does not bring it back")
+    void settingMovesToTheCopy() {
+      Task task = weekly();
+      task.complete(TODAY, NOW);
+
+      assertThat(task.recurrence()).isNull();
+      task.reopen();
+      assertThat(task.recurrence()).isNull();
+    }
+
+    @Test
+    @DisplayName("completing it twice adds one copy, so a replayed completion is harmless")
+    void oneCopyPerCompletion() {
+      Task task = weekly();
+
+      assertThat(task.complete(TODAY, NOW)).isPresent();
+      assertThat(task.complete(TODAY, NOW)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("a task that does not repeat adds nothing when completed")
+    void noRecurrenceNoCopy() {
+      assertThat(task().complete(TODAY, NOW)).isEmpty();
+    }
+
+    @Test
+    @DisplayName(
+        "changing the setting is not a review: it says nothing about where the task belongs")
+    void settingIsNotReviewing() {
+      Task task = task();
+      task.recurrence(WEEKLY);
+      task.recurrence(null);
+
+      assertThat(task.lastReviewedAt()).isEqualTo(NOW);
     }
   }
 
@@ -157,18 +260,20 @@ class TaskTest {
 
     private static Task completed() {
       Task task = task();
-      task.complete();
+      task.complete(TODAY, NOW);
       return task;
     }
 
     @Test
-    @DisplayName("it cannot be retitled, renoted or given a due date")
+    @DisplayName("it cannot be retitled, renoted, given a due date or set to repeat")
     void noEditing() {
       assertThatThrownBy(() -> completed().title("Renew passport urgently"))
           .isInstanceOf(TaskCompletedException.class);
       assertThatThrownBy(() -> completed().notes("Booked an appointment"))
           .isInstanceOf(TaskCompletedException.class);
       assertThatThrownBy(() -> completed().dueDate(TODAY.plusDays(7)))
+          .isInstanceOf(TaskCompletedException.class);
+      assertThatThrownBy(() -> completed().recurrence(new Recurrence(1, RecurrenceUnit.DAYS)))
           .isInstanceOf(TaskCompletedException.class);
     }
 
@@ -219,7 +324,7 @@ class TaskTest {
     void refusedDeferralChangesNothing() {
       Task task = task();
       task.moveTo(TaskZone.CRITICAL_NOW, NOW);
-      task.complete();
+      task.complete(TODAY, NOW);
 
       assertThatThrownBy(() -> task.deferUntil(TODAY.plusWeeks(2), TODAY, NOW))
           .isInstanceOf(TaskCompletedException.class);

@@ -3,6 +3,7 @@ package ch.ethy.todo.domain;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -20,6 +21,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import org.hibernate.annotations.CreationTimestamp;
@@ -78,6 +80,8 @@ public class Task {
 
   @Column(name = "due_date")
   private LocalDate dueDate;
+
+  @Embedded private Recurrence recurrence;
 
   /** Strings rather than an entity: a label with an owner has no clean answer on a shared list. */
   @ElementCollection(fetch = FetchType.LAZY)
@@ -199,6 +203,16 @@ public class Task {
     this.dueDate = dueDate;
   }
 
+  public Recurrence recurrence() {
+    return recurrence;
+  }
+
+  /** Null for a task that does not repeat. Not a review: it says nothing about where it belongs. */
+  public void recurrence(Recurrence recurrence) {
+    mustBeOpen();
+    this.recurrence = recurrence;
+  }
+
   public boolean isOpen() {
     return state == TaskState.TODO;
   }
@@ -211,9 +225,34 @@ public class Task {
     }
   }
 
-  public void complete() {
+  /**
+   * A repeating task hands its setting on to the copy this returns, so completing it again - a
+   * replayed request - finds nothing left to copy, and reopening it does not bring the setting
+   * back. The copy belongs in this task's list; adding it there is the caller's.
+   */
+  public Optional<Task> complete(LocalDate today, Instant now) {
+    Task next = recurrence == null ? null : nextOccurrence(today, now);
     this.state = TaskState.DONE;
     this.deferUntil = null;
+    this.recurrence = null;
+    return Optional.ofNullable(next);
+  }
+
+  /**
+   * A due date carries the schedule, and how long the copy can stay hidden is the user's to decide;
+   * without one, hiding it for an interval is what makes it come back when it is next due.
+   */
+  private Task nextOccurrence(LocalDate today, Instant now) {
+    Task next = new Task(title, zone, now);
+    next.notes = notes;
+    next.labels.addAll(labels);
+    next.recurrence = recurrence;
+    if (dueDate != null) {
+      next.dueDate = recurrence.after(dueDate);
+    } else {
+      next.deferUntil = recurrence.after(today);
+    }
+    return next;
   }
 
   public void reopen() {

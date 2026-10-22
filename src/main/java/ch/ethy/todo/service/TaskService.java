@@ -133,6 +133,7 @@ public class TaskService {
     task.clientRef(clientRef);
     task.notes(draft.notes());
     task.dueDate(draft.dueDate());
+    task.recurrence(draft.recurrence());
     task.labels(draft.labels());
     list.add(task);
     return tasks.save(task);
@@ -151,12 +152,22 @@ public class TaskService {
     } else if (edit.dueDate() != null) {
       task.dueDate(edit.dueDate());
     }
+    if (edit.clearRecurrence()) {
+      task.recurrence(null);
+    } else if (edit.recurrence() != null) {
+      task.recurrence(edit.recurrence());
+    }
     return task;
   }
 
   public Task complete(Long id, User user) {
     Task task = resolve(id, user);
-    task.complete();
+    task.complete(LocalDate.now(clock), clock.instant())
+        .ifPresent(
+            next -> {
+              task.taskList().add(next);
+              tasks.save(next);
+            });
     return task;
   }
 

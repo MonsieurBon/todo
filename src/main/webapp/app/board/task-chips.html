@@ -19,3 +19,6 @@
 @if (task().dueDate) {
   <span class="chip due">due {{ task().dueDate }}</span>
 }
+@if (task().recurrence; as recurrence) {
+  <span class="chip repeats">{{ describe(recurrence) }}</span>
+}

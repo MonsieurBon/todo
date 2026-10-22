@@ -1,5 +1,7 @@
 package ch.ethy.todo.mcp;
 
+import ch.ethy.todo.domain.Recurrence;
+import ch.ethy.todo.domain.RecurrenceUnit;
 import ch.ethy.todo.domain.Task;
 import ch.ethy.todo.domain.TaskList;
 import ch.ethy.todo.domain.TaskZone;
@@ -63,6 +65,10 @@ public class TodoTools {
           a task may carry several, and they are how tasks are grouped across lists.
 
           Keep the title short enough to scan; anything longer goes in the notes.
+
+          A task can repeat every N days, weeks or months: completing it then adds the
+          next one, due one interval after this one's due date or, without a due date,
+          hidden for one interval from the day it was completed.
           """)
   public Responses.TaskView createTask(
       @McpToolParam(
@@ -100,10 +106,21 @@ public class TodoTools {
                   "When it must be finished, as YYYY-MM-DD. Not a deferral: it does not hide"
                       + " the task.",
               required = false)
-          LocalDate dueDate) {
+          LocalDate dueDate,
+      @McpToolParam(description = RECURRENCE_EVERY, required = false) Integer recurrenceEvery,
+      @McpToolParam(description = RECURRENCE_UNIT, required = false)
+          RecurrenceUnit recurrenceUnit) {
     var me = currentUser.current();
     TaskZone target = zone == null ? TaskZone.OPPORTUNITY_NOW : zone;
-    var draft = new NewTask(title, target, notes, dueDate, labels, null);
+    var draft =
+        new NewTask(
+            title,
+            target,
+            notes,
+            dueDate,
+            recurrence(recurrenceEvery, recurrenceUnit),
+            labels,
+            null);
     return view(listId == null ? tasks.capture(me, draft) : tasks.addTo(listId, me, draft));
   }
 
@@ -118,9 +135,9 @@ public class TodoTools {
       title = "Edit a task",
       description =
           """
-          Change a task's title, notes or due date. Only what is passed changes;
-          anything omitted keeps its current value. Notes are replaced whole, so to add
-          to them pass the existing notes with the addition.
+          Change a task's title, notes, due date or how often it repeats. Only what is
+          passed changes; anything omitted keeps its current value. Notes are replaced
+          whole, so to add to them pass the existing notes with the addition.
 
           Zone, deferral, topics and completion have their own tools.
 
@@ -144,12 +161,25 @@ public class TodoTools {
       @McpToolParam(
               description = "True to remove the due date. Cannot be combined with dueDate.",
               required = false)
-          Boolean clearDueDate) {
+          Boolean clearDueDate,
+      @McpToolParam(description = RECURRENCE_EVERY, required = false) Integer recurrenceEvery,
+      @McpToolParam(description = RECURRENCE_UNIT, required = false) RecurrenceUnit recurrenceUnit,
+      @McpToolParam(
+              description =
+                  "True to stop the task repeating. Cannot be combined with recurrenceEvery.",
+              required = false)
+          Boolean clearRecurrence) {
     return view(
         tasks.update(
             taskId,
             currentUser.current(),
-            new TaskEdit(title, notes, dueDate, Boolean.TRUE.equals(clearDueDate))));
+            new TaskEdit(
+                title,
+                notes,
+                dueDate,
+                Boolean.TRUE.equals(clearDueDate),
+                recurrence(recurrenceEvery, recurrenceUnit),
+                Boolean.TRUE.equals(clearRecurrence))));
   }
 
   @McpTool(
@@ -281,6 +311,10 @@ public class TodoTools {
           """
           Mark a task as completed. It drops off the list immediately.
           Completing clears any deferral, so a reopened task comes straight back.
+
+          A repeating task adds its next one when completed, and stops repeating itself:
+          reopening it neither brings the repeat back nor removes the next one. The answer
+          is the completed task; get_board with includeDeferred finds the next one.
           """)
   public Responses.TaskView completeTask(
       @McpToolParam(description = "Id of the task.", required = true) Long taskId) {
@@ -299,7 +333,8 @@ public class TodoTools {
       description =
           """
           Undo complete_task: the task is open again, in the zone it was in.
-          get_board with includeDone finds completed tasks.
+          get_board with includeDone finds completed tasks. A task that repeated does not
+          repeat again once reopened, and the next one its completion added stays.
 
           Afterwards, check get_board: if the task's zone is now over its cap, say so
           and offer to move something out.
@@ -501,6 +536,23 @@ public class TodoTools {
           String email) {
     var me = currentUser.current();
     return Responses.TaskListSummary.of(lists.share(listId, me, email), me);
+  }
+
+  private static final String RECURRENCE_EVERY =
+      "Repeat the task every this many days, weeks or months, from 1 to "
+          + Recurrence.MAX_EVERY
+          + ". Needs recurrenceUnit.";
+
+  private static final String RECURRENCE_UNIT = "DAYS, WEEKS or MONTHS. Needs recurrenceEvery.";
+
+  private static Recurrence recurrence(Integer every, RecurrenceUnit unit) {
+    if (every == null && unit == null) {
+      return null;
+    }
+    if (every == null || unit == null) {
+      throw new IllegalArgumentException("A repeat needs both recurrenceEvery and recurrenceUnit");
+    }
+    return new Recurrence(every, unit);
   }
 
   private Responses.TaskView view(Task task) {

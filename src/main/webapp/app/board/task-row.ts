@@ -91,6 +91,7 @@ export class TaskRow {
       title: change.title,
       notes: change.notes,
       ...(change.dueDate ? { dueDate: change.dueDate } : { clearDueDate: true }),
+      ...(change.recurrence ? { recurrence: change.recurrence } : { clearRecurrence: true }),
     });
     if (edited === 'done') {
       await this.board.setLabels(task, change.labels);

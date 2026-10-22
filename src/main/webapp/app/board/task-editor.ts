@@ -18,6 +18,8 @@ import {
 } from '@angular/material/dialog';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
+import { Recurrence } from '../api/model';
+import { RepeatField } from '../core/repeat-field';
 import { TopicsField } from '../core/topics-field';
 import { BoardStore, BoardTask } from './board-store';
 
@@ -26,6 +28,7 @@ export interface TaskEdit {
   notes: string;
   dueDate: string;
   labels: string[];
+  recurrence: Recurrence | null;
 }
 
 /**
@@ -44,6 +47,7 @@ export interface TaskEdit {
     MatFormField,
     MatInput,
     MatLabel,
+    RepeatField,
     TopicsField,
   ],
   templateUrl: './task-editor.html',
@@ -63,14 +67,16 @@ export class TaskEditor {
 
   protected readonly knownTopics = inject(BoardStore).labels;
   private readonly topicsField = viewChild.required(TopicsField);
+  private readonly repeatField = viewChild.required(RepeatField);
 
   protected readonly title = signal(this.task.title);
   protected readonly notes = signal(this.task.notes ?? '');
   protected readonly dueDate = signal(this.task.dueDate ?? '');
   protected readonly labels = signal(this.task.labels ?? []);
+  protected readonly recurrence = signal<Recurrence | null>(this.task.recurrence ?? null);
 
   protected readonly canSave = computed(
-    () => !!this.title().trim() && !this.topicsField().invalid(),
+    () => !!this.title().trim() && !this.topicsField().invalid() && !this.repeatField().invalid(),
   );
 
   protected save(): void {
@@ -84,6 +90,7 @@ export class TaskEditor {
       notes: this.notes().trim(),
       dueDate: this.dueDate(),
       labels: this.labels(),
+      recurrence: this.recurrence(),
     });
   }
 }

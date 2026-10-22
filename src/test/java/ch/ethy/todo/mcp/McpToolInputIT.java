@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import ch.ethy.todo.IntegrationTest;
+import ch.ethy.todo.domain.Recurrence;
+import ch.ethy.todo.domain.RecurrenceUnit;
 import ch.ethy.todo.domain.Task;
 import ch.ethy.todo.domain.TaskCompletedException;
 import ch.ethy.todo.domain.TaskList;
@@ -75,7 +77,39 @@ class McpToolInputIT extends IntegrationTest {
                 null,
                 null,
                 null,
+                null,
+                null,
                 null));
+  }
+
+  @Test
+  @DisplayName("create_task refuses a repeat beyond the limit and names it")
+  void recurrenceTooLong() {
+    asSomeone();
+    rejectedNaming(
+        Recurrence.MAX_EVERY,
+        () ->
+            tools.createTask(
+                "Water the plants",
+                TaskZone.OPPORTUNITY_NOW,
+                null,
+                null,
+                null,
+                null,
+                Recurrence.MAX_EVERY + 1,
+                RecurrenceUnit.DAYS));
+  }
+
+  @Test
+  @DisplayName("create_task refuses half a repeat rather than guessing the other half")
+  void recurrenceNeedsBothHalves() {
+    asSomeone();
+    assertThatThrownBy(
+            () ->
+                tools.createTask(
+                    "Water the plants", TaskZone.OPPORTUNITY_NOW, null, null, null, null, 2, null))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("recurrenceUnit");
   }
 
   @Test
@@ -89,6 +123,8 @@ class McpToolInputIT extends IntegrationTest {
                 "Fix the roof",
                 TaskZone.OPPORTUNITY_NOW,
                 List.of("l".repeat(Task.MAX_LABEL_LENGTH + 1)),
+                null,
+                null,
                 null,
                 null,
                 null));
@@ -107,6 +143,8 @@ class McpToolInputIT extends IntegrationTest {
                 null,
                 null,
                 "n".repeat(Task.MAX_NOTES_LENGTH + 1),
+                null,
+                null,
                 null));
   }
 
@@ -114,20 +152,42 @@ class McpToolInputIT extends IntegrationTest {
   @DisplayName("update_task refuses a title or notes longer than the column")
   void updateTooLong() {
     asSomeone();
-    var task = tools.createTask("Fix the roof", TaskZone.OPPORTUNITY_NOW, null, null, null, null);
+    var task =
+        tools.createTask(
+            "Fix the roof", TaskZone.OPPORTUNITY_NOW, null, null, null, null, null, null);
     rejectedNaming(
         Task.MAX_TITLE_LENGTH,
-        () -> tools.updateTask(task.id(), "t".repeat(Task.MAX_TITLE_LENGTH + 1), null, null, null));
+        () ->
+            tools.updateTask(
+                task.id(),
+                "t".repeat(Task.MAX_TITLE_LENGTH + 1),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null));
     rejectedNaming(
         Task.MAX_NOTES_LENGTH,
-        () -> tools.updateTask(task.id(), null, "n".repeat(Task.MAX_NOTES_LENGTH + 1), null, null));
+        () ->
+            tools.updateTask(
+                task.id(),
+                null,
+                "n".repeat(Task.MAX_NOTES_LENGTH + 1),
+                null,
+                null,
+                null,
+                null,
+                null));
   }
 
   @Test
   @DisplayName("a refused update_task applies none of its fields, so a retry starts clean")
   void refusedUpdateAppliesNothing() {
     asSomeone();
-    var task = tools.createTask("Fix the roof", TaskZone.OPPORTUNITY_NOW, null, null, null, null);
+    var task =
+        tools.createTask(
+            "Fix the roof", TaskZone.OPPORTUNITY_NOW, null, null, null, null, null, null);
     rejectedNaming(
         Task.MAX_NOTES_LENGTH,
         () ->
@@ -135,6 +195,9 @@ class McpToolInputIT extends IntegrationTest {
                 task.id(),
                 "Fix the ridge tile",
                 "n".repeat(Task.MAX_NOTES_LENGTH + 1),
+                null,
+                null,
+                null,
                 null,
                 null));
     assertThat(tools.getBoard(null, null, null, null, null).tasks())
@@ -148,7 +211,8 @@ class McpToolInputIT extends IntegrationTest {
       "get_board finds a deferred task only when asked to, in the zone it was deferred from")
   void boardFindsDeferred() {
     asSomeone();
-    var task = tools.createTask("Fix the roof", TaskZone.CRITICAL_NOW, null, null, null, null);
+    var task =
+        tools.createTask("Fix the roof", TaskZone.CRITICAL_NOW, null, null, null, null, null, null);
     tools.deferTasks(List.of(task.id()), LocalDate.now().plusMonths(1));
 
     assertThat(tools.getBoard(null, null, null, null, null).tasks())
@@ -163,11 +227,15 @@ class McpToolInputIT extends IntegrationTest {
   @DisplayName("update_task refuses a blank title, and a due date together with clearing it")
   void updateContradictions() {
     asSomeone();
-    var task = tools.createTask("Fix the roof", TaskZone.OPPORTUNITY_NOW, null, null, null, null);
-    assertThatThrownBy(() -> tools.updateTask(task.id(), " ", null, null, null))
+    var task =
+        tools.createTask(
+            "Fix the roof", TaskZone.OPPORTUNITY_NOW, null, null, null, null, null, null);
+    assertThatThrownBy(() -> tools.updateTask(task.id(), " ", null, null, null, null, null, null))
         .isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(
-            () -> tools.updateTask(task.id(), null, null, LocalDate.of(2030, 1, 1), true))
+            () ->
+                tools.updateTask(
+                    task.id(), null, null, LocalDate.of(2030, 1, 1), true, null, null, null))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -175,7 +243,9 @@ class McpToolInputIT extends IntegrationTest {
   @DisplayName("set_task_labels refuses a label longer than the column")
   void setLabelsTooLong() {
     asSomeone();
-    var task = tools.createTask("Fix the roof", TaskZone.OPPORTUNITY_NOW, null, null, null, null);
+    var task =
+        tools.createTask(
+            "Fix the roof", TaskZone.OPPORTUNITY_NOW, null, null, null, null, null, null);
     rejectedNaming(
         Task.MAX_LABEL_LENGTH,
         () -> tools.setTaskLabels(task.id(), List.of("l".repeat(Task.MAX_LABEL_LENGTH + 1))));
@@ -187,12 +257,21 @@ class McpToolInputIT extends IntegrationTest {
     asSomeone();
     var task =
         tools.createTask(
-            "Fix the roof", TaskZone.OPPORTUNITY_NOW, List.of("house"), null, null, null);
+            "Fix the roof",
+            TaskZone.OPPORTUNITY_NOW,
+            List.of("house"),
+            null,
+            null,
+            null,
+            null,
+            null);
     tools.completeTask(task.id());
 
     assertThat(
             List.<ThrowingCallable>of(
-                () -> tools.updateTask(task.id(), "Fix the ridge", null, null, null),
+                () ->
+                    tools.updateTask(
+                        task.id(), "Fix the ridge", null, null, null, null, null, null),
                 () -> tools.moveTasksToZone(List.of(task.id()), TaskZone.CRITICAL_NOW),
                 () -> tools.deferTasks(List.of(task.id()), LocalDate.of(2030, 1, 1)),
                 () -> tools.undeferTask(task.id()),
@@ -222,11 +301,16 @@ class McpToolInputIT extends IntegrationTest {
   @DisplayName("reopen_task is the way back: afterwards the tools take the task again")
   void reopeningRestoresTheTools() {
     asSomeone();
-    var task = tools.createTask("Fix the roof", TaskZone.OPPORTUNITY_NOW, null, null, null, null);
+    var task =
+        tools.createTask(
+            "Fix the roof", TaskZone.OPPORTUNITY_NOW, null, null, null, null, null, null);
     tools.completeTask(task.id());
     tools.reopenTask(task.id());
 
-    assertThatCode(() -> tools.updateTask(task.id(), "Fix the ridge tile", null, null, null))
+    assertThatCode(
+            () ->
+                tools.updateTask(
+                    task.id(), "Fix the ridge tile", null, null, null, null, null, null))
         .doesNotThrowAnyException();
   }
 
@@ -261,6 +345,8 @@ class McpToolInputIT extends IntegrationTest {
                     List.of("l".repeat(Task.MAX_LABEL_LENGTH)),
                     null,
                     "n".repeat(Task.MAX_NOTES_LENGTH),
+                    null,
+                    null,
                     null))
         .doesNotThrowAnyException();
   }

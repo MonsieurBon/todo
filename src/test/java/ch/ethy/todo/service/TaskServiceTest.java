@@ -82,7 +82,7 @@ class TaskServiceTest {
   @DisplayName("a completed task shown on request counts towards no zone")
   void completedIsNoLoad() {
     Task done = new Task("Done already", TaskZone.CRITICAL_NOW, NOW);
-    done.complete();
+    done.complete(TODAY, NOW);
     when(tasks.findOnBoard(any(), anyBoolean())).thenReturn(List.of(done));
 
     var board = service.board(ME, new BoardFilter(null, null, null, true, false));

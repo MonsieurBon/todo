@@ -2,7 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { IDBPDatabase, openDB } from 'idb';
 import { firstValueFrom } from 'rxjs';
 import { TodoApi } from '../api/todo-api';
-import { Zone } from '../api/model';
+import { Recurrence, Zone } from '../api/model';
 
 /**
  * Two kinds by design, not an unfinished list: creating is append-only and completing idempotent,
@@ -18,6 +18,8 @@ export type OutboxEntry =
       notes: string;
       zone: Zone;
       labels: string[];
+      /** Missing from entries queued before tasks could repeat. */
+      recurrence?: Recurrence | null;
     }
   | { id: string; kind: 'complete'; createdAt: number; taskId: number };
 
@@ -126,6 +128,7 @@ export class Outbox {
           notes: entry.notes,
           zone: entry.zone,
           labels: entry.labels,
+          recurrence: entry.recurrence ?? undefined,
           clientRef: entry.id,
         };
         await firstValueFrom(

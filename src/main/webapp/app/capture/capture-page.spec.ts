@@ -78,6 +78,47 @@ describe('the capture form', () => {
     );
   });
 
+  const repeatWeekly = async (fixture: ComponentFixture<CapturePage>, every: string) => {
+    fixture.nativeElement.querySelector('app-repeat-field .mat-mdc-select-trigger').click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    (
+      Array.from(document.querySelectorAll('mat-option')).find(
+        (o) => o.textContent!.trim() === 'Weekly',
+      ) as HTMLElement
+    ).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await set(fixture, 'every', every);
+  };
+
+  it('sends how often the task repeats, and that it does not when nothing is chosen', async () => {
+    const fixture = await render();
+    await set(fixture, 'title', 'Water the plants');
+    button(fixture).click();
+    await fixture.whenStable();
+    expect(captured).toHaveBeenLastCalledWith(expect.objectContaining({ recurrence: null }));
+
+    await repeatWeekly(fixture, '2');
+    button(fixture).click();
+    await fixture.whenStable();
+    expect(captured).toHaveBeenLastCalledWith(
+      expect.objectContaining({ recurrence: { every: 2, unit: 'WEEKS' } }),
+    );
+  });
+
+  it('will not queue an interval the server would refuse', async () => {
+    const fixture = await render();
+    await set(fixture, 'title', 'Water the plants');
+    await repeatWeekly(fixture, '0');
+
+    expect(button(fixture).disabled).toBe(true);
+    button(fixture).click();
+    await fixture.whenStable();
+
+    expect(captured).not.toHaveBeenCalled();
+  });
+
   it('refuses to queue a topic the server would reject, and says which one', async () => {
     const fixture = await render();
     const long = 'l'.repeat(MAX_LABEL_LENGTH + 1);
