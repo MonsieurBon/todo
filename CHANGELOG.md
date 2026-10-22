@@ -1,3 +1,10 @@
+## [2.10.1](https://github.com/MonsieurBon/todo/compare/v2.10.0...v2.10.1) (2026-10-22)
+
+
+### Bug Fixes
+
+* a capture completed before it syncs reaches the server completed ([e942ccc](https://github.com/MonsieurBon/todo/commit/e942ccc07bf285d6239b0c15c3bd2bd33eb5bc75))
+
 # [2.10.0](https://github.com/MonsieurBon/todo/compare/v2.9.1...v2.10.0) (2026-10-22)
 
 
