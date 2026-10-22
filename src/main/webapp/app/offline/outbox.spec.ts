@@ -2,8 +2,9 @@
 import 'fake-indexeddb/auto';
 import { TestBed } from '@angular/core/testing';
 import { openDB } from 'idb';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Task } from '../api/model';
 import { TodoApi } from '../api/todo-api';
 import { Outbox } from './outbox';
 
@@ -175,6 +176,98 @@ describe('the outbox', () => {
 
     // Out of order, the completion would name a task the server has never heard of.
     expect(order.indexOf('capture')).toBeLessThan(order.indexOf('complete'));
+  });
+
+  /**
+   * Its capture may still be queued ahead of it, already sent, or both: the server resolves the
+   * capture sent again to the task it already holds, so the completion depends on neither.
+   */
+  it('completes a capture by sending it again and completing what comes back', async () => {
+    api.capture = vi.fn(() => of({ id: 9 }));
+
+    await outbox.enqueue({
+      kind: 'complete',
+      capture: {
+        id: 'ref-1',
+        kind: 'capture',
+        title: 'Already done',
+        notes: '',
+        zone: 'CRITICAL_NOW',
+        labels: [],
+        listId: null,
+        recurrence: { every: 1, unit: 'WEEKS' },
+      },
+    });
+
+    expect(api.capture).toHaveBeenCalledWith(
+      expect.objectContaining({ clientRef: 'ref-1', recurrence: { every: 1, unit: 'WEEKS' } }),
+    );
+    expect(api.complete).toHaveBeenCalledWith(9);
+    expect(outbox.pending()).toHaveLength(0);
+    expect(outbox.delivered().get('ref-1')).toBe(9);
+  });
+
+  it('keeps the completion of a capture that could not be sent', async () => {
+    api.capture = fails(0);
+
+    await outbox.enqueue({
+      kind: 'complete',
+      capture: {
+        id: 'ref-2',
+        kind: 'capture',
+        title: 'Underground',
+        notes: '',
+        zone: 'CRITICAL_NOW',
+        labels: [],
+        listId: null,
+      },
+    });
+
+    expect(api.complete).not.toHaveBeenCalled();
+    expect(outbox.pending()).toHaveLength(1);
+  });
+
+  /** Its row offers a reopen once it knows the id, which must not overtake the completion. */
+  it('names the task of a completed capture only once the completion was sent', async () => {
+    api.capture = vi.fn(() => of({ id: 9 }));
+    api.complete = fails(0);
+
+    await outbox.enqueue({
+      kind: 'complete',
+      capture: {
+        id: 'ref-3',
+        kind: 'capture',
+        title: 'Half way',
+        notes: '',
+        zone: 'CRITICAL_NOW',
+        labels: [],
+        listId: null,
+      },
+    });
+
+    expect(outbox.delivered().has('ref-3')).toBe(false);
+  });
+
+  it('sends what was queued while it was sending, without waiting for the next one', async () => {
+    const answer = new Subject<Task>();
+    api.capture = vi.fn(() => answer);
+
+    const capturing = outbox.enqueue({
+      kind: 'capture',
+      title: 'Slow to arrive',
+      notes: '',
+      zone: 'CRITICAL_NOW',
+      labels: [],
+      listId: null,
+    });
+    await vi.waitFor(() => expect(api.capture).toHaveBeenCalled());
+    await outbox.enqueue({ kind: 'complete', taskId: 5 });
+    answer.next({ id: 5 } as Task);
+    answer.complete();
+    await capturing;
+
+    expect(api.complete).toHaveBeenCalledWith(5);
+    expect(outbox.pending()).toHaveLength(0);
   });
 
   /** The board renders the queue in signal order, and a reload fills it straight from the store. */

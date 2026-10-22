@@ -120,6 +120,9 @@ with `npm run build`.
   and `delete_1`. Name them for what they operate on.
 - **Offline covers read, create and complete only.** Move, defer and edit need a connection —
   replayed blind they're silent overwrites.
+- **Nothing takes a queued write back but sending it.** A click cannot know whether the write is
+  already on its way, so completing an unsent capture queues the completion behind it, and deleting
+  one waits until it has been sent, like deleting any task.
 - **A write returns `done`, `settled` or `refused`; it does not throw.** Everything goes through
   `Writes.attempt`, which keeps the reason in the one banner the shell renders. `settled` means the
   server has moved past the thing being changed, so a caller holding its own copy of it — a review
