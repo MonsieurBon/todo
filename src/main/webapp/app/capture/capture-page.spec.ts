@@ -2,7 +2,7 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { MAX_LABEL_LENGTH, MAX_TITLE_LENGTH } from '../api/model';
+import { MAX_LABEL_LENGTH, MAX_NOTES_LENGTH, MAX_TITLE_LENGTH } from '../api/model';
 import { BoardStore } from '../board/board-store';
 import { CapturePage } from './capture-page';
 
@@ -156,6 +156,23 @@ describe('the capture form', () => {
 
     expect(button(fixture).disabled).toBe(true);
     expect(fixture.nativeElement.textContent).toContain('Too long by 12');
+  });
+
+  it('says that notes are markdown', async () => {
+    const fixture = await render();
+
+    expect(fixture.nativeElement.textContent).toContain('Markdown');
+  });
+
+  // Material allows one hint per side, so the warning has to take the format hint's place.
+  it('says why the button is dead when the notes run past the limit', async () => {
+    const fixture = await render();
+    await set(fixture, 'title', 'Fix the roof');
+    await set(fixture, 'notes', 'n'.repeat(MAX_NOTES_LENGTH + 3));
+
+    expect(button(fixture).disabled).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('Too long by 3');
+    expect(fixture.nativeElement.textContent).not.toContain('Markdown');
   });
 
   // ParamMap.get returns '' for a parameter that was sent but left empty, so `??` would keep it

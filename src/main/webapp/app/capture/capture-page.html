@@ -38,6 +38,8 @@
       <mat-hint class="too-long"
         >Too long by {{ notes().trim().length - maxNotesLength }}.</mat-hint
       >
+    } @else {
+      <mat-hint>{{ notesHint }}</mat-hint>
     }
   </mat-form-field>
 

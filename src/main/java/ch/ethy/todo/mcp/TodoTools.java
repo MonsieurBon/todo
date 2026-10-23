@@ -97,7 +97,9 @@ public class TodoTools {
           Long listId,
       @McpToolParam(
               description =
-                  "Detail that does not belong in the title. At most "
+                  "Detail that does not belong in the title. "
+                      + NOTES_FORMAT
+                      + " At most "
                       + Task.MAX_NOTES_LENGTH
                       + " characters.",
               required = false)
@@ -152,7 +154,9 @@ public class TodoTools {
           String title,
       @McpToolParam(
               description =
-                  "New notes, replacing the old ones. At most "
+                  "New notes, replacing the old ones. "
+                      + NOTES_FORMAT
+                      + " At most "
                       + Task.MAX_NOTES_LENGTH
                       + " characters; an empty string clears them.",
               required = false)
@@ -550,6 +554,9 @@ public class TodoTools {
     var me = currentUser.current();
     return Responses.TaskListSummary.of(lists.share(listId, me, email), me);
   }
+
+  private static final String NOTES_FORMAT =
+      "Shown as Markdown, though images and HTML appear as plain text.";
 
   private static final String RECURRENCE_EVERY =
       "Repeat the task every this many days, weeks or months, from 1 to "
