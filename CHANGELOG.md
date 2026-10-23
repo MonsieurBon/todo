@@ -1,3 +1,10 @@
+## [2.10.2](https://github.com/MonsieurBon/todo/compare/v2.10.1...v2.10.2) (2026-10-23)
+
+
+### Bug Fixes
+
+* a due date past 9999-12-31 is refused rather than failing with a 500 ([5d45c61](https://github.com/MonsieurBon/todo/commit/5d45c61fa0854a5c0c1aac4f8e956c48a9a1d757))
+
 ## [2.10.1](https://github.com/MonsieurBon/todo/compare/v2.10.0...v2.10.1) (2026-10-22)
 
 
