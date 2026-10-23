@@ -237,6 +237,24 @@ class TaskTest {
     }
 
     @Test
+    @DisplayName(
+        "completing it is refused when the copy would fall due past the last date the column holds,"
+            + " and changes nothing")
+    void noCopyBeyondTheColumn() {
+      Task last = weekly();
+      last.dueDate(Task.LAST_DATE.minusWeeks(1));
+      assertThat(last.complete(TODAY, NOW).orElseThrow().dueDate()).isEqualTo(Task.LAST_DATE);
+
+      Task task = weekly();
+      task.dueDate(Task.LAST_DATE.minusDays(6));
+      assertThatThrownBy(() -> task.complete(TODAY, NOW))
+          .isInstanceOf(TaskStateException.class)
+          .hasMessageContaining(Task.LAST_DATE.toString());
+      assertThat(task.isOpen()).isTrue();
+      assertThat(task.recurrence()).isEqualTo(WEEKLY);
+    }
+
+    @Test
     @DisplayName("a task that does not repeat adds nothing when completed")
     void noRecurrenceNoCopy() {
       assertThat(task().complete(TODAY, NOW)).isEmpty();
@@ -480,6 +498,24 @@ class TaskTest {
           .isInstanceOf(IllegalArgumentException.class)
           .hasMessageContaining(Task.LAST_DATE.toString());
       assertThat(other.deferUntil()).isNull();
+    }
+  }
+
+  @Nested
+  @DisplayName("due date")
+  class DueDate {
+
+    @Test
+    @DisplayName("a due date past the last date the column holds is refused, and changes nothing")
+    void noFurtherThanTheColumn() {
+      Task task = task();
+      task.dueDate(Task.LAST_DATE);
+      assertThat(task.dueDate()).isEqualTo(Task.LAST_DATE);
+
+      assertThatThrownBy(() -> task.dueDate(Task.LAST_DATE.plusDays(1)))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining(Task.LAST_DATE.toString());
+      assertThat(task.dueDate()).isEqualTo(Task.LAST_DATE);
     }
   }
 
