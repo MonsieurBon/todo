@@ -1,3 +1,10 @@
+## [2.10.4](https://github.com/MonsieurBon/todo/compare/v2.10.3...v2.10.4) (2026-10-23)
+
+
+### Bug Fixes
+
+* Spring Boot 4.1.2, for the security fixes in Tomcat and Jackson ([d5c0c63](https://github.com/MonsieurBon/todo/commit/d5c0c638c946f8d000c962c19f0da61a64865374))
+
 ## [2.10.3](https://github.com/MonsieurBon/todo/compare/v2.10.2...v2.10.3) (2026-10-23)
 
 
