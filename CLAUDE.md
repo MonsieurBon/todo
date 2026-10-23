@@ -100,8 +100,8 @@ with `npm run build`.
   one as a base plus a combining mark is refused, while a title and notes take any language.
 - **A completed task is read-only**, for the same reason: every public mutator on `Task` starts
   with `mustBeOpen()`, `complete` and `reopen` excepted. No test enumerates them, so a new one has to
-  remember. `TaskCompletedException` answers 409 — reuse it for the next state refusal rather than
-  inventing a 400.
+  remember. `TaskCompletedException` answers 409, as any state refusal does — the next one is
+  another `TaskStateException` under its own code, not a 400, and not `task_completed` either.
 - **Deciding where a task belongs is a review.** Filing it in a zone, moving it, deferring it and
   bringing it back early all record that it was looked at, so the sweep never asks again about
   something just decided.

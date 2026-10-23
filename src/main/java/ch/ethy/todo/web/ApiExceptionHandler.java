@@ -1,6 +1,6 @@
 package ch.ethy.todo.web;
 
-import ch.ethy.todo.domain.TaskCompletedException;
+import ch.ethy.todo.domain.TaskStateException;
 import ch.ethy.todo.service.NotFoundException;
 import ch.ethy.todo.web.dto.Responses;
 import java.util.LinkedHashMap;
@@ -22,10 +22,10 @@ public class ApiExceptionHandler {
   }
 
   /** 409, not 400: the request is well formed, it is the task's state that refuses it. */
-  @ExceptionHandler(TaskCompletedException.class)
-  public ResponseEntity<Responses.ApiError> completed(TaskCompletedException e) {
+  @ExceptionHandler(TaskStateException.class)
+  public ResponseEntity<Responses.ApiError> stateRefused(TaskStateException e) {
     return ResponseEntity.status(HttpStatus.CONFLICT)
-        .body(new Responses.ApiError("task_completed", e.getMessage(), Map.of()));
+        .body(new Responses.ApiError(e.reason(), e.getMessage(), Map.of()));
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)

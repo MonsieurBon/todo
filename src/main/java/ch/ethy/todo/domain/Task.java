@@ -203,6 +203,9 @@ public class Task {
 
   public void dueDate(LocalDate dueDate) {
     mustBeOpen();
+    if (dueDate != null && dueDate.isAfter(LAST_DATE)) {
+      throw new IllegalArgumentException("Cannot be due beyond " + LAST_DATE + ": " + dueDate);
+    }
     this.dueDate = dueDate;
   }
 
@@ -252,6 +255,11 @@ public class Task {
     next.recurrence = recurrence;
     if (dueDate != null) {
       next.dueDate = recurrence.after(dueDate);
+      if (next.dueDate.isAfter(LAST_DATE)) {
+        throw new TaskStateException(
+            "repeat_out_of_range",
+            "Task " + id + " would next be due beyond " + LAST_DATE + "; move its due date first");
+      }
     } else {
       next.deferUntil = recurrence.after(today);
     }
