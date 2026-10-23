@@ -16,6 +16,10 @@ Angular 22 in one jar, plus an MCP server.
   GitHub issues. No MCP server? Ask him; don't fall back to issues.
 - One thing at a time, one PR at a time. Dependabot's PRs don't count, but should ideally be merged
   before starting the next item.
+- Before the next item, also look at the open alerts in the Security tab. The daily image scan
+  reports every finding there and fails its run only on a fixable High or Critical. A finding
+  accepted rather than fixed goes in `.grype.yaml` with its reason: a dismissal in the tab never
+  reaches the gate.
 - TDD: failing test first. The test and the code that passes it land in the same commit.
 - Every change goes through a PR that Claude reviews. The review is one comment; answer it point by
   point — fix it or say why not. Silence is not an answer. The review may reject the approach, not

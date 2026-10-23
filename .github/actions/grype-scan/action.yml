@@ -1,0 +1,40 @@
+name: Grype image scan
+description: >-
+  Scan a container image for known vulnerabilities, and fail on a High or Critical one that
+  already has a fix. Findings accepted rather than fixed are listed in .grype.yaml.
+
+inputs:
+  image:
+    description: The image to scan, as Grype names a source (e.g. docker:todo:ci, or a registry reference).
+    required: true
+  sarif:
+    description: >-
+      Where to write every finding as SARIF, unfixed and lower severities included, for the
+      Security tab. Left empty, no report is written.
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Download Grype
+      id: grype
+      uses: anchore/scan-action/download-grype@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
+
+    - name: Report every finding
+      if: inputs.sarif != ''
+      shell: bash
+      env:
+        GRYPE: ${{ steps.grype.outputs.cmd }}
+        IMAGE: ${{ inputs.image }}
+        SARIF: ${{ inputs.sarif }}
+      run: '"$GRYPE" "$IMAGE" -o sarif="$SARIF"'
+
+    # A finding without a fix has nothing to act on, and a gate that stays red for one is a
+    # gate nobody reads.
+    - name: Fail on a fixable High or Critical
+      shell: bash
+      env:
+        GRYPE: ${{ steps.grype.outputs.cmd }}
+        IMAGE: ${{ inputs.image }}
+      run: '"$GRYPE" "$IMAGE" --only-fixed --fail-on high -o table'

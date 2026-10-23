@@ -1,0 +1,7 @@
+# Findings accepted rather than fixed, each with its reason. Dismissing an alert in the
+# Security tab does not reach the gate; this file does, for CI and a local run alike.
+ignore:
+  # Pebble comes with the Ubuntu base image. Nothing in this image starts it: the entry
+  # point runs java and the healthcheck bash.
+  - package:
+      location: "/usr/bin/pebble"

@@ -94,6 +94,28 @@ jobs:
       - name: verify
         run: ./mvnw -B -Pintegration-tests verify -Dskip.npm=true -Dskip.installnodenpm=true
 
+  # Dependabot's pull requests get no Claude review, so this is the one look at what they
+  # bring in. Keyed to the author rather than the actor, so it still runs after someone else
+  # pushes to the branch.
+  scan-image:
+    name: scan image
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: maven
+      - name: build
+        run: ./mvnw -B package -DskipTests=true
+      - name: build image
+        run: docker build -t todo:scan .
+      - uses: ./.github/actions/grype-scan
+        with:
+          image: docker:todo:scan
+
   e2e:
     name: package + e2e
     runs-on: ubuntu-latest
