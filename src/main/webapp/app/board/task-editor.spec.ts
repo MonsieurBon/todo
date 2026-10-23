@@ -44,6 +44,12 @@ describe('the task editor', () => {
 
   beforeEach(() => TestBed.resetTestingModule());
 
+  it('says that notes are markdown', async () => {
+    await open();
+
+    expect(fixture.nativeElement.textContent).toContain('Markdown');
+  });
+
   it('hands back the topics it was given, plus one typed in', async () => {
     await open();
     await set('labels', 'roof');

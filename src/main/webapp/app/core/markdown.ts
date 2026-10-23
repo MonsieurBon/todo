@@ -36,6 +36,9 @@ const marked = new Marked({
   },
 });
 
+/** Under every field that takes notes; kept beside the renderer so it promises only what renders. */
+export const NOTES_HINT = 'Markdown: **bold**, - list, [link](url)';
+
 /** Notes as html, for binding to innerHTML, where Angular sanitizes it a second time. */
 export function renderNotes(notes: string): string {
   return marked.parse(notes, { async: false });

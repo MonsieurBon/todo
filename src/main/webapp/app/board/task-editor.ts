@@ -16,9 +16,10 @@ import {
   MatDialogRef,
   MatDialogTitle,
 } from '@angular/material/dialog';
-import { MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatFormField, MatHint, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { Recurrence } from '../api/model';
+import { NOTES_HINT } from '../core/markdown';
 import { RepeatField } from '../core/repeat-field';
 import { TopicsField } from '../core/topics-field';
 import { BoardStore, BoardTask } from './board-store';
@@ -45,6 +46,7 @@ export interface TaskEdit {
     MatDialogContent,
     MatDialogTitle,
     MatFormField,
+    MatHint,
     MatInput,
     MatLabel,
     RepeatField,
@@ -74,6 +76,7 @@ export class TaskEditor {
   protected readonly dueDate = signal(this.task.dueDate ?? '');
   protected readonly labels = signal(this.task.labels ?? []);
   protected readonly recurrence = signal<Recurrence | null>(this.task.recurrence ?? null);
+  protected readonly notesHint = NOTES_HINT;
 
   protected readonly canSave = computed(
     () => !!this.title().trim() && !this.topicsField().invalid() && !this.repeatField().invalid(),

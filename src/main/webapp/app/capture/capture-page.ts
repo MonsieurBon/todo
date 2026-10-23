@@ -28,6 +28,7 @@ import {
   openingLine,
 } from '../api/model';
 import { BoardStore } from '../board/board-store';
+import { NOTES_HINT } from '../core/markdown';
 import { RepeatField } from '../core/repeat-field';
 import { TopicsField } from '../core/topics-field';
 
@@ -90,6 +91,7 @@ export class CapturePage {
 
   protected readonly maxTitleLength = MAX_TITLE_LENGTH;
   protected readonly maxNotesLength = MAX_NOTES_LENGTH;
+  protected readonly notesHint = NOTES_HINT;
 
   private readonly topicsField = viewChild.required(TopicsField);
   private readonly repeatField = viewChild.required(RepeatField);
