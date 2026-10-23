@@ -1,0 +1,37 @@
+name: Scan image
+
+# A CVE is usually published after the image that carries it has shipped, and nothing in the
+# repository changes when it is, so only a schedule notices. A failed run is what notifies:
+# GitHub mails it to whoever last changed the schedule.
+on:
+  schedule:
+    - cron: '23 4 * * *'
+  workflow_dispatch:
+  # So a change to the scan is seen working before the schedule depends on it.
+  pull_request:
+    paths:
+      - .github/workflows/scan.yml
+      - .github/actions/grype-scan/**
+      - .grype.yaml
+
+permissions:
+  contents: read
+  security-events: write # upload the report to the Security tab
+
+jobs:
+  released:
+    name: scan released image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/grype-scan
+        with:
+          image: ghcr.io/monsieurbon/todo:latest
+          sarif: grype.sarif
+      # Also when the gate failed: the report is where its findings are read.
+      - name: Upload to the Security tab
+        if: ${{ !cancelled() && hashFiles('grype.sarif') != '' }}
+        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        with:
+          sarif_file: grype.sarif
+          category: released-image
