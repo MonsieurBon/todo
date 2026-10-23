@@ -1,3 +1,10 @@
+## [2.10.3](https://github.com/MonsieurBon/todo/compare/v2.10.2...v2.10.3) (2026-10-23)
+
+
+### Bug Fixes
+
+* the notes field says it takes markdown, to people and to assistants ([927fbaf](https://github.com/MonsieurBon/todo/commit/927fbaf300469423d40efa4320975844ea9c15ca))
+
 ## [2.10.2](https://github.com/MonsieurBon/todo/compare/v2.10.1...v2.10.2) (2026-10-23)
 
 
