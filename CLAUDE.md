@@ -3,6 +3,8 @@
 Todo is a One Minute To-Do List: three urgency zones, soft caps, a review sweep. Spring Boot 4 +
 Angular 22 in one jar, plus an MCP server.
 
+The repository is public: only this project's own work goes into it.
+
 ## How we work
 
 - Fabian is the PO, the agent is the Developer. *What* gets built is his call; *how* is yours.
