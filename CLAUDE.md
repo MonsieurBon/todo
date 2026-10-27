@@ -16,8 +16,9 @@ The repository is public: only this project's own work goes into it.
   the review asks for it: the raise is yours, the call to close is his.
 - The backlog is in the todo app under the label `todo-app`, over the `todo` MCP server — not
   GitHub issues. No MCP server? Ask him; don't fall back to issues.
-- One thing at a time, one PR at a time. Dependabot's PRs don't count, but should ideally be merged
-  before starting the next item.
+- One thing at a time, one PR at a time. Dependabot's PRs don't count: they merge themselves once
+  green, except a major or one that fails, which should ideally be dealt with before starting the
+  next item.
 - Before the next item, also look at the open alerts in the Security tab. The daily image scan
   reports every finding there and fails its run only on a fixable High or Critical. A finding
   accepted rather than fixed goes in `.grype.yaml` with its reason: a dismissal in the tab never
@@ -195,6 +196,13 @@ ships nothing.
 | `fix:`, `perf:`, a revert | patch |
 | `BREAKING CHANGE:` footer | major |
 | `docs:`, `refactor:`, `test:`, `chore:`, `build:`, `ci:`, `style:` | ships nothing |
+
+A Dependabot merge releases only when it ships a fix: a security update of a direct production
+dependency, or a base image bump. Its merge commit then carries `fix(deps):`; Dependabot's own
+commits stay `build`.
+
+`main` takes nothing that hasn't passed the build's checks, from anyone: a ruleset requires them,
+and the release's GitHub App is the only actor past it, so that it can push the release commits.
 
 A breaking change is a `BREAKING CHANGE:` footer — with a space, its own paragraph in the body.
 `BREAKING-CHANGE:` and a subject-line mention both fail to produce a major here. One commit in the

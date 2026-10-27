@@ -19,6 +19,9 @@ concurrency:
 env:
   JAVA_VERSION: '25'
 
+# The job names are the required checks of main's ruleset. Renaming or removing a job
+# leaves every pull request waiting for a check that never comes, and a new job guards
+# nothing until the ruleset names it.
 jobs:
   lint-frontend:
     name: lint frontend

@@ -1,0 +1,73 @@
+name: Dependabot
+
+# Dependabot's pull requests merge themselves once main's ruleset sees the build green;
+# a major is left to a person. pull_request_target, because Dependabot's pull_request
+# runs get no secrets and the App's key is one. Nothing here checks out or runs the
+# pull request's code.
+on:
+  pull_request_target:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  auto-merge:
+    name: auto-merge
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      # An App, not GITHUB_TOKEN: a merge GITHUB_TOKEN made would start no release run,
+      # and only an App can read Dependabot's alerts. Not the release's App either: that
+      # one gets past main's ruleset, so its merges would not wait for the build.
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        id: app
+        with:
+          client-id: ${{ vars.AUTOMATION_APP_CLIENT_ID }}
+          private-key: ${{ secrets.AUTOMATION_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-workflows: write
+          permission-vulnerability-alerts: read
+
+      # A rebase or a newer version runs this again, and starts over: what an earlier run
+      # armed may no longer hold, e.g. for a group that has become a major since. Before
+      # the metadata, so that a run failing there still takes it back.
+      - name: take back an earlier merge
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          PR: ${{ github.event.pull_request.html_url }}
+        run: |
+          if [ "$(gh pr view "$PR" --json autoMergeRequest --jq '.autoMergeRequest != null')" = true ]; then
+            gh pr merge "$PR" --disable-auto
+          fi
+
+      - uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+        id: metadata
+        with:
+          github-token: ${{ steps.app.outputs.token }}
+          alert-lookup: true
+
+      # The merge commit's subject decides whether it releases. A bump releases when it
+      # ships a fix: a direct production dependency with an alert against it, or the base
+      # image, whose fixes come without an alert. An indirect dependency waits for the
+      # direct one that pulls it in to ship its own fix.
+      - name: merge when green
+        if: steps.metadata.outputs.update-type != 'version-update:semver-major'
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          PR: ${{ github.event.pull_request.html_url }}
+          TITLE: ${{ github.event.pull_request.title }}
+          RELEASE: >-
+            ${{ steps.metadata.outputs.package-ecosystem == 'docker'
+            || (steps.metadata.outputs.package-ecosystem != 'github_actions'
+            && steps.metadata.outputs.dependency-type == 'direct:production'
+            && steps.metadata.outputs.ghsa-id != '') }}
+        run: |
+          if [ "$RELEASE" = true ]; then
+            gh pr merge "$PR" --auto --merge --subject "fix(deps): ${TITLE#*: }"
+          else
+            gh pr merge "$PR" --auto --merge
+          fi
