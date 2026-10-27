@@ -2,12 +2,20 @@
 # and github-actions take `default-days` only. Where the tiers do apply,
 # `default-days` is still the fallback for a bump whose triple does not parse or
 # does not move.
+#
+# A bump of anything that ships in the image is `fix(deps):`, so that merging it
+# releases; development dependencies and the workflows' actions are `build`,
+# which releases nothing. Every ecosystem names its prefix: left to detect one
+# from history, Dependabot could pick up `fix` from the others.
 version: 2
 updates:
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: "daily"
+    commit-message:
+      prefix: "fix"
+      include: "scope"
     cooldown:
       default-days: 7
     # The runtime stays on the LTS the workflows build and test with (JAVA_VERSION).
@@ -25,6 +33,9 @@ updates:
       - "/.github/actions/*"
     schedule:
       interval: "daily"
+    commit-message:
+      prefix: "build"
+      include: "scope"
     cooldown:
       default-days: 7
     # claude-code-action is pinned in both directories above. Without
@@ -39,6 +50,10 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    commit-message:
+      prefix: "fix"
+      prefix-development: "build"
+      include: "scope"
     cooldown:
       default-days: 3
       semver-patch-days: 3
@@ -49,6 +64,10 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    commit-message:
+      prefix: "fix"
+      prefix-development: "build"
+      include: "scope"
     cooldown:
       default-days: 3
       semver-patch-days: 3

@@ -196,6 +196,9 @@ ships nothing.
 | `BREAKING CHANGE:` footer | major |
 | `docs:`, `refactor:`, `test:`, `chore:`, `build:`, `ci:`, `style:` | ships nothing |
 
+A dependency bump is `fix(deps):` when what it bumps ships in the image, so that it is released, and
+`build` when it doesn't. Dependabot writes them that way.
+
 A breaking change is a `BREAKING CHANGE:` footer — with a space, its own paragraph in the body.
 `BREAKING-CHANGE:` and a subject-line mention both fail to produce a major here. One commit in the
 range carrying it is enough, whatever its type. Squash merge is off, so when squashing locally the
