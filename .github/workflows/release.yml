@@ -4,6 +4,13 @@ on:
   push:
     branches: [ "main" ]
 
+# Runs side by side would work out the same next version and race to tag it, so they
+# queue. A newer push replaces a run still waiting rather than queueing behind it; that
+# loses nothing, because a run releases main as it is when it starts.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 # The Java the image runs on. Dependabot holds the Dockerfile to this major.
 env:
   JAVA_VERSION: '25'
@@ -21,6 +28,10 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # The tip, not the commit that started this run. A run that waited would start
+          # behind the release commits of the one before it, and semantic-release quietly
+          # publishes nothing from a branch that is behind.
+          ref: main
           # semantic-release decides the next version from the commits since the last
           # tag, so a shallow clone would make every release look like the first.
           fetch-depth: 0
