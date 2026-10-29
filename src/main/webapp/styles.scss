@@ -53,6 +53,24 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+// A dialog showing one task. Its notes are markdown, and a table needs the width a desktop has:
+// past the 560px Material gives a dialog, up to the margin it keeps around one on a phone. Below
+// 600px Material treats the screen as a phone's and this stays out of it.
+@media (min-width: 600px) {
+  .task-dialog {
+    @include mat.dialog-overrides(
+      (
+        container-max-width: calc(100vw - 32px),
+      )
+    );
+    width: 48rem;
+
+    .mat-mdc-dialog-content {
+      max-height: 80vh;
+    }
+  }
+}
+
 .page {
   max-width: 56rem;
   margin: 0 auto;

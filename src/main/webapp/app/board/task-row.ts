@@ -76,10 +76,7 @@ export class TaskRow {
   protected async edit(): Promise<void> {
     const task = this.task();
     const change = await new Promise<TaskEdit | undefined>((resolve) =>
-      this.dialog
-        .open(TaskEditor, { data: task })
-        .afterClosed()
-        .subscribe((result) => resolve(result as TaskEdit | undefined)),
+      TaskEditor.open(this.dialog, task).afterClosed().subscribe(resolve),
     );
     if (!change) {
       return;
