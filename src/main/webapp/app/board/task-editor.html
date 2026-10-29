@@ -9,6 +9,7 @@
     <mat-label>Notes</mat-label>
     <textarea
       matInput
+      class="notes-input"
       rows="4"
       [ngModel]="notes()"
       (ngModelChange)="notes.set($event)"

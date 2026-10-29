@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import {
   MAT_DIALOG_DATA,
+  MatDialog,
   MatDialogActions,
   MatDialogClose,
   MatDialogContent,
@@ -31,5 +32,9 @@ import { TaskNotes } from './task-notes';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TaskDetail {
+  static open(dialog: MatDialog, task: BoardTask): void {
+    dialog.open(TaskDetail, { data: task, panelClass: 'task-dialog' });
+  }
+
   protected readonly task = inject<BoardTask>(MAT_DIALOG_DATA);
 }

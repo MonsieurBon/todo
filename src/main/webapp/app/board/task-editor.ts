@@ -10,6 +10,7 @@ import { FormsModule } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import {
   MAT_DIALOG_DATA,
+  MatDialog,
   MatDialogActions,
   MatDialogClose,
   MatDialogContent,
@@ -60,10 +61,21 @@ export interface TaskEdit {
       min-width: min(90vw, 26rem);
       padding-top: 0.5rem;
     }
+
+    /* The lines a markdown table needs, where task-dialog gives it the width. */
+    @media (min-width: 600px) {
+      textarea {
+        min-height: 40vh;
+      }
+    }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TaskEditor {
+  static open(dialog: MatDialog, task: BoardTask): MatDialogRef<TaskEditor, TaskEdit> {
+    return dialog.open(TaskEditor, { data: task, panelClass: 'task-dialog' });
+  }
+
   private readonly dialog = inject<MatDialogRef<TaskEditor, TaskEdit>>(MatDialogRef);
   private readonly task = inject<BoardTask>(MAT_DIALOG_DATA);
 

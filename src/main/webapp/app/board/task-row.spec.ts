@@ -89,7 +89,7 @@ describe('a task row', () => {
 
     fixture.nativeElement.querySelector('button.body').click();
 
-    expect(open).toHaveBeenCalledWith(TaskDetail, { data: task });
+    expect(open).toHaveBeenCalledWith(TaskDetail, { data: task, panelClass: 'task-dialog' });
   });
 
   const button = (host: HTMLElement, label: string): HTMLButtonElement =>

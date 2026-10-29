@@ -53,7 +53,7 @@ describe('a row in the review sweep', () => {
 
     host.querySelector<HTMLButtonElement>('button.body')!.click();
 
-    expect(open).toHaveBeenCalledWith(TaskDetail, { data: task });
+    expect(open).toHaveBeenCalledWith(TaskDetail, { data: task, panelClass: 'task-dialog' });
   });
 
   it('moves a task up or down a zone', async () => {
