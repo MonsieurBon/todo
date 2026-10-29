@@ -44,7 +44,7 @@ export class TaskRow {
   );
 
   protected details(): void {
-    this.dialog.open(TaskDetail, { data: this.task() });
+    TaskDetail.open(this.dialog, this.task());
   }
 
   protected complete(): void {

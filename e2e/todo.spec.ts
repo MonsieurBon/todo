@@ -210,7 +210,7 @@ test('a deferred task can be shown, edited and brought back, and counts only onc
   await expect(critical.getByText(/^until /)).toBeHidden();
 });
 
-test('the editor gives the notes room on a desktop and keeps to the screen on a phone', async () => {
+test('a task opens with room for its notes on a desktop and keeps to the screen on a phone', async () => {
   const title = `Compare offers ${run}`;
   const dialog = page.getByRole('dialog');
   const notes = page.getByLabel('Notes');
@@ -225,6 +225,9 @@ test('the editor gives the notes room on a desktop and keeps to the screen on a 
     expect((await dialog.boundingBox())!.width).toBeGreaterThan(700);
     expect((await notes.boundingBox())!.height).toBeGreaterThan(250);
     await page.getByRole('button', { name: 'Cancel' }).click();
+    await page.getByText(title).click();
+    expect((await dialog.boundingBox())!.width).toBeGreaterThan(700);
+    await page.getByRole('button', { name: 'Close' }).click();
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole('button', { name: `Actions for ${title}` }).click();
@@ -232,6 +235,9 @@ test('the editor gives the notes room on a desktop and keeps to the screen on a 
     expect((await dialog.boundingBox())!.width).toBeLessThanOrEqual(390 - 32);
     expect((await notes.boundingBox())!.height).toBeLessThan(150);
     await page.getByRole('button', { name: 'Cancel' }).click();
+    await page.getByText(title).click();
+    expect((await dialog.boundingBox())!.width).toBeLessThanOrEqual(390 - 32);
+    await page.getByRole('button', { name: 'Close' }).click();
   } finally {
     await page.emulateMedia({ reducedMotion: null });
     await page.setViewportSize(desktop);
