@@ -71,6 +71,12 @@ body {
   }
 }
 
+// Notes are typed as markdown, where a table only reads as one when its columns line up. Scoped
+// to the form field to outrank the font Material's input inherits.
+.mat-mdc-form-field textarea.notes-input {
+  font-family: monospace;
+}
+
 .page {
   max-width: 56rem;
   margin: 0 auto;

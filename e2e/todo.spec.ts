@@ -244,6 +244,17 @@ test('a task opens with room for its notes on a desktop and keeps to the screen 
   }
 });
 
+test("notes are typed in a monospaced font, so a table's columns line up", async () => {
+  const title = `Line up ${run}`;
+  await capture(title);
+  await page.getByRole('button', { name: `Edit ${title}` }).click();
+  await expect(page.getByLabel('Notes')).toHaveCSS('font-family', 'monospace');
+  await page.getByRole('button', { name: 'Cancel' }).click();
+
+  await page.goto('/capture');
+  await expect(page.getByLabel('Notes')).toHaveCSS('font-family', 'monospace');
+});
+
 test('a repeating task leaves the next one behind when completed, hidden until it is due', async () => {
   const topic = `weekly${run}`;
   const title = `Water the plants ${run}`;
