@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write        # commit the version bump and publish the release
+      contents: write        # publish the release
       issues: write          # comment on released issues
       pull-requests: write   # comment on released pull requests
       packages: write        # push the image to GHCR
@@ -28,6 +28,9 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # The push credential is handed over in the release step alone, not to the
+          # installs and tests before it.
+          persist-credentials: false
           # The tip, not the commit that started this run. A run that waited would start
           # behind the release commits of the one before it, and semantic-release quietly
           # publishes nothing from a branch that is behind.
@@ -64,7 +67,22 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # The release commits and the tag are pushed as the App, the one actor main's
+      # ruleset lets past its required checks.
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        id: app
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      # semantic-release pushes with GITHUB_TOKEN, which the ruleset turns away, unless
+      # the remote already takes its push; so the App's token goes on the remote.
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx semantic-release
+          APP_TOKEN: ${{ steps.app.outputs.token }}
+        run: |
+          git config http.https://github.com/.extraheader \
+            "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$APP_TOKEN" | base64 -w0)"
+          npx semantic-release
