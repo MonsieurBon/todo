@@ -1,6 +1,6 @@
 {
   "name": "todo",
-  "version": "2.10.5-SNAPSHOT",
+  "version": "2.10.5",
   "scripts": {
     "ng": "ng",
     "prepare": "npm run api:types",

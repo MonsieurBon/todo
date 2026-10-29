@@ -1,3 +1,12 @@
+## [2.10.5](https://github.com/MonsieurBon/todo/compare/v2.10.4...v2.10.5) (2026-10-29)
+
+
+### Bug Fixes
+
+* give the task editor a desktop's width, and room for its notes ([b11da35](https://github.com/MonsieurBon/todo/commit/b11da35aad07b0fdaf8e7293e8c915fccd92b6af))
+* show a task's details as wide as its editor ([e578821](https://github.com/MonsieurBon/todo/commit/e578821649f27c52722d8eaab5d2945b770d9b89))
+* type notes in a monospaced font, so a table's columns line up ([af23289](https://github.com/MonsieurBon/todo/commit/af23289c06a96c4bb83eb396b5722565c87dca8f))
+
 ## [2.10.4](https://github.com/MonsieurBon/todo/compare/v2.10.3...v2.10.4) (2026-10-23)
 
 
