@@ -1,3 +1,10 @@
+## [2.10.7](https://github.com/MonsieurBon/todo/compare/v2.10.6...v2.10.7) (2026-10-30)
+
+
+### Bug Fixes
+
+* **deps:** bump eclipse-temurin from 25.0.4.1_1-jre to 25.0.5_8-jre ([b8dec82](https://github.com/MonsieurBon/todo/commit/b8dec82028a16c7a42f1d7f3cd4577092ba492e0))
+
 ## [2.10.6](https://github.com/MonsieurBon/todo/compare/v2.10.5...v2.10.6) (2026-10-30)
 
 
