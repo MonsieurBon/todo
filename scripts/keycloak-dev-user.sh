@@ -4,7 +4,7 @@
 #
 # The realm itself is declarative — keycloak/realm-todo.json, imported on startup.
 # Users deliberately live outside it: the realm file is shared with every other
-# environment, and in those, people register themselves. This is dev convenience only.
+# environment, and each of those keeps its own users. This is dev convenience only.
 #
 set -euo pipefail
 
