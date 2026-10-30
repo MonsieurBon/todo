@@ -2,7 +2,7 @@
   "realm": "todo",
   "enabled": true,
   "displayName": "Todo",
-  "registrationAllowed": true,
+  "registrationAllowed": false,
   "registrationEmailAsUsername": true,
   "resetPasswordAllowed": true,
   "loginWithEmailAllowed": true,

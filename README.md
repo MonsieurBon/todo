@@ -126,6 +126,10 @@ What it requires of that issuer, independent of which product you use:
 **A working implementation is provided**: [`keycloak/realm-todo.json`](keycloak/realm-todo.json),
 importable with `--import-realm`. It also defines clients for AI assistants over MCP.
 
+It does not let people register themselves: an account exists once an administrator creates it. To
+open sign-up, set `registrationAllowed` to `true` in the file before importing it, or turn on User
+registration under Realm settings → Login in a realm that already exists.
+
 > ⚠️ **Rewrite it before importing.** The audience mapper and `todo-web`'s redirect URIs are
 > literal `http://localhost:8090`. Keycloak does **not** substitute `${env.VAR}` during realm
 > import — a placeholder is stored verbatim, becomes the expected audience, and rejects every token
@@ -213,6 +217,9 @@ and upgrading across several means doing each listed step on the way, oldest fir
   temporary on purpose: Keycloak locks per user, so a permanent one would let anyone lock out anyone
   whose address they know. An existing realm needs it set under Realm settings → Security defenses →
   Brute force detection, with the values from the file.
+- **Optional:** the realm file no longer lets people register themselves (see
+  [Identity provider](#identity-provider)). An existing realm keeps whatever it has; nothing in the
+  app depends on it.
 
 ### 2.10.0
 
