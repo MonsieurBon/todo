@@ -1,3 +1,11 @@
+## [2.10.6](https://github.com/MonsieurBon/todo/compare/v2.10.5...v2.10.6) (2026-10-30)
+
+
+### Bug Fixes
+
+* let only an administrator create an account ([c54c930](https://github.com/MonsieurBon/todo/commit/c54c9309de36509439a47d12bf9f5902d50213f3))
+* lock an account for a while after repeated failed sign-ins ([37a59b0](https://github.com/MonsieurBon/todo/commit/37a59b0a75722e6320c6530b86ac80ff5c810704))
+
 ## [2.10.5](https://github.com/MonsieurBon/todo/compare/v2.10.4...v2.10.5) (2026-10-29)
 
 
