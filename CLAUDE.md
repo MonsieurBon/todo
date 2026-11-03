@@ -209,6 +209,6 @@ A breaking change is a `BREAKING CHANGE:` footer — with a space, its own parag
 range carrying it is enough, whatever its type. Squash merge is off, so when squashing locally the
 prefix must describe the whole.
 
-A step an operator has to take by hand goes in the README's Upgrading section, under the version the
-change ships in. semantic-release only picks that number at merge, so predict it from the prefix and
-check the heading once the release is out.
+A step an operator has to take by hand goes in the README's Upgrading section, under the
+`### Unreleased` heading at its top, adding it if there isn't one yet. semantic-release only picks
+the version at merge, and the release replaces that heading with it.
