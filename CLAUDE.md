@@ -19,10 +19,10 @@ The repository is public: only this project's own work goes into it.
 - One thing at a time, one PR at a time. Dependabot's PRs don't count: they merge themselves once
   green, except a major or one that fails, which should ideally be dealt with before starting the
   next item.
-- Before the next item, also look at the open alerts in the Security tab. The daily image scan
-  reports every finding there and fails its run only on a fixable High or Critical. A finding
-  accepted rather than fixed goes in `.grype.yaml` with its reason: a dismissal in the tab never
-  reaches the gate.
+- Before the next item, also look at the last run of the daily image scan and the open alerts in
+  the Security tab. The scan reports every finding there and fails its run only on a fixable High
+  or Critical, so a red run is the sign that something can be fixed. A finding accepted rather
+  than fixed goes in `.grype.yaml` with its reason: a dismissal in the tab never reaches the gate.
 - TDD: failing test first. The test and the code that passes it land in the same commit.
 - Every change goes through a PR that Claude reviews. The review is one comment; answer it point by
   point — fix it or say why not. Silence is not an answer. The review may reject the approach, not
@@ -209,6 +209,6 @@ A breaking change is a `BREAKING CHANGE:` footer — with a space, its own parag
 range carrying it is enough, whatever its type. Squash merge is off, so when squashing locally the
 prefix must describe the whole.
 
-A step an operator has to take by hand goes in the README's Upgrading section, under the version the
-change ships in. semantic-release only picks that number at merge, so predict it from the prefix and
-check the heading once the release is out.
+A step an operator has to take by hand goes in the README's Upgrading section, under the
+`### Unreleased` heading at its top, adding it if there isn't one yet. semantic-release only picks
+the version at merge, and the release replaces that heading with it.
