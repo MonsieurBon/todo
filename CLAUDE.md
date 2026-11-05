@@ -61,7 +61,7 @@ with `npm run build`.
 ## Layout
 
 | | |
-|---|---|
+| --- | --- |
 | `src/main/java/ch/ethy/todo/` | `domain`, `repository`, `service`, `web`, `mcp`, `security` |
 | `src/main/webapp/` | Angular 22, standalone, signals, `OnPush` |
 | `src/main/webapp/api/openapi.json` | the API contract, checked in |
@@ -162,6 +162,7 @@ with `npm run build`.
 npm run e2e                       # Playwright; needs the stack up and `npm run build` run
 ./mvnw test -Dskip.npm=true -Dskip.installnodenpm=true   # Java only
 npm run test:ci                   # frontend only
+npx markdownlint-cli2             # the hand-written docs
 ```
 
 The frontend build is wired into the Maven lifecycle, so every goal runs `npm ci` and `ng build`
@@ -179,7 +180,8 @@ only the framework's.
 ## Conventions
 
 - Conventional commits (see below). Java formatted by Spotless (Google style); TS/HTML by Prettier
-  (100 cols, single quotes); ESLint with the `app` prefix.
+  (100 cols, single quotes); ESLint with the `app` prefix; Markdown linted by markdownlint
+  (100 cols).
 - Angular: standalone components, signals, `OnPush`, logic in services rather than components.
 - Comments are a last resort. Write one only for what the code cannot say — why, or a constraint
   that isn't visible from here. Never pin a fact the next PR will move (a version, a list, a PR
@@ -191,7 +193,7 @@ Pushes to `main` are released by semantic-release, from the commit messages — 
 ships nothing.
 
 | Prefix | Effect |
-|---|---|
+| --- | --- |
 | `feat:` | minor |
 | `fix:`, `perf:`, a revert | patch |
 | `BREAKING CHANGE:` footer | major |

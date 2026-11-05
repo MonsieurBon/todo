@@ -13,7 +13,7 @@ For working on the code, see [CLAUDE.md](CLAUDE.md).
 
 ## The image
 
-```
+```text
 ghcr.io/monsieurbon/todo:<version>
 ghcr.io/monsieurbon/todo:latest
 ```
@@ -25,7 +25,7 @@ unanswerable and a rollback guesswork.
 ## Shape of the service
 
 | | |
-|---|---|
+| --- | --- |
 | **Ports** | one, HTTP, `8080` by default. Nothing else needs publishing. |
 | **Volumes** | **none.** The app writes no files; everything durable is in MySQL. It runs as uid/gid `1001` and does not need to own anything. |
 | **Health** | `GET /actuator/health` → `200 {"status":"UP"}`, or `503` with `"DOWN"`. Unauthenticated, because a healthcheck carries no credentials — and for that reason it reports **no detail** about what is wrong. |
@@ -38,7 +38,7 @@ unanswerable and a rollback guesswork.
 Every variable the app reads. There are no others.
 
 | Variable | Default | Required | Notes |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `DB_HOST` | `localhost` | **yes** | |
 | `DB_PORT` | `3306` | no | |
 | `DB_NAME` | `todo` | no | |
@@ -73,7 +73,7 @@ The URL must be **both**:
 2. **Reachable from inside this container**, because the app fetches signing keys from it.
 
 | What you set | What happens | How it looks |
-|---|---|---|
+| --- | --- | --- |
 | The internal name (`http://keycloak:8081/realms/todo`) | Reachable, but every token says `iss: http://localhost:8081/...` | **`401` on every request**, with a valid token and a correct audience. Nothing in the response says why. |
 | The public URL, not resolvable inside the container | `iss` matches, but the signing keys cannot be fetched | **`503`** with `identity_provider_unavailable`. |
 
@@ -108,7 +108,7 @@ What it requires of that issuer, independent of which product you use:
 - Two scopes, one per surface: `todo:api` opens the REST API, `todo:mcp` opens the MCP server.
   Neither is a permission tier — past the gate a token may do everything its surface offers, to
   its own data. A client is granted one of them and cannot obtain the other.
-- **Each must be a _default_ client scope of its client, not an optional one**, because no client
+- **Each must be a *default* client scope of its client, not an optional one**, because no client
   names it in its request: the web app must not, so that a bundle cached in a browser never pins a
   scope name, and an assistant cannot be relied upon to, since nothing obliges a third-party MCP
   client to read the metadata that advertises it. Configure either as optional and that surface
@@ -141,7 +141,7 @@ existing IdP only by hand; [Upgrading](#upgrading) lists the ones a release need
 **Ordering: none required.** Measured, not assumed:
 
 | | |
-|---|---|
+| --- | --- |
 | App starts while the IdP is unreachable | yes — issuer metadata is fetched lazily |
 | Web app and static content while it is down | served |
 | Authenticated requests while it has never been reached | `503` with `Retry-After` |

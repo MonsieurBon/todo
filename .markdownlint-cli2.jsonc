@@ -1,0 +1,11 @@
+{
+  // The action adds its own default glob, `*.{md,markdown}`, to these; CHANGELOG.md is the
+  // release's, so it is ignored rather than left out.
+  "globs": ["*.md", ".claude/agents/*.md"],
+  "ignores": ["CHANGELOG.md"],
+  "config": {
+    "MD013": { "line_length": 100, "tables": false },
+    // An agent's prompt opens with its frontmatter, whose name is its title.
+    "MD041": { "front_matter_title": "^\\s*name\\s*:" }
+  }
+}
