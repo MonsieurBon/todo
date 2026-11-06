@@ -1,6 +1,16 @@
-# Pinned by digest, not by tag: a tag is a moving target, and an image that changed
-# underneath a release would make that release unreproducible.
+# Pinned by digest, not by tag, so the JRE a release runs on changes only through a
+# deliberate bump. The OS packages move with every build, see below.
 FROM eclipse-temurin:25.0.5_8-jre@sha256:ecdc0adb37bde1a281c4d245a3cd535004b1fc8322d560f5b09463b248c81df0
+
+# The base image is rebuilt on its own schedule, behind Ubuntu's security fixes. A release
+# build takes the OS packages as they are that day, so it ships whatever is fixed by then -
+# at the price of two builds of one commit differing in them. That only holds while this
+# layer is built afresh, hence --no-cache in the release. A failed fetch must fail the build:
+# otherwise the upgrade finds nothing to do and the release ships unpatched.
+RUN apt-get update --error-on=any \
+ && DEBIAN_FRONTEND=noninteractive apt-get upgrade --yes \
+      -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold \
+ && rm -rf /var/lib/apt/lists/*
 
 # Nothing here needs root. The app writes no files - everything durable is in MySQL -
 # so it does not even need to own its own directory.
