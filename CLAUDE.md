@@ -23,6 +23,8 @@ The repository is public: only this project's own work goes into it.
   the Security tab. The scan reports every finding there and fails its run only on a fixable High
   or Critical, so a red run is the sign that something can be fixed. A finding accepted rather
   than fixed goes in `.grype.yaml` with its reason: a dismissal in the tab never reaches the gate.
+  A release build upgrades the image's OS packages, so a fixed OS package ships with the next
+  release; when none is due, an empty `fix:` commit through a PR cuts one.
 - TDD: failing test first. The test and the code that passes it land in the same commit.
 - Every change goes through a PR that Claude reviews. The review is one comment; answer it point by
   point — fix it or say why not. Silence is not an answer. The review may reject the approach, not
