@@ -72,6 +72,7 @@ export class BoardStore {
   private readonly served = signal<BoardView | null>(null);
   private readonly busy = signal(false);
   private readonly completed = signal<Completed[]>([]);
+  private loads = 0;
 
   readonly filter = signal<BoardFilter>({});
   readonly lists = signal<TaskList[]>([]);
@@ -189,7 +190,13 @@ export class BoardStore {
     await this.refresh();
   }
 
+  /**
+   * Only the newest load may show its answer: an older one landing last would put the board back on
+   * the filter, or the server, as it was before the caller changed it.
+   */
   async refresh(): Promise<void> {
+    const load = ++this.loads;
+    const newest = () => load === this.loads;
     this.busy.set(true);
     // Probed rather than inferred: the service worker returns 200 with no connection at all.
     void this.connectivity.probe();
@@ -199,13 +206,17 @@ export class BoardStore {
         firstValueFrom(this.api.lists()),
         firstValueFrom(this.api.labels()),
       ]);
-      this.served.set(board);
-      this.lists.set(lists);
-      this.labels.set(labels);
+      if (newest()) {
+        this.served.set(board);
+        this.lists.set(lists);
+        this.labels.set(labels);
+      }
     } catch {
       // Only reached when nothing is cached either. Keep what is on screen; the probe says why.
     } finally {
-      this.busy.set(false);
+      if (newest()) {
+        this.busy.set(false);
+      }
     }
   }
 

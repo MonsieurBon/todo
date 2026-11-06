@@ -4,7 +4,7 @@ import { Subject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { signal } from '@angular/core';
 import { BoardView, Task, Zone } from '../api/model';
-import { TodoApi } from '../api/todo-api';
+import { BoardFilter, TodoApi } from '../api/todo-api';
 import { Connectivity } from '../core/connectivity';
 import { Writes } from '../core/writes';
 import { Outbox } from '../offline/outbox';
@@ -161,6 +161,32 @@ describe('the board', () => {
     await load([task(1, { title: 'Fix the tile', clientRef: sentRef })]);
 
     expect(store.tasks().filter((t) => t.title === 'Fix the tile')).toHaveLength(1);
+  });
+
+  it('shows the newer filter when the older one is answered last', async () => {
+    const older = new Subject<BoardView>();
+    api['board'] = vi.fn((filter: BoardFilter) =>
+      filter.label === 'house' ? older : of(board([task(2, { labels: ['garden'] })])),
+    );
+
+    store.narrowTo({ label: 'house' });
+    store.narrowTo({ label: 'garden' });
+    older.next(board([task(1, { labels: ['house'] })]));
+    older.complete();
+    await new Promise((resolve) => setTimeout(resolve));
+
+    expect(store.tasks().map((t) => t.id)).toEqual([2]);
+  });
+
+  it('does not hold a refresh up behind one that is never answered', async () => {
+    api['board'] = vi.fn(() => new Subject<BoardView>());
+    void store.refresh();
+    api['board'] = vi.fn(() => of(board([task(2)])));
+
+    await store.refresh();
+
+    expect(store.tasks().map((t) => t.id)).toEqual([2]);
+    expect(store.loading()).toBe(false);
   });
 
   it('reloads after a refused write, so a row the server has moved on from corrects itself', async () => {
