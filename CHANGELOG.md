@@ -1,3 +1,10 @@
+## [2.10.8](https://github.com/MonsieurBon/todo/compare/v2.10.7...v2.10.8) (2026-11-06)
+
+
+### Bug Fixes
+
+* keep the board on the newest filter when an older answer arrives last ([5d480cf](https://github.com/MonsieurBon/todo/commit/5d480cffdf087223b4394de60c72de316bb77dc0))
+
 ## [2.10.7](https://github.com/MonsieurBon/todo/compare/v2.10.6...v2.10.7) (2026-10-30)
 
 
