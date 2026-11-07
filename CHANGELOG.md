@@ -1,3 +1,10 @@
+## [2.10.9](https://github.com/MonsieurBon/todo/compare/v2.10.8...v2.10.9) (2026-11-07)
+
+
+### Bug Fixes
+
+* ship the OS security fixes published since the base image was built ([af173d9](https://github.com/MonsieurBon/todo/commit/af173d9d83b816054534ad1550fde2d2e687c410))
+
 ## [2.10.8](https://github.com/MonsieurBon/todo/compare/v2.10.7...v2.10.8) (2026-11-06)
 
 
