@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '24.16.0'
+          node-version: '24.22.2'
           cache: 'npm'
       # Dependabot writes the lock file with the npm that packageManager names; the
       # workflows and the Maven build read it with the npm bundled with their own Node pin.
@@ -100,7 +100,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '24.16.0'
+          node-version: '24.22.2'
           cache: 'npm'
       - run: npm ci
       - name: test
@@ -169,7 +169,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '24.16.0'
+          node-version: '24.22.2'
           cache: 'npm'
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
