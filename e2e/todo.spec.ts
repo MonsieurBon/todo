@@ -210,6 +210,21 @@ test('a deferred task can be shown, edited and brought back, and counts only onc
   await expect(critical.getByText(/^until /)).toBeHidden();
 });
 
+test('a task can be deferred to a date of its own', async () => {
+  const topic = `dated${run}`;
+  await capture(`Dated ${run}`, { labels: topic });
+  await page.goto(`/?label=${topic}`);
+  await page.getByRole('checkbox', { name: 'Deferred' }).check();
+
+  await page.getByRole('button', { name: `Defer Dated ${run}` }).click();
+  await page.getByRole('menuitem', { name: 'Pick a date…' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Date').fill('9999-12-31');
+  await dialog.getByLabel('Date').press('Enter');
+
+  await expect(page.getByText('until 9999-12-31')).toBeVisible();
+});
+
 test('a task opens with room for its notes on a desktop and keeps to the screen on a phone', async () => {
   const title = `Compare offers ${run}`;
   const dialog = page.getByRole('dialog');

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import contract from '../../api/openapi.json';
 import {
+  Deferral,
   MAX_LABEL_LENGTH,
   unusableLabel,
   MAX_NOTES_LENGTH,
@@ -133,5 +134,15 @@ describe('cutting to fit', () => {
 
   it('keeps a character that ends exactly on the limit', () => {
     expect(cutTo(2, '\uD83E\uDDF9\uD83E\uDDF9')).toBe('\uD83E\uDDF9');
+  });
+});
+
+describe('a deferral', () => {
+  // The server refuses one that names both, so it must not compile either.
+  it('is by days or to a date, never both', () => {
+    // @ts-expect-error a date and a number of days at once
+    const both: Deferral = { days: 1, until: '2026-12-24' };
+
+    expect(both).toBeDefined();
   });
 });

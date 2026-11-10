@@ -95,7 +95,7 @@
         matButton="tonal"
         type="button"
         [disabled]="!online()"
-        [matMenuTriggerFor]="deferMenu"
+        [matMenuTriggerFor]="deferMenu.menu()"
       >
         <mat-icon svgIcon="later" />
         Defer…
@@ -110,9 +110,5 @@
     }
   </mat-menu>
 
-  <mat-menu #deferMenu="matMenu">
-    <button mat-menu-item type="button" (click)="deferAll(1)">Tomorrow</button>
-    <button mat-menu-item type="button" (click)="deferAll(7)">Next week</button>
-    <button mat-menu-item type="button" (click)="deferAll(30)">In a month</button>
-  </mat-menu>
+  <app-defer-menu #deferMenu [defer]="deferAll" />
 }

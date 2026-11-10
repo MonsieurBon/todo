@@ -1,7 +1,16 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { BoardFilter, TodoApi } from '../api/todo-api';
-import { BoardView, Recurrence, Task, TaskList, UpdateTask, ZONES, Zone } from '../api/model';
+import {
+  BoardView,
+  Deferral,
+  Recurrence,
+  Task,
+  TaskList,
+  UpdateTask,
+  ZONES,
+  Zone,
+} from '../api/model';
 import { Connectivity } from '../core/connectivity';
 import { WriteResult, Writes } from '../core/writes';
 import { Outbox } from '../offline/outbox';
@@ -320,8 +329,8 @@ export class BoardStore {
     return this.online_(() => firstValueFrom(this.api.moveZone(task.id!, zone)));
   }
 
-  async defer(task: BoardTask, days: number): Promise<WriteResult> {
-    return this.online_(() => firstValueFrom(this.api.defer(task.id!, days)));
+  async defer(task: BoardTask, deferral: Deferral): Promise<WriteResult> {
+    return this.online_(() => firstValueFrom(this.api.defer(task.id!, deferral)));
   }
 
   async undefer(task: BoardTask): Promise<WriteResult> {

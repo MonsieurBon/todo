@@ -38,6 +38,9 @@ export type TaskList = Sent<Schemas['TaskListSummary'], never>;
 export type CaptureTask = Schemas['CaptureTask'];
 export type CreateTask = Schemas['CreateTask'];
 export type UpdateTask = Schemas['UpdateTask'];
+type Defer = Required<Schemas['Defer']>;
+export type Deferral =
+  { days: Defer['days']; until?: never } | { until: Defer['until']; days?: never };
 
 /** Declaration order is urgency order, and every screen relies on it. */
 export const ZONES: readonly Zone[] = ['CRITICAL_NOW', 'OPPORTUNITY_NOW', 'OVER_THE_HORIZON'];

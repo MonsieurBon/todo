@@ -222,7 +222,7 @@ describe('the board', () => {
       throw { status: 0 };
     });
 
-    const result = await store.defer(store.tasks()[0], 1);
+    const result = await store.defer(store.tasks()[0], { days: 1 });
 
     expect(result).toBe('refused');
     expect(writes.problem()).toMatch(/connection/i);
@@ -234,10 +234,10 @@ describe('the board', () => {
     api['defer'] = vi.fn(() => {
       throw { status: 0 };
     });
-    await store.defer(store.tasks()[0], 1);
+    await store.defer(store.tasks()[0], { days: 1 });
 
     api['defer'] = vi.fn(() => of({}));
-    await store.defer(store.tasks()[0], 1);
+    await store.defer(store.tasks()[0], { days: 1 });
 
     expect(writes.problem()).toBeNull();
   });

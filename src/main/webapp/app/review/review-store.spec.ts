@@ -159,10 +159,10 @@ describe('the review sweep', () => {
     const [first, second] = review.zones()[1].tasks;
 
     await review.move(first, 'CRITICAL_NOW');
-    await review.defer(second, 7);
+    await review.defer(second, { days: 7 });
 
     expect(api['moveZone']).toHaveBeenCalledWith(2, 'CRITICAL_NOW');
-    expect(api['defer']).toHaveBeenCalledWith(3, 7);
+    expect(api['defer']).toHaveBeenCalledWith(3, { days: 7 });
     expect(api['markReviewed']).not.toHaveBeenCalled();
     expect(ids(review)).toEqual([1]);
   });
@@ -213,10 +213,10 @@ describe('the review sweep', () => {
     review.toggle(review.zones()[0].tasks[0]);
     await review.moveAll('OVER_THE_HORIZON');
     review.toggle(review.zones()[1].tasks[0]);
-    await review.deferAll(30);
+    await review.deferAll({ until: '2026-12-24' });
 
     expect(api['moveAllTo']).toHaveBeenCalledWith([1], 'OVER_THE_HORIZON');
-    expect(api['deferAll']).toHaveBeenCalledWith([2], 30);
+    expect(api['deferAll']).toHaveBeenCalledWith([2], { until: '2026-12-24' });
     expect(ids(review)).toEqual([3]);
   });
 
