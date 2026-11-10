@@ -32,6 +32,32 @@ jobs:
         with:
           node-version: '24.16.0'
           cache: 'npm'
+      # Dependabot writes the lock file with the npm that packageManager names; the
+      # workflows and the Maven build read it with the npm bundled with their own Node pin.
+      # Two npms disagree on what belongs in the lock file, and `npm ci` then refuses each
+      # of Dependabot's npm PRs. So all Node pins must agree, and packageManager must name
+      # the npm that Node bundles.
+      - name: npm matches packageManager
+        run: |
+          node=$(node --version | sed 's/^v//')
+          pom=$(sed -n 's|.*<node.version>v\(.*\)</node.version>.*|\1|p' pom.xml)
+          if [ -z "$pom" ]; then
+            echo "::error file=pom.xml::no <node.version>v…</node.version> found"
+            exit 1
+          fi
+          pins=$( { sed -nE "s/^[[:space:]]*node-version:[[:space:]]*['\"]?([^'\"[:space:]]*).*/\1/p" \
+                      .github/workflows/*.yml .github/actions/*/action.yml
+                    echo "$pom"; } | sort -u)
+          if [ "$pins" != "$node" ]; then
+            echo "::error::Node is pinned as $(echo $pins), but every pin must be $node"
+            exit 1
+          fi
+          expected=$(jq -r '.packageManager | sub("^npm@"; "")' package.json)
+          actual=$(npm --version)
+          if [ "$actual" != "$expected" ]; then
+            echo "::error file=package.json::packageManager names npm $expected, but this Node bundles npm $actual"
+            exit 1
+          fi
       - run: npm ci
       - name: lint
         run: npm run lint:check
