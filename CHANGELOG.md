@@ -1,3 +1,10 @@
+# [2.11.0](https://github.com/MonsieurBon/todo/compare/v2.10.9...v2.11.0) (2026-11-10)
+
+
+### Features
+
+* defer a task to a date picked in a dialog ([3cb6256](https://github.com/MonsieurBon/todo/commit/3cb62567fec6dbe70727f92263b97ff13db0aafd))
+
 ## [2.10.9](https://github.com/MonsieurBon/todo/compare/v2.10.8...v2.10.9) (2026-11-07)
 
 
