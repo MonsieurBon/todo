@@ -1,10 +1,12 @@
 import { WritableSignal, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MatDialog } from '@angular/material/dialog';
 import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Zone } from '../api/model';
 import { TodoApi } from '../api/todo-api';
 import { BoardStore } from '../board/board-store';
+import { DeferDialog } from '../core/defer-dialog';
 import { ReviewPage } from './review-page';
 
 /** The sweep as a board: only what is due has a row, and a decided row goes. */
@@ -29,6 +31,8 @@ describe('the review board', () => {
   let reviewQueue: ReturnType<typeof vi.fn>;
   let markReviewed: ReturnType<typeof vi.fn>;
   let markAllReviewed: ReturnType<typeof vi.fn>;
+  let deferAll: ReturnType<typeof vi.fn>;
+  let open: ReturnType<typeof vi.fn>;
   let online: WritableSignal<boolean>;
 
   const render = async (): Promise<ComponentFixture<ReviewPage>> => {
@@ -53,15 +57,19 @@ describe('the review board', () => {
     reviewQueue = vi.fn(() => of(due));
     markReviewed = vi.fn((id: number) => (settle(id), of({})));
     markAllReviewed = vi.fn((ids: number[]) => (settle(...ids), of([])));
+    deferAll = vi.fn((ids: number[]) => (settle(...ids), of([])));
+    open = vi.fn(() => ({ afterClosed: () => of('2026-12-24') }));
     online = signal(true);
     TestBed.configureTestingModule({
       providers: [
+        { provide: MatDialog, useValue: { open } },
         {
           provide: TodoApi,
           useValue: {
             reviewQueue,
             markReviewed,
             markAllReviewed,
+            deferAll,
             board: () =>
               of({
                 zones: [
@@ -129,6 +137,32 @@ describe('the review board', () => {
     expect(markAllReviewed).toHaveBeenCalledWith([2, 3]);
     expect(text(fixture)).not.toContain('Task 2');
     expect(text(fixture)).not.toContain('selected');
+  });
+
+  const deferSelectionToDate = async (fixture: ComponentFixture<ReviewPage>) => {
+    await click(fixture, 'input[aria-label="Select everything due in Opportunity Now"]');
+    const bulk: HTMLButtonElement[] = [
+      ...fixture.nativeElement.querySelectorAll('.bulk .actions button'),
+    ];
+    bulk.find((b) => b.textContent!.trim() === 'Defer…')!.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    [...document.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')]
+      .find((b) => b.textContent!.trim() === 'Pick a date…')!
+      .click();
+  };
+
+  it('defers a selection to a date picked in a dialog', async () => {
+    const fixture = await render();
+
+    await deferSelectionToDate(fixture);
+    await vi.waitFor(() => expect(deferAll).toHaveBeenCalled());
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(open).toHaveBeenCalledWith(DeferDialog, expect.anything());
+    expect(deferAll).toHaveBeenCalledWith([2, 3], { until: '2026-12-24' });
+    expect(text(fixture)).not.toContain('Task 2');
   });
 
   /** Replayed blind from the outbox, a move or a deferral is a silent overwrite. */

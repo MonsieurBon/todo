@@ -4,7 +4,8 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { MatTooltip } from '@angular/material/tooltip';
-import { ZONE_NAMES, Zone, moveLabel, zoneAfter } from '../api/model';
+import { Deferral, ZONE_NAMES, Zone, moveLabel, zoneAfter } from '../api/model';
+import { DeferMenu } from '../core/defer-menu';
 import { BoardStore, BoardTask, isDeferred } from './board-store';
 import { TaskChips } from './task-chips';
 import { TaskDetail } from './task-detail';
@@ -12,7 +13,16 @@ import { TaskEdit, TaskEditor } from './task-editor';
 
 @Component({
   selector: 'app-task-row',
-  imports: [MatIcon, MatIconButton, MatMenu, MatMenuItem, MatMenuTrigger, MatTooltip, TaskChips],
+  imports: [
+    DeferMenu,
+    MatIcon,
+    MatIconButton,
+    MatMenu,
+    MatMenuItem,
+    MatMenuTrigger,
+    MatTooltip,
+    TaskChips,
+  ],
   templateUrl: './task-row.html',
   styleUrl: './task-row.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -61,9 +71,7 @@ export class TaskRow {
     }
   }
 
-  protected deferBy(days: number): void {
-    void this.board.defer(this.task(), days);
-  }
+  protected readonly defer = (deferral: Deferral) => this.board.defer(this.task(), deferral);
 
   protected undefer(): void {
     void this.board.undefer(this.task());

@@ -4,7 +4,8 @@ import { MatCheckbox } from '@angular/material/checkbox';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { MatProgressBar } from '@angular/material/progress-bar';
-import { ZONES, ZONE_NAMES, Zone } from '../api/model';
+import { Deferral, ZONES, ZONE_NAMES, Zone } from '../api/model';
+import { DeferMenu } from '../core/defer-menu';
 import { ReviewRow } from './review-row';
 import { ReviewStore } from './review-store';
 
@@ -12,6 +13,7 @@ import { ReviewStore } from './review-store';
 @Component({
   selector: 'app-review-page',
   imports: [
+    DeferMenu,
     MatButton,
     MatCheckbox,
     MatIcon,
@@ -70,7 +72,5 @@ export class ReviewPage {
     void this.review.moveAll(zone);
   }
 
-  protected deferAll(days: number): void {
-    void this.review.deferAll(days);
-  }
+  protected readonly deferAll = (deferral: Deferral) => this.review.deferAll(deferral);
 }

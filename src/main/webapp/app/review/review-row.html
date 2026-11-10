@@ -54,7 +54,7 @@
         [disabled]="!online()"
         [attr.aria-label]="'Defer ' + task().title"
         matTooltip="Defer"
-        [matMenuTriggerFor]="deferMenu"
+        [matMenuTriggerFor]="deferMenu.menu()"
       >
         <mat-icon svgIcon="later" />
       </button>
@@ -94,7 +94,12 @@
         <span>Move to {{ zoneName(zone) }}</span>
       </button>
     }
-    <button mat-menu-item type="button" [disabled]="!online()" [matMenuTriggerFor]="deferMenu">
+    <button
+      mat-menu-item
+      type="button"
+      [disabled]="!online()"
+      [matMenuTriggerFor]="deferMenu.menu()"
+    >
       <mat-icon svgIcon="later" />
       <span>Defer</span>
     </button>
@@ -104,9 +109,5 @@
     </button>
   </mat-menu>
 
-  <mat-menu #deferMenu="matMenu">
-    <button mat-menu-item type="button" (click)="defer(1)">Tomorrow</button>
-    <button mat-menu-item type="button" (click)="defer(7)">Next week</button>
-    <button mat-menu-item type="button" (click)="defer(30)">In a month</button>
-  </mat-menu>
+  <app-defer-menu #deferMenu [defer]="defer" />
 </div>

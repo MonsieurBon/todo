@@ -5,16 +5,18 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { MatTooltip } from '@angular/material/tooltip';
-import { ZONE_NAMES, Zone, moveLabel, zoneAfter } from '../api/model';
+import { Deferral, ZONE_NAMES, Zone, moveLabel, zoneAfter } from '../api/model';
 import { BoardTask } from '../board/board-store';
 import { TaskChips } from '../board/task-chips';
 import { TaskDetail } from '../board/task-detail';
+import { DeferMenu } from '../core/defer-menu';
 import { ReviewStore } from './review-store';
 
 /** A task that is due, which can be placed or passed but not edited or completed. */
 @Component({
   selector: 'app-review-row',
   imports: [
+    DeferMenu,
     MatCheckbox,
     MatIcon,
     MatIconButton,
@@ -67,9 +69,7 @@ export class ReviewRow {
     }
   }
 
-  protected defer(days: number): void {
-    void this.review.defer(this.task(), days);
-  }
+  protected readonly defer = (deferral: Deferral) => this.review.defer(this.task(), deferral);
 
   protected remove(): void {
     void this.review.remove(this.task());

@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, firstValueFrom } from 'rxjs';
-import { ZONES, Zone, ZoneLoad } from '../api/model';
+import { Deferral, ZONES, Zone, ZoneLoad } from '../api/model';
 import { TodoApi } from '../api/todo-api';
 import { BoardStore, BoardTask, GONE, ZoneSection, asBoardTask } from '../board/board-store';
 import { Writes } from '../core/writes';
@@ -104,8 +104,8 @@ export class ReviewStore {
     return this.decide(task, () => this.api.moveZone(task.id!, zone));
   }
 
-  defer(task: BoardTask, days: number): Promise<void> {
-    return this.decide(task, () => this.api.defer(task.id!, days));
+  defer(task: BoardTask, deferral: Deferral): Promise<void> {
+    return this.decide(task, () => this.api.defer(task.id!, deferral));
   }
 
   remove(task: BoardTask): Promise<void> {
@@ -166,8 +166,8 @@ export class ReviewStore {
     return this.decideAll((ids) => this.api.moveAllTo(ids, zone));
   }
 
-  deferAll(days: number): Promise<void> {
-    return this.decideAll((ids) => this.api.deferAll(ids, days));
+  deferAll(deferral: Deferral): Promise<void> {
+    return this.decideAll((ids) => this.api.deferAll(ids, deferral));
   }
 
   /**

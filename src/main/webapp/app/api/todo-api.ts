@@ -1,7 +1,16 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { BoardView, CaptureTask, CreateTask, Task, TaskList, UpdateTask, Zone } from './model';
+import {
+  BoardView,
+  CaptureTask,
+  CreateTask,
+  Deferral,
+  Task,
+  TaskList,
+  UpdateTask,
+  Zone,
+} from './model';
 
 export interface BoardFilter {
   list?: number | null;
@@ -91,9 +100,9 @@ export class TodoApi {
     return this.http.post<Task>(`/api/tasks/${id}/zone`, { zone });
   }
 
-  /** By days rather than to a date: the server's day decides which date that is. */
-  defer(id: number, days: number): Observable<Task> {
-    return this.http.post<Task>(`/api/tasks/${id}/defer`, { days });
+  /** A date the user did not name goes as days: the server's day decides which date that is. */
+  defer(id: number, deferral: Deferral): Observable<Task> {
+    return this.http.post<Task>(`/api/tasks/${id}/defer`, deferral);
   }
 
   undefer(id: number): Observable<Task> {
@@ -112,8 +121,8 @@ export class TodoApi {
     return this.http.post<Task[]>('/api/tasks/zone', { taskIds: ids, zone });
   }
 
-  deferAll(ids: number[], days: number): Observable<Task[]> {
-    return this.http.post<Task[]>('/api/tasks/defer', { taskIds: ids, days });
+  deferAll(ids: number[], deferral: Deferral): Observable<Task[]> {
+    return this.http.post<Task[]>('/api/tasks/defer', { taskIds: ids, ...deferral });
   }
 
   update(id: number, patch: UpdateTask): Observable<Task> {
