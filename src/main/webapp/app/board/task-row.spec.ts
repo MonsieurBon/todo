@@ -198,6 +198,26 @@ describe('a task row', () => {
     await vi.waitFor(() => expect(document.querySelector('[role="menu"]')).toBeNull());
   });
 
+  // A dialog hands focus back to whatever had it when it opened; the menu's item is gone by then.
+  it('opens the editor from the actions menu once the menu has given focus back', async () => {
+    let focused: Element | null = null;
+    open.mockImplementation(() => {
+      focused = document.activeElement;
+      return { afterClosed: () => of(undefined) };
+    });
+    const fixture = await rendered();
+    const trigger = button(fixture.nativeElement, 'Actions for Fix the tile');
+
+    trigger.focus();
+    trigger.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    menuItem('Edit').click();
+    await vi.waitFor(() => expect(open).toHaveBeenCalled());
+
+    expect(focused).toBe(trigger);
+  });
+
   it("greys out a step past the zone's edge rather than dropping it, so buttons line up", async () => {
     const fixture = await rendered();
 

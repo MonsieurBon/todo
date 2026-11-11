@@ -1,9 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  viewChild,
+} from '@angular/core';
 import { MatIconButton } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { MatTooltip } from '@angular/material/tooltip';
+import { firstValueFrom } from 'rxjs';
 import { Deferral, ZONE_NAMES, Zone, moveLabel, zoneAfter } from '../api/model';
 import { DeferMenu } from '../core/defer-menu';
 import { BoardStore, BoardTask, isDeferred } from './board-store';
@@ -32,6 +40,8 @@ export class TaskRow {
   private readonly dialog = inject(MatDialog);
 
   readonly task = input.required<BoardTask>();
+
+  private readonly menu = viewChild.required<MatMenu>('menu');
 
   protected readonly online = this.board.online;
 
@@ -81,8 +91,14 @@ export class TaskRow {
     void this.board.remove(this.task());
   }
 
-  protected async edit(): Promise<void> {
+  /** The editor gives focus back to whatever had it on opening, so not to the menu's item. */
+  protected async editFromMenu(): Promise<void> {
     const task = this.task();
+    await firstValueFrom(this.menu().closed);
+    await this.edit(task);
+  }
+
+  protected async edit(task = this.task()): Promise<void> {
     const change = await new Promise<TaskEdit | undefined>((resolve) =>
       TaskEditor.open(this.dialog, task).afterClosed().subscribe(resolve),
     );
