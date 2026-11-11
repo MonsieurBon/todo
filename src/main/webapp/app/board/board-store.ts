@@ -341,10 +341,6 @@ export class BoardStore {
     return this.online_(() => firstValueFrom(this.api.update(task.id!, patch)));
   }
 
-  async setLabels(task: BoardTask, labels: string[]): Promise<WriteResult> {
-    return this.online_(() => firstValueFrom(this.api.setLabels(task.id!, labels)));
-  }
-
   async remove(task: BoardTask): Promise<WriteResult> {
     return this.online_(() => firstValueFrom(this.api.delete(task.id!)));
   }

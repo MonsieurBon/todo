@@ -215,20 +215,6 @@
         "required" : [ "taskIds" ],
         "type" : "object"
       },
-      "SetLabels" : {
-        "properties" : {
-          "labels" : {
-            "items" : {
-              "maxLength" : 64,
-              "minLength" : 0,
-              "type" : "string"
-            },
-            "type" : "array"
-          }
-        },
-        "required" : [ "labels" ],
-        "type" : "object"
-      },
       "Share" : {
         "properties" : {
           "email" : {
@@ -349,6 +335,14 @@
           "dueDate" : {
             "format" : "date",
             "type" : "string"
+          },
+          "labels" : {
+            "items" : {
+              "maxLength" : 64,
+              "minLength" : 0,
+              "type" : "string"
+            },
+            "type" : "array"
           },
           "notes" : {
             "maxLength" : 10000,
@@ -1049,43 +1043,6 @@
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/Defer"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/TaskView"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "tags" : [ "task-controller" ]
-      }
-    },
-    "/api/tasks/{id}/labels" : {
-      "put" : {
-        "operationId" : "setTaskLabels",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "id",
-          "required" : true,
-          "schema" : {
-            "format" : "int64",
-            "type" : "integer"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/SetLabels"
               }
             }
           },

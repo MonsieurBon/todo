@@ -5,7 +5,6 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -78,7 +77,7 @@ class TaskEditingIT extends IntegrationTest {
 
     mvc.perform(
             withBody(
-                put("/api/tasks/" + id + "/labels").with(as(me)),
+                patch("/api/tasks/" + id).with(as(me)),
                 Map.of("labels", List.of("Garden", "garden", "straße", "strasse", "Küche"))))
         .andExpect(status().isOk());
 
@@ -130,6 +129,65 @@ class TaskEditingIT extends IntegrationTest {
     assertThat(task.get("title").asString()).isEqualTo("Fix the ridge tile");
     assertThat(task.get("notes").asString()).isEqualTo("The cracked one above the porch.");
     assertThat(task.get("dueDate").asString()).isEqualTo("2026-10-01");
+  }
+
+  @Test
+  @DisplayName("one edit changes the title and the topics together")
+  void topicsTravelWithTheEdit() throws Exception {
+    String me = "subject-relabel-" + System.nanoTime();
+    long id =
+        capture(
+            me,
+            Map.of("title", "Fix the tile", "labels", List.of("house"), "zone", "OPPORTUNITY_NOW"));
+
+    mvc.perform(
+            withBody(
+                patch("/api/tasks/" + id).with(as(me)),
+                Map.of("title", "Fix the ridge tile", "labels", List.of("roof", "diy"))))
+        .andExpect(status().isOk());
+
+    var task = reread(me, id);
+    assertThat(task.get("title").asString()).isEqualTo("Fix the ridge tile");
+    assertThat(task.get("labels").valueStream().map(JsonNode::asString))
+        .containsExactlyInAnyOrder("roof", "diy");
+  }
+
+  @Test
+  @DisplayName("an edit with a topic that is refused changes nothing, not even the title")
+  void aRefusedTopicRefusesTheWholeEdit() throws Exception {
+    String me = "subject-half-" + System.nanoTime();
+    long id =
+        capture(
+            me,
+            Map.of("title", "Fix the tile", "labels", List.of("house"), "zone", "OPPORTUNITY_NOW"));
+
+    mvc.perform(
+            withBody(
+                patch("/api/tasks/" + id).with(as(me)),
+                Map.of("title", "Fix the ridge tile", "labels", List.of("project a"))))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error").value("invalid_request"));
+
+    var task = reread(me, id);
+    assertThat(task.get("title").asString()).isEqualTo("Fix the tile");
+    assertThat(task.get("labels").valueStream().map(JsonNode::asString)).containsExactly("house");
+  }
+
+  @Test
+  @DisplayName("an edit with an empty set of topics removes them all, where none leaves them")
+  void emptyTopicsClearThem() throws Exception {
+    String me = "subject-untag-" + System.nanoTime();
+    long id =
+        capture(
+            me,
+            Map.of("title", "Fix the tile", "labels", List.of("house"), "zone", "OPPORTUNITY_NOW"));
+
+    mvc.perform(withBody(patch("/api/tasks/" + id).with(as(me)), Map.of("labels", List.of())))
+        .andExpect(status().isOk());
+
+    var task = reread(me, id);
+    assertThat(task.get("labels").valueStream()).isEmpty();
+    assertThat(task.get("title").asString()).isEqualTo("Fix the tile");
   }
 
   @Test
@@ -224,7 +282,7 @@ class TaskEditingIT extends IntegrationTest {
         .andExpect(status().isConflict());
     mvc.perform(
             withBody(
-                put("/api/tasks/" + id + "/labels").with(as(me)),
+                patch("/api/tasks/" + id).with(as(me)),
                 Map.of("labels", java.util.List.of("garden"))))
         .andExpect(status().isConflict());
 
@@ -263,6 +321,7 @@ class TaskEditingIT extends IntegrationTest {
                 "title", "Fix the tile",
                 "notes", "The cracked one above the porch.",
                 "dueDate", "2026-10-01",
+                "labels", List.of("house"),
                 "zone", "OPPORTUNITY_NOW"));
 
     mvc.perform(
@@ -275,6 +334,7 @@ class TaskEditingIT extends IntegrationTest {
         .as("a null field means leave it alone, which is what the partial update promises")
         .isEqualTo("The cracked one above the porch.");
     assertThat(task.get("dueDate").asString()).isEqualTo("2026-10-01");
+    assertThat(task.get("labels").valueStream().map(JsonNode::asString)).containsExactly("house");
   }
 
   @Test

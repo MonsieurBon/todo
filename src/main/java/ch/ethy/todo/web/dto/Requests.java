@@ -74,7 +74,8 @@ public final class Requests {
       LocalDate dueDate,
       Boolean clearDueDate,
       @Valid Recurrence recurrence,
-      Boolean clearRecurrence) {}
+      Boolean clearRecurrence,
+      List<@Size(max = Task.MAX_LABEL_LENGTH) String> labels) {}
 
   public record MoveZone(@NotNull TaskZone zone) {}
 
@@ -88,8 +89,6 @@ public final class Requests {
       return deferralDate(until, days, clock);
     }
   }
-
-  public record SetLabels(@NotNull List<@Size(max = Task.MAX_LABEL_LENGTH) String> labels) {}
 
   public record Selection(@NotEmpty List<@NotNull Long> taskIds) {}
 

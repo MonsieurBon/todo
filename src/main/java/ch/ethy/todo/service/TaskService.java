@@ -107,12 +107,6 @@ public class TaskService {
     return tasks.findLabelsVisibleTo(user).stream().sorted(alphabetical).toList();
   }
 
-  public Task setLabels(Long id, User user, Collection<String> labels) {
-    Task task = resolve(id, user);
-    task.labels(labels);
-    return task;
-  }
-
   public Task addTo(Long listId, User user, NewTask draft) {
     return createIn(lists.accessible(listId, user), draft);
   }
@@ -156,6 +150,9 @@ public class TaskService {
       task.recurrence(null);
     } else if (edit.recurrence() != null) {
       task.recurrence(edit.recurrence());
+    }
+    if (edit.labels() != null) {
+      task.labels(edit.labels());
     }
     return task;
   }
