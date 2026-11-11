@@ -1,0 +1,17 @@
+// A task's actions are buttons where its container has room for them and a menu where it has
+// not: the container's width decides rather than the device's, so a narrow window on a desktop
+// gets the phone's actions.
+.unfolded {
+  display: none;
+}
+
+@container (min-width: 36rem) {
+  .unfolded {
+    display: flex;
+    margin-left: 0.5rem;
+  }
+
+  .folded {
+    display: none;
+  }
+}

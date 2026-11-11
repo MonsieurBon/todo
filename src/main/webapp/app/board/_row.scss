@@ -1,23 +1,7 @@
-// The row decides by its own width rather than the device's, so a narrow window on a desktop
-// gets the phone's row.
+// The row is the container its actions fold by.
 :host {
   display: block;
   container-type: inline-size;
-}
-
-.unfolded {
-  display: none;
-}
-
-@container (min-width: 36rem) {
-  .unfolded {
-    display: flex;
-    margin-left: 0.5rem;
-  }
-
-  .folded {
-    display: none;
-  }
 }
 
 .task {

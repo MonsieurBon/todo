@@ -1,0 +1,6 @@
+@use 'fold';
+
+// Its buttons are the row's own items, spaced by the row's flexbox.
+:host {
+  display: contents;
+}
