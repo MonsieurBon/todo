@@ -203,6 +203,8 @@ test('a deferred task can be shown, edited and brought back, and counts only onc
   await critical.getByText(`Parked ${run}`).click();
   await expect(page.getByText('Ask about the deposit too')).toBeVisible();
   await page.getByRole('button', { name: 'Close' }).click();
+  // The task's actions are in the dialog too, and until it has gone they are the only ones.
+  await expect(page.getByRole('dialog')).toBeHidden();
 
   await page.getByRole('button', { name: `Defer Parked ${run}` }).click();
   await page.getByRole('menuitem', { name: 'Now' }).click();
@@ -225,7 +227,7 @@ test('a task can be deferred to a date of its own', async () => {
   await expect(page.getByText('until 9999-12-31')).toBeVisible();
 });
 
-test('a task opens with room for its notes on a desktop and keeps to the screen on a phone', async () => {
+test('a task opens with its actions and room for its notes on a desktop, keeps to the screen on a phone, and follows what is done to it', async () => {
   const title = `Compare offers ${run}`;
   const dialog = page.getByRole('dialog');
   const notes = page.getByLabel('Notes');
@@ -242,7 +244,19 @@ test('a task opens with room for its notes on a desktop and keeps to the screen 
     await page.getByRole('button', { name: 'Cancel' }).click();
     await page.getByText(title).click();
     expect((await dialog.boundingBox())!.width).toBeGreaterThan(700);
+    const heading = dialog.getByRole('heading', { name: title });
+    await expect(dialog.getByRole('button', { name: `Edit ${title}` })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: `Actions for ${title}` })).toBeHidden();
+    // Reopening has to follow the completion to the server, never overtake it.
+    const sent = page.waitForResponse((r) => r.url().endsWith('/complete'));
+    await dialog.getByRole('button', { name: `Complete ${title}` }).click();
+    await expect(heading).toHaveCSS('text-decoration-line', 'line-through');
+    await sent;
+    await dialog.getByRole('button', { name: `Reopen ${title}` }).click();
+    await expect(heading).not.toHaveCSS('text-decoration-line', 'line-through');
+    await expect(dialog.getByRole('button', { name: `Complete ${title}` })).toBeVisible();
     await page.getByRole('button', { name: 'Close' }).click();
+    await expect(dialog).toBeHidden();
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole('button', { name: `Actions for ${title}` }).click();
@@ -252,6 +266,7 @@ test('a task opens with room for its notes on a desktop and keeps to the screen 
     await page.getByRole('button', { name: 'Cancel' }).click();
     await page.getByText(title).click();
     expect((await dialog.boundingBox())!.width).toBeLessThanOrEqual(390 - 32);
+    await expect(dialog.getByRole('button', { name: `Actions for ${title}` })).toBeVisible();
     await page.getByRole('button', { name: 'Close' }).click();
   } finally {
     await page.emulateMedia({ reducedMotion: null });

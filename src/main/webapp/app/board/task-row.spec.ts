@@ -54,7 +54,11 @@ describe('a task row', () => {
   it('opens the task in a detail dialog when its body is clicked', async () => {
     (await rendered()).querySelector<HTMLButtonElement>('button.body')!.click();
 
-    expect(open).toHaveBeenCalledWith(TaskDetail, { data: task, panelClass: 'task-dialog' });
+    expect(open).toHaveBeenCalledWith(TaskDetail, {
+      data: { task, fromBoard: true },
+      panelClass: 'task-dialog',
+      autoFocus: 'first-heading',
+    });
   });
 
   /** The review board's left edge selects, so on the board it must not look like a tick box. */

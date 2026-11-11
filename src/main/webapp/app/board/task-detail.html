@@ -1,10 +1,16 @@
-<h2 mat-dialog-title class="title">{{ task.title }}</h2>
+<!-- The container its actions fold by: buttons in a desktop's dialog, a menu in a phone's. -->
+<div class="head">
+  <h2 mat-dialog-title class="title" [class.done]="task().done">{{ task().title }}</h2>
+  @if (fromBoard) {
+    <span class="actions"><app-task-actions [task]="task()" /></span>
+  }
+</div>
 
 <!-- Outside the scrolling notes: where the task sits has to stay readable while reading them. -->
-<app-task-chips class="meta" [task]="task" [showZone]="true" />
+<app-task-chips class="meta" [task]="task()" [showZone]="true" />
 
 <mat-dialog-content class="detail">
-  @if (task.notes; as notes) {
+  @if (task().notes; as notes) {
     <app-task-notes [notes]="notes" />
   } @else {
     <p class="notes muted">No notes.</p>

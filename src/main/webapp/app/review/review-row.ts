@@ -52,7 +52,7 @@ export class ReviewRow {
   );
 
   protected details(): void {
-    TaskDetail.open(this.dialog, this.task());
+    TaskDetail.open(this.dialog, { task: this.task(), fromBoard: false });
   }
 
   protected toggle(): void {
