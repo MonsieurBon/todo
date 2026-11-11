@@ -1,3 +1,15 @@
+# [2.12.0](https://github.com/MonsieurBon/todo/compare/v2.11.1...v2.12.0) (2026-11-11)
+
+
+### Bug Fixes
+
+* give focus back after editing from a row's folded actions menu ([b972bc4](https://github.com/MonsieurBon/todo/commit/b972bc415a6bebb8758e8390bc27b4435e6b7592))
+
+
+### Features
+
+* act on a task from its detail view, which follows it on the board ([74c9c16](https://github.com/MonsieurBon/todo/commit/74c9c16528146941165cdb357d94ea259c9fe9fa))
+
 ## [2.11.1](https://github.com/MonsieurBon/todo/compare/v2.11.0...v2.11.1) (2026-11-11)
 
 
