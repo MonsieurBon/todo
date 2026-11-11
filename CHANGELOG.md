@@ -1,3 +1,10 @@
+## [2.11.1](https://github.com/MonsieurBon/todo/compare/v2.11.0...v2.11.1) (2026-11-11)
+
+
+### Bug Fixes
+
+* change a task's topics in the same edit as its text ([7faf95c](https://github.com/MonsieurBon/todo/commit/7faf95c8e82cd26d0612e10fe56296cc22797ba8))
+
 # [2.11.0](https://github.com/MonsieurBon/todo/compare/v2.10.9...v2.11.0) (2026-11-10)
 
 
