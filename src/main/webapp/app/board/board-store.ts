@@ -29,6 +29,8 @@ export interface BoardTask {
   deferUntil?: string;
   lastReviewedAt?: string;
   recurrence?: Recurrence;
+  /** The capture it was made from, which is how it is still the task that capture was. */
+  clientRef?: string;
   /** Completed while the board was open: kept in sight so an accidental complete can be undone. */
   done?: true;
 }
@@ -69,7 +71,13 @@ export const asBoardTask = (task: Task): BoardTask => ({
   deferUntil: task.deferUntil,
   lastReviewedAt: task.lastReviewedAt,
   recurrence: task.recurrence,
+  clientRef: task.clientRef,
 });
+
+const sameTask = (a: BoardTask, b: BoardTask): boolean =>
+  (a.id !== null && a.id === b.id) ||
+  (a.pendingId !== null && (a.pendingId === b.pendingId || a.pendingId === b.clientRef)) ||
+  (b.pendingId !== null && b.pendingId === a.clientRef);
 
 @Injectable({ providedIn: 'root' })
 export class BoardStore {
@@ -88,6 +96,11 @@ export class BoardStore {
   readonly labels = signal<string[]>([]);
   readonly loading = this.busy.asReadonly();
   readonly online = this.connectivity.online;
+  /**
+   * Changes with each board the server answers. Only a read can say a task has left the board:
+   * a sent capture leaves the outbox before the board that holds it has been read.
+   */
+  readonly read = this.served.asReadonly();
 
   readonly showingCached = computed(() => !this.online() && this.served() !== null);
 
@@ -118,7 +131,7 @@ export class BoardStore {
     const delivered = this.outbox.delivered();
     return (task: BoardTask): BoardTask => {
       const id = task.pendingId ? delivered.get(task.pendingId) : undefined;
-      return id === undefined ? task : { ...task, id, pendingId: null };
+      return id === undefined ? task : { ...task, id, pendingId: null, clientRef: task.pendingId! };
     };
   });
 
@@ -156,6 +169,11 @@ export class BoardStore {
     }
     return rows;
   });
+
+  /** The task as the board shows it now, however it has changed or synced; none once it is gone. */
+  latest(task: BoardTask): BoardTask | undefined {
+    return this.tasks().find((row) => sameTask(row, task));
+  }
 
   /**
    * The server's loads, which count everything visible whatever the filter shows, with the outbox

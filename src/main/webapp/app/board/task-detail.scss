@@ -1,4 +1,19 @@
+.head {
+  display: flex;
+  align-items: flex-start;
+  container-type: inline-size;
+  // The title brings Material's padding; the actions sit in the corner it leaves.
+  padding-right: 12px;
+}
+
+.actions {
+  display: flex;
+  padding-top: 8px;
+}
+
 .title {
+  flex: 1 1 auto;
+  min-width: 0;
   // A title can be long with no space to break at, and the dialog has to stay on the screen.
   overflow-wrap: anywhere;
 }
@@ -15,4 +30,9 @@
 
 .notes {
   margin: 0;
+}
+
+.title.done {
+  text-decoration: line-through;
+  color: var(--mat-sys-on-surface-variant);
 }

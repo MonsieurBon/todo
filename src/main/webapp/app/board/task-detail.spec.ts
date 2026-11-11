@@ -1,7 +1,7 @@
-import { signal } from '@angular/core';
+import { WritableSignal, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BoardStore, BoardTask } from './board-store';
 import { TaskDetail } from './task-detail';
 
@@ -19,18 +19,32 @@ describe('the task detail dialog', () => {
     dueDate: '2026-10-01',
   };
 
-  const shown = async (detail: BoardTask): Promise<HTMLElement> => {
+  let board: WritableSignal<BoardTask[]>;
+  let read: WritableSignal<number>;
+  let close: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    board = signal([task]);
+    read = signal(0);
+    close = vi.fn();
+  });
+
+  const rendered = async (detail: BoardTask, fromBoard = false) => {
     TestBed.configureTestingModule({
       providers: [
-        { provide: MAT_DIALOG_DATA, useValue: detail },
-        { provide: MatDialogRef, useValue: { close: () => undefined } },
+        { provide: MAT_DIALOG_DATA, useValue: { task: detail, fromBoard } },
+        { provide: MatDialogRef, useValue: { close } },
         {
           provide: BoardStore,
           useValue: {
+            online: signal(true),
             lists: signal([
               { id: 1, name: 'Inbox' },
               { id: 2, name: 'Household' },
             ]),
+            read,
+            latest: (opened: BoardTask) => board().find((t) => t.id === opened.id),
+            reopenable: () => true,
           },
         },
       ],
@@ -38,8 +52,11 @@ describe('the task detail dialog', () => {
     const fixture = TestBed.createComponent(TaskDetail);
     await fixture.whenStable();
     fixture.detectChanges();
-    return fixture.nativeElement as HTMLElement;
+    return fixture;
   };
+
+  const shown = async (detail: BoardTask, fromBoard = false): Promise<HTMLElement> =>
+    (await rendered(detail, fromBoard)).nativeElement as HTMLElement;
 
   it('shows the notes in full, line breaks and all', async () => {
     const notes = (await shown(task)).querySelector('app-task-notes');
@@ -81,5 +98,80 @@ describe('the task detail dialog', () => {
 
   it('does not call a synced task pending', async () => {
     expect((await shown(task)).textContent).not.toContain('waiting to sync');
+  });
+
+  const button = (host: HTMLElement, label: string): HTMLButtonElement | null =>
+    host.querySelector(`button[aria-label="${label}"]`);
+
+  /** Opened from the board, it is the board's task, so whatever the row offers, it offers too. */
+  describe('opened from the board', () => {
+    it("offers the row's actions", async () => {
+      const host = await shown(task, true);
+
+      expect(button(host, 'Complete Fix the tile')).not.toBeNull();
+      expect(button(host, 'Edit Fix the tile')).not.toBeNull();
+      expect(button(host, 'Delete Fix the tile')).not.toBeNull();
+    });
+
+    it('shows the task as the board has it now, rather than as it was opened', async () => {
+      const fixture = await rendered(task, true);
+
+      board.set([{ ...task, title: 'Fix the tile today', zone: 'CRITICAL_NOW' }]);
+      fixture.detectChanges();
+      const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+      expect(text).toContain('Fix the tile today');
+      expect(text).toContain('Critical Now');
+      expect(close).not.toHaveBeenCalled();
+    });
+
+    it('shows a task completed from it as done, so the completion can be taken back', async () => {
+      const fixture = await rendered(task, true);
+
+      board.set([{ ...task, done: true }]);
+      fixture.detectChanges();
+      const host = fixture.nativeElement as HTMLElement;
+
+      expect(host.querySelector('.title')!.classList.contains('done')).toBe(true);
+      expect(button(host, 'Reopen Fix the tile')).not.toBeNull();
+    });
+
+    it('closes once the task has left the board, showing it as last seen until then', async () => {
+      const fixture = await rendered(task, true);
+      board.set([{ ...task, title: 'Fix the tile today' }]);
+      fixture.detectChanges();
+
+      board.set([]);
+      read.update((n) => n + 1);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(close).toHaveBeenCalled();
+      expect((fixture.nativeElement as HTMLElement).textContent).toContain('Fix the tile today');
+    });
+    // A sent capture leaves the outbox before the board that holds it has been read.
+    it('stays open while the task is missing only until the board is read again', async () => {
+      const fixture = await rendered(task, true);
+
+      board.set([]);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      expect(close).not.toHaveBeenCalled();
+
+      board.set([{ ...task, title: 'Fix the tile today' }]);
+      read.update((n) => n + 1);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      expect(close).not.toHaveBeenCalled();
+      expect((fixture.nativeElement as HTMLElement).textContent).toContain('Fix the tile today');
+    });
+  });
+
+  /** The sweep's own card places a task; here it is only read. */
+  it('offers no actions when opened from the review sweep', async () => {
+    const host = await shown(task);
+
+    expect(host.querySelector('app-task-actions')).toBeNull();
+    expect(button(host, 'Complete Fix the tile')).toBeNull();
   });
 });

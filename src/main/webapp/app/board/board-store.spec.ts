@@ -163,6 +163,58 @@ describe('the board', () => {
     expect(store.tasks().filter((t) => t.title === 'Fix the tile')).toHaveLength(1);
   });
 
+  /** The detail view follows a task while it is open, through whatever the board does to it. */
+  describe('following a task', () => {
+    it('finds it as the board shows it now', async () => {
+      await load([task(1)]);
+      const opened = store.tasks()[0];
+
+      await load([task(1, { title: 'Renamed', zone: 'OPPORTUNITY_NOW' })]);
+
+      expect(store.latest(opened)).toEqual(
+        expect.objectContaining({ id: 1, title: 'Renamed', zone: 'OPPORTUNITY_NOW' }),
+      );
+    });
+
+    it('finds a capture again once the server holds it', async () => {
+      api['capture'] = vi.fn(() => {
+        throw { status: 0 };
+      });
+      await store.capture({
+        title: 'Fix the tile',
+        notes: '',
+        zone: 'CRITICAL_NOW',
+        labels: [],
+        listId: null,
+      });
+      const opened = store.tasks()[0];
+      const sentRef = (api['capture'].mock.calls[0][0] as { clientRef: string }).clientRef;
+
+      await load([task(1, { title: 'Fix the tile', clientRef: sentRef })]);
+
+      expect(store.latest(opened)).toEqual(expect.objectContaining({ id: 1, pendingId: null }));
+    });
+
+    it('finds it done once it is completed, since the board keeps it in sight', async () => {
+      await load([task(1)]);
+      const opened = store.tasks()[0];
+      api['board'] = vi.fn(() => of(board([])));
+
+      await store.complete(opened);
+
+      expect(store.latest(opened)).toEqual(expect.objectContaining({ id: 1, done: true }));
+    });
+
+    it('finds nothing once it has left the board', async () => {
+      await load([task(1), task(2)]);
+      const opened = store.tasks()[0];
+
+      await load([task(2)]);
+
+      expect(store.latest(opened)).toBeUndefined();
+    });
+  });
+
   it('shows the newer filter when the older one is answered last', async () => {
     const older = new Subject<BoardView>();
     api['board'] = vi.fn((filter: BoardFilter) =>
@@ -472,6 +524,19 @@ describe('the board', () => {
       expect(await store.reopen(store.tasks()[0])).toBe('done');
       expect(api['reopen']).toHaveBeenCalledWith(9);
       expect(shown()).toEqual([[9, false]]);
+    });
+
+    it('is found again as the task the server made of that capture', async () => {
+      await captureUnsent();
+      const opened = store.tasks()[0];
+      await store.complete(opened);
+
+      api['addToList'] = vi.fn(() => of(task(9, { clientRef: opened.pendingId! })));
+      await store.sync();
+
+      expect(store.latest(opened)).toEqual(
+        expect.objectContaining({ id: 9, pendingId: null, done: true }),
+      );
     });
 
     it('is neither shown nor counted while that completion waits to be sent', async () => {

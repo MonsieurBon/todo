@@ -58,7 +58,11 @@ describe('a row in the review sweep', () => {
 
     host.querySelector<HTMLButtonElement>('button.body')!.click();
 
-    expect(open).toHaveBeenCalledWith(TaskDetail, { data: task, panelClass: 'task-dialog' });
+    expect(open).toHaveBeenCalledWith(TaskDetail, {
+      data: { task, fromBoard: false },
+      panelClass: 'task-dialog',
+      autoFocus: 'first-heading',
+    });
   });
 
   it('moves a task up or down a zone', async () => {
