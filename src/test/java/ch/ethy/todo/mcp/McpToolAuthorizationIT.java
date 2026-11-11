@@ -231,16 +231,18 @@ class McpToolAuthorizationIT extends IntegrationTest {
               null,
               null,
               null,
+              null,
               null);
       assertThat(edited.title()).isEqualTo("Fix the tile");
       assertThat(edited.notes()).isEqualTo("By the shower");
       assertThat(edited.dueDate()).isEqualTo(LocalDate.of(2030, 4, 1));
 
-      var notesOnly = tools.updateTask(task.id(), null, "Grout too", null, null, null, null, null);
+      var notesOnly =
+          tools.updateTask(task.id(), null, "Grout too", null, null, null, null, null, null);
       assertThat(notesOnly.title()).as("an omitted field is left alone").isEqualTo("Fix the tile");
       assertThat(notesOnly.dueDate()).isEqualTo(LocalDate.of(2030, 4, 1));
 
-      tools.updateTask(task.id(), null, "", null, true, null, null, null);
+      tools.updateTask(task.id(), null, "", null, true, null, null, null, null);
       assertThat(tools.getBoard(null, null, null, null, null).tasks())
           .filteredOn(t -> t.id().equals(task.id()))
           .singleElement()
@@ -262,7 +264,9 @@ class McpToolAuthorizationIT extends IntegrationTest {
 
       as(someone());
       assertThatThrownBy(
-              () -> tools.updateTask(task.id(), "Taken", "Theirs", null, null, null, null, null))
+              () ->
+                  tools.updateTask(
+                      task.id(), "Taken", "Theirs", null, null, null, null, null, null))
           .isInstanceOf(NotFoundException.class)
           .satisfies(e -> assertThat(e.getMessage()).doesNotContain("Private", "Mine"));
 

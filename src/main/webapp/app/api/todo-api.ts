@@ -129,10 +129,6 @@ export class TodoApi {
     return this.http.patch<Task>(`/api/tasks/${id}`, patch);
   }
 
-  setLabels(id: number, labels: string[]): Observable<Task> {
-    return this.http.put<Task>(`/api/tasks/${id}/labels`, { labels });
-  }
-
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`/api/tasks/${id}`);
   }

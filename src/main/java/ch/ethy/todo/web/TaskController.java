@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -131,7 +130,8 @@ public class TaskController {
                 request.dueDate(),
                 Boolean.TRUE.equals(request.clearDueDate()),
                 Requests.Recurrence.toDomain(request.recurrence()),
-                Boolean.TRUE.equals(request.clearRecurrence()))));
+                Boolean.TRUE.equals(request.clearRecurrence()),
+                request.labels())));
   }
 
   @PostMapping("/tasks/{id}/complete")
@@ -187,12 +187,6 @@ public class TaskController {
     return tasks.deferAll(request.taskIds(), currentUser.current(), request.date(clock)).stream()
         .map(this::view)
         .toList();
-  }
-
-  @PutMapping("/tasks/{id}/labels")
-  public Responses.TaskView setTaskLabels(
-      @PathVariable Long id, @Valid @RequestBody Requests.SetLabels request) {
-    return view(tasks.setLabels(id, currentUser.current(), request.labels()));
   }
 
   @DeleteMapping("/tasks/{id}")

@@ -166,6 +166,7 @@ class McpToolInputIT extends IntegrationTest {
                 null,
                 null,
                 null,
+                null,
                 null));
     rejectedNaming(
         Task.MAX_NOTES_LENGTH,
@@ -174,6 +175,7 @@ class McpToolInputIT extends IntegrationTest {
                 task.id(),
                 null,
                 "n".repeat(Task.MAX_NOTES_LENGTH + 1),
+                null,
                 null,
                 null,
                 null,
@@ -195,6 +197,7 @@ class McpToolInputIT extends IntegrationTest {
                 task.id(),
                 "Fix the ridge tile",
                 "n".repeat(Task.MAX_NOTES_LENGTH + 1),
+                null,
                 null,
                 null,
                 null,
@@ -246,25 +249,60 @@ class McpToolInputIT extends IntegrationTest {
     var task =
         tools.createTask(
             "Fix the roof", TaskZone.OPPORTUNITY_NOW, null, null, null, null, null, null);
-    assertThatThrownBy(() -> tools.updateTask(task.id(), " ", null, null, null, null, null, null))
+    assertThatThrownBy(
+            () -> tools.updateTask(task.id(), " ", null, null, null, null, null, null, null))
         .isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(
             () ->
                 tools.updateTask(
-                    task.id(), null, null, LocalDate.of(2030, 1, 1), true, null, null, null))
+                    task.id(), null, null, LocalDate.of(2030, 1, 1), true, null, null, null, null))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
-  @DisplayName("set_task_labels refuses a label longer than the column")
-  void setLabelsTooLong() {
+  @DisplayName("update_task refuses a label longer than the column")
+  void updateLabelTooLong() {
     asSomeone();
     var task =
         tools.createTask(
             "Fix the roof", TaskZone.OPPORTUNITY_NOW, null, null, null, null, null, null);
     rejectedNaming(
         Task.MAX_LABEL_LENGTH,
-        () -> tools.setTaskLabels(task.id(), List.of("l".repeat(Task.MAX_LABEL_LENGTH + 1))));
+        () ->
+            tools.updateTask(
+                task.id(),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                List.of("l".repeat(Task.MAX_LABEL_LENGTH + 1))));
+  }
+
+  @Test
+  @DisplayName("update_task given only topics replaces them and leaves the text as it was")
+  void relabelOnly() {
+    asSomeone();
+    var task =
+        tools.createTask(
+            "Fix the roof",
+            TaskZone.OPPORTUNITY_NOW,
+            List.of("house"),
+            null,
+            "Above the porch",
+            null,
+            null,
+            null);
+
+    var relabelled =
+        tools.updateTask(
+            task.id(), null, null, null, null, null, null, null, List.of("roof", "diy"));
+
+    assertThat(relabelled.labels()).containsExactlyInAnyOrder("roof", "diy");
+    assertThat(relabelled.title()).isEqualTo("Fix the roof");
+    assertThat(relabelled.notes()).isEqualTo("Above the porch");
   }
 
   @Test
@@ -287,11 +325,13 @@ class McpToolInputIT extends IntegrationTest {
             List.<ThrowingCallable>of(
                 () ->
                     tools.updateTask(
-                        task.id(), "Fix the ridge", null, null, null, null, null, null),
+                        task.id(), "Fix the ridge", null, null, null, null, null, null, null),
                 () -> tools.moveTasksToZone(List.of(task.id()), TaskZone.CRITICAL_NOW),
                 () -> tools.deferTasks(List.of(task.id()), LocalDate.of(2030, 1, 1), null),
                 () -> tools.undeferTask(task.id()),
-                () -> tools.setTaskLabels(task.id(), List.of("garden")),
+                () ->
+                    tools.updateTask(
+                        task.id(), null, null, null, null, null, null, null, List.of("garden")),
                 () -> tools.markTasksReviewed(List.of(task.id()))))
         .allSatisfy(
             call ->
@@ -326,7 +366,7 @@ class McpToolInputIT extends IntegrationTest {
     assertThatCode(
             () ->
                 tools.updateTask(
-                    task.id(), "Fix the ridge tile", null, null, null, null, null, null))
+                    task.id(), "Fix the ridge tile", null, null, null, null, null, null, null))
         .doesNotThrowAnyException();
   }
 

@@ -82,13 +82,7 @@ public class TodoTools {
           TaskZone zone,
       @McpToolParam(
               description =
-                  "Topics for this task, e.g. [\"house\", \"project-a\"]. At most "
-                      + Task.MAX_LABEL_LENGTH
-                      + " characters each."
-                      + " Letters, digits and hyphens only - no spaces, so write \"project-a\" rather "
-                      + "than \"project a\". A topic outside that is refused, and the refusal "
-                      + "takes the whole call with it. Call list_labels first and reuse an "
-                      + "existing spelling: topics are matched exactly.",
+                  "Topics for this task, e.g. [\"house\", \"project-a\"]. " + TOPIC_FORMAT,
               required = false)
           List<String> labels,
       @McpToolParam(
@@ -138,11 +132,12 @@ public class TodoTools {
       title = "Edit a task",
       description =
           """
-          Change a task's title, notes, due date or how often it repeats. Only what is
-          passed changes; anything omitted keeps its current value. Notes are replaced
-          whole, so to add to them pass the existing notes with the addition.
+          Change a task's title, notes, due date, topics or how often it repeats.
+          Pass only what changes; anything omitted keeps its current value. To change
+          only the topics, pass the task's id and labels, nothing else. Notes are
+          replaced whole, so to add to them pass the existing notes with the addition.
 
-          Zone, deferral, topics and completion have their own tools.
+          Zone, deferral and completion have their own tools.
 
           A completed task is read-only; call reopen_task first if it needs changing.
           """)
@@ -173,7 +168,14 @@ public class TodoTools {
               description =
                   "True to stop the task repeating. Cannot be combined with recurrenceEvery.",
               required = false)
-          Boolean clearRecurrence) {
+          Boolean clearRecurrence,
+      @McpToolParam(
+              description =
+                  "The complete set of topics, replacing the current ones: pass the whole set, "
+                      + "not just the additions, and an empty list to remove them all. "
+                      + TOPIC_FORMAT,
+              required = false)
+          List<String> labels) {
     return view(
         tasks.update(
             taskId,
@@ -184,7 +186,8 @@ public class TodoTools {
                 dueDate,
                 Boolean.TRUE.equals(clearDueDate),
                 recurrence(recurrenceEvery, recurrenceUnit),
-                Boolean.TRUE.equals(clearRecurrence))));
+                Boolean.TRUE.equals(clearRecurrence),
+                labels)));
   }
 
   @McpTool(
@@ -443,35 +446,6 @@ public class TodoTools {
   }
 
   @McpTool(
-      name = "set_task_labels",
-      annotations =
-          @McpTool.McpAnnotations(
-              readOnlyHint = false,
-              destructiveHint = true,
-              idempotentHint = true,
-              openWorldHint = false),
-      title = "Set a task's topics",
-      description =
-          "Replace every topic on a task. Pass the complete set, not just the additions. "
-              + "Call list_labels first so existing topics are reused rather than duplicated. "
-              + "A completed task is read-only; call reopen_task first if it needs relabelling.")
-  public Responses.TaskView setTaskLabels(
-      @McpToolParam(description = "Id of the task.", required = true) Long taskId,
-      @McpToolParam(
-              description =
-                  "The complete set of topics, at most "
-                      + Task.MAX_LABEL_LENGTH
-                      + " characters each."
-                      + " Letters, digits and hyphens only - no spaces, so write \"project-a\" rather "
-                      + "than \"project a\". A topic outside that is refused, and the refusal "
-                      + "takes the whole call with it. Call list_labels first and reuse an "
-                      + "existing spelling: topics are matched exactly.",
-              required = true)
-          List<String> labels) {
-    return view(tasks.setLabels(taskId, currentUser.current(), labels));
-  }
-
-  @McpTool(
       name = "mark_tasks_reviewed",
       annotations =
           @McpTool.McpAnnotations(
@@ -564,6 +538,14 @@ public class TodoTools {
           + ". Needs recurrenceUnit.";
 
   private static final String RECURRENCE_UNIT = "DAYS, WEEKS or MONTHS. Needs recurrenceEvery.";
+
+  private static final String TOPIC_FORMAT =
+      "At most "
+          + Task.MAX_LABEL_LENGTH
+          + " characters each. Letters, digits and hyphens only - no spaces, so write"
+          + " \"project-a\" rather than \"project a\". A topic outside that is refused, and the"
+          + " refusal takes the whole call with it. Call list_labels first and reuse an existing"
+          + " spelling: topics are matched exactly.";
 
   private static Recurrence recurrence(Integer every, RecurrenceUnit unit) {
     if (every == null && unit == null) {

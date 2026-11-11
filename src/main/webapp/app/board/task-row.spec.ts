@@ -9,7 +9,6 @@ import { TaskDetail } from './task-detail';
 import { TaskEdit } from './task-editor';
 import { TaskRow } from './task-row';
 
-/** An edit is two requests, so half of it landing is a state the row has to avoid. */
 describe('a task row', () => {
   const task: BoardTask = {
     id: 7,
@@ -23,7 +22,6 @@ describe('a task row', () => {
   };
 
   let edit: ReturnType<typeof vi.fn>;
-  let setLabels: ReturnType<typeof vi.fn>;
   let complete: ReturnType<typeof vi.fn>;
   let moveZone: ReturnType<typeof vi.fn>;
   let remove: ReturnType<typeof vi.fn>;
@@ -49,7 +47,6 @@ describe('a task row', () => {
 
   beforeEach(() => {
     edit = vi.fn(async () => 'done');
-    setLabels = vi.fn(async () => 'done');
     complete = vi.fn(async () => 'done');
     moveZone = vi.fn(async () => 'done');
     remove = vi.fn(async () => 'done');
@@ -74,7 +71,6 @@ describe('a task row', () => {
             online: signal(true),
             lists: signal([]),
             edit,
-            setLabels,
             complete,
             moveZone,
             remove,
@@ -221,18 +217,14 @@ describe('a task row', () => {
     expect((await row()).contains('deferred')).toBe(false);
   });
 
-  it('relabels once the edit itself has landed', async () => {
+  it('sends the topics with the rest of the edit, as one request', async () => {
     await edited();
 
-    expect(setLabels).toHaveBeenCalledWith(task, ['diy']);
-  });
-
-  it('does not relabel a task whose edit the server refused', async () => {
-    edit.mockResolvedValue('refused');
-
-    await edited();
-
-    expect(setLabels).not.toHaveBeenCalled();
+    expect(edit).toHaveBeenCalledOnce();
+    expect(edit).toHaveBeenCalledWith(
+      task,
+      expect.objectContaining({ title: 'Fix it', labels: ['diy'] }),
+    );
   });
 
   it('asks for the due date to be cleared when the editor comes back with none', async () => {

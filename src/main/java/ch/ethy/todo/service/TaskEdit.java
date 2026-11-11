@@ -2,10 +2,11 @@ package ch.ethy.todo.service;
 
 import ch.ethy.todo.domain.Recurrence;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
- * Null means "leave as is"; a due date is removed only by {@code clearDueDate}, a recurrence only
- * by {@code clearRecurrence}.
+ * Null means "leave as is"; topics are replaced whole when given. A due date is removed only by
+ * {@code clearDueDate}, a recurrence only by {@code clearRecurrence}.
  */
 public record TaskEdit(
     String title,
@@ -13,7 +14,8 @@ public record TaskEdit(
     LocalDate dueDate,
     boolean clearDueDate,
     Recurrence recurrence,
-    boolean clearRecurrence) {
+    boolean clearRecurrence,
+    List<String> labels) {
 
   public TaskEdit {
     if (clearDueDate && dueDate != null) {
