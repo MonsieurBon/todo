@@ -71,6 +71,13 @@ body {
   }
 }
 
+// On any screen, so the dialog's own buttons stay on it: Material passes this down to the surface,
+// whose scrolling content then gives up the height that a long title takes. Qualified to outrank
+// the overlay's own 100%, which leaves no room for the dialog's margins.
+.cdk-overlay-pane.task-dialog {
+  max-height: calc(100dvh - 32px);
+}
+
 // Notes are typed as markdown, where a table only reads as one when its columns line up. Scoped
 // to the form field to outrank the font Material's input inherits.
 .mat-mdc-form-field textarea.notes-input {
