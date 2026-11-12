@@ -24,13 +24,23 @@
   font: var(--mat-sys-label-large);
 }
 
+.update,
 .problem {
   align-items: center;
   margin: 0;
   padding: 0.1rem 0.4rem 0.1rem 0.9rem;
+  font: var(--mat-sys-label-large);
+}
+
+.update {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+.problem,
+.update.broken {
   background: var(--mat-sys-error-container);
   color: var(--mat-sys-on-error-container);
-  font: var(--mat-sys-label-large);
 }
 
 .account-name {

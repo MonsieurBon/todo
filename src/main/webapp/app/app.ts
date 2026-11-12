@@ -6,6 +6,7 @@ import { MatToolbar } from '@angular/material/toolbar';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './auth/auth.service';
 import { BoardStore } from './board/board-store';
+import { AppUpdate } from './core/app-update';
 import { Writes } from './core/writes';
 
 @Component({
@@ -31,6 +32,7 @@ export class App {
   private readonly board = inject(BoardStore);
   private readonly router = inject(Router);
   private readonly writes = inject(Writes);
+  private readonly update = inject(AppUpdate);
 
   protected readonly signedIn = this.auth.signedIn;
   protected readonly account = this.auth.displayName;
@@ -38,6 +40,7 @@ export class App {
   protected readonly pending = this.board.pendingCount;
   protected readonly showingCached = this.board.showingCached;
   protected readonly problem = this.writes.problem;
+  protected readonly updateOffer = this.update.offer;
 
   protected readonly connectionNote = computed(() => {
     const queued = this.pending();
@@ -76,6 +79,10 @@ export class App {
 
   protected sync(): void {
     void this.board.sync();
+  }
+
+  protected takeUpdate(): void {
+    this.update.apply();
   }
 
   protected dismissProblem(): void {
