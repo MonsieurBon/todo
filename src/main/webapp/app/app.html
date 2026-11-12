@@ -25,6 +25,21 @@
     <p class="connection" role="status">{{ note }}</p>
   }
 
+  <!-- Two elements, not one with a changing role: an alert is announced when it appears. -->
+  @if (updateOffer() === 'broken') {
+    <p class="update broken row" role="alert">
+      <span class="grow"
+        >This version of the app can’t load all its parts. Reload to continue.</span
+      >
+      <button matButton type="button" (click)="takeUpdate()">Reload</button>
+    </p>
+  } @else if (updateOffer() === 'ready') {
+    <p class="update row" role="status">
+      <span class="grow">A new version is ready.</span>
+      <button matButton type="button" (click)="takeUpdate()">Reload</button>
+    </p>
+  }
+
   @if (problem(); as note) {
     <p class="problem row" role="alert">
       <span class="grow">{{ note }}</span>

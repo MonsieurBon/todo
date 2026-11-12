@@ -3,12 +3,17 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './app';
+import { AppUpdate, UpdateOffer } from './core/app-update';
 import { AuthService } from './auth/auth.service';
 import { BoardStore } from './board/board-store';
 import { Writes } from './core/writes';
 
 describe('the app shell', () => {
   let writes: Writes;
+  let update: {
+    offer: ReturnType<typeof signal<UpdateOffer | null>>;
+    apply: ReturnType<typeof vi.fn>;
+  };
 
   const render = async (): Promise<ComponentFixture<App>> => {
     const fixture = TestBed.createComponent(App);
@@ -23,8 +28,10 @@ describe('the app shell', () => {
   };
 
   beforeEach(() => {
+    update = { offer: signal<UpdateOffer | null>(null), apply: vi.fn() };
     TestBed.configureTestingModule({
       providers: [
+        { provide: AppUpdate, useValue: update },
         provideRouter([{ path: 'lists', children: [] }]),
         {
           provide: AuthService,
@@ -102,5 +109,56 @@ describe('the app shell', () => {
     fixture.nativeElement.querySelector('.problem button').click();
 
     expect(shown(fixture)).toBeNull();
+  });
+
+  it('offers a new version once it is ready, and reloads when asked', async () => {
+    const fixture = await render();
+    expect(fixture.nativeElement.querySelector('.update')).toBeNull();
+
+    update.offer.set('ready');
+    fixture.detectChanges();
+    const note: HTMLElement = fixture.nativeElement.querySelector('.update');
+    expect(note.textContent).toContain('A new version is ready');
+    note.querySelector('button')!.click();
+
+    expect(update.apply).toHaveBeenCalled();
+  });
+
+  it('says so when the running version is broken', async () => {
+    const fixture = await render();
+
+    update.offer.set('broken');
+    fixture.detectChanges();
+
+    const note: HTMLElement = fixture.nativeElement.querySelector('.update');
+    expect(note.textContent).toContain('This version of the app can’t load all its parts.');
+    expect(note.getAttribute('role')).toBe('alert');
+    expect(note.classList).toContain('broken');
+  });
+
+  /** Unlike a broken version, a new one can wait for whenever the user likes. */
+  it('mentions a new version without raising an alarm', async () => {
+    const fixture = await render();
+
+    update.offer.set('ready');
+    fixture.detectChanges();
+
+    const note: HTMLElement = fixture.nativeElement.querySelector('.update');
+    expect(note.getAttribute('role')).toBe('status');
+    expect(note.classList).not.toContain('broken');
+  });
+
+  /** A screen reader announces an alert that appears, not a status that turns into one. */
+  it('raises a new alert when a version that was ready turns out broken', async () => {
+    const fixture = await render();
+    update.offer.set('ready');
+    fixture.detectChanges();
+    const ready: HTMLElement = fixture.nativeElement.querySelector('.update');
+
+    update.offer.set('broken');
+    fixture.detectChanges();
+
+    expect(ready.isConnected).toBe(false);
+    expect(fixture.nativeElement.querySelector('.update').getAttribute('role')).toBe('alert');
   });
 });
