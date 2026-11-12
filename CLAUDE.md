@@ -37,6 +37,9 @@ The repository is public: only this project's own work goes into it.
   you know. Fix each finding or know why not, and raise one that questions the approach with
   Fabian. A finding caught here is a review round saved. Nothing reaches the remote that hasn't been
   reviewed.
+- When a review comes back, the pre-push reviewer's or the PR's, show Fabian what it found: each
+  finding with what happens, why it matters and the proposed fix, in the reply itself. A question
+  about the findings comes after he has read them, never in a dialog that covers them.
 - First round: implement, have the diff reviewed, push, open the PR.
 - Every round after: summarise the review's points and discuss them with Fabian *before* touching
   code — the fix is not yours to choose alone. Then implement, have the diff reviewed, reply to the
