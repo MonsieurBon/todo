@@ -1,3 +1,10 @@
+## [2.12.1](https://github.com/MonsieurBon/todo/compare/v2.12.0...v2.12.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* offer a new version of the app instead of running old code until reloaded ([9f149d9](https://github.com/MonsieurBon/todo/commit/9f149d9af50397db99e63191a77cc0bdf5dae44e))
+
 # [2.12.0](https://github.com/MonsieurBon/todo/compare/v2.11.1...v2.12.0) (2026-11-11)
 
 
