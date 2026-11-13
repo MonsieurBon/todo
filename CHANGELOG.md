@@ -1,3 +1,10 @@
+## [2.12.2](https://github.com/MonsieurBon/todo/compare/v2.12.1...v2.12.2) (2026-11-13)
+
+
+### Bug Fixes
+
+* keep a task's dialog and its Close button on a phone's screen, whatever the title's length ([4c14785](https://github.com/MonsieurBon/todo/commit/4c14785b47f35679664df44746674124af339b46))
+
 ## [2.12.1](https://github.com/MonsieurBon/todo/compare/v2.12.0...v2.12.1) (2026-11-12)
 
 
