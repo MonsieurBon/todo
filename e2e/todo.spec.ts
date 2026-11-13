@@ -31,10 +31,13 @@ test.afterAll(async () => {
 
 async function capture(
   title: string,
-  options: { zone?: string; labels?: string } = {},
+  options: { zone?: string; labels?: string; notes?: string } = {},
 ): Promise<void> {
   await page.goto('/capture');
   await page.getByLabel('What needs doing?').fill(title);
+  if (options.notes) {
+    await page.getByLabel('Notes').fill(options.notes);
+  }
   if (options.zone) {
     await page.getByLabel('Urgency').click();
     await page.getByRole('option', { name: options.zone }).click();
@@ -268,6 +271,39 @@ test('a task opens with its actions and room for its notes on a desktop, keeps t
     expect((await dialog.boundingBox())!.width).toBeLessThanOrEqual(390 - 32);
     await expect(dialog.getByRole('button', { name: `Actions for ${title}` })).toBeVisible();
     await page.getByRole('button', { name: 'Close' }).click();
+  } finally {
+    await page.emulateMedia({ reducedMotion: null });
+    await page.setViewportSize(desktop);
+  }
+});
+
+test('a task with a long title and long notes keeps its Close button on a phone, upright or sideways', async () => {
+  const title = `${run} ${'replace the leaking kitchen tap before winter '.repeat(8)}`
+    .slice(0, 255)
+    .trim();
+  const notes = Array.from({ length: 40 }, (_, i) => `Paragraph ${i}: ${'and more. '.repeat(20)}`);
+  const dialog = page.getByRole('dialog');
+  const desktop = page.viewportSize()!;
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  try {
+    await capture(title, { notes: notes.join('\n\n') });
+
+    for (const screen of [
+      { width: 390, height: 844 },
+      { width: 844, height: 390 },
+    ]) {
+      await page.setViewportSize(screen);
+      await page.getByText(title.slice(0, 40)).click();
+      const close = dialog.getByRole('button', { name: 'Close' });
+      // Whole, not just inside the screen: the dialog clips what it scrolls.
+      await expect(close).toBeInViewport({ ratio: 1 });
+      // The title gives way, so the notes still have room to be read.
+      expect((await dialog.locator('mat-dialog-content').boundingBox())!.height).toBeGreaterThan(
+        100,
+      );
+      await close.click();
+      await expect(dialog).toBeHidden();
+    }
   } finally {
     await page.emulateMedia({ reducedMotion: null });
     await page.setViewportSize(desktop);

@@ -18,6 +18,21 @@
   overflow-wrap: anywhere;
 }
 
+// Under 600px in either direction, a phone upright or sideways or a short window, the notes need
+// what height is left. A title stays cut off at three lines there: long text belongs in the notes.
+@media (max-width: 599.98px), (max-height: 599.98px) {
+  .title {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    overflow: hidden;
+    // A clip ends at the padding's edge, where the fourth line would show; as margin it does not.
+    padding-bottom: 0;
+    margin-bottom: 14px;
+  }
+}
+
 .detail {
   min-width: min(90vw, 26rem);
 }
