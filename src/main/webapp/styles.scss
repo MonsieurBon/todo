@@ -15,21 +15,21 @@ html {
       // No web fonts: the app has to render the same with no connection, and a font that
       // arrives late is worse than one that never left the device.
       typography: (
-          plain-family: (
-            system-ui,
-            -apple-system,
-            'Segoe UI',
-            Roboto,
-            sans-serif,
-          ),
-          brand-family: (
-            system-ui,
-            -apple-system,
-            'Segoe UI',
-            Roboto,
-            sans-serif,
-          ),
+        plain-family: (
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif,
         ),
+        brand-family: (
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif,
+        ),
+      ),
       density: 0,
     )
   );
