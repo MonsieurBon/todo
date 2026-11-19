@@ -13,6 +13,19 @@
       </button>
       <mat-menu #accountMenu="matMenu">
         <div class="account-name muted">{{ account() ?? 'Signed in' }}</div>
+        @if (notificationAvailable()) {
+          <button
+            mat-menu-item
+            type="button"
+            role="menuitemcheckbox"
+            class="notification"
+            [attr.aria-checked]="notifying()"
+            (click)="toggleNotification()"
+          >
+            <mat-icon [svgIcon]="notifying() ? 'check' : 'bell'" />
+            <span>Show Critical Now as a notification</span>
+          </button>
+        }
         <button mat-menu-item type="button" (click)="signOut()">
           <mat-icon svgIcon="logout" />
           <span>Sign out</span>

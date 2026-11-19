@@ -47,6 +47,8 @@ Every variable the app reads. There are no others.
 | `OIDC_ISSUER_URI` | `http://localhost:8081/realms/todo` | **yes** | The identity provider's **public** realm URL. Both halves of that matter — see below. |
 | `TODO_CANONICAL_URI` | `http://localhost:8080` | **yes** | **The public origin of this app, and the audience it demands.** See below. |
 | `TODO_TIME_ZONE` | `Europe/Zurich` | no | Whose midnight ends a day: when a deferral is over, and what "in a week" counts from. An IANA zone id. Timestamps stay UTC. |
+| `TODO_PUSH_PUBLIC_KEY` | — | no | With `TODO_PUSH_PRIVATE_KEY`, the VAPID key pair devices subscribe to the Critical Now notification with. Without both the app does not offer it. `scripts/vapid-keys.sh` makes a pair. After a new pair, a device's notification stays as it is until the app is next opened there. |
+| `TODO_PUSH_PRIVATE_KEY` | — | no | The private half. A secret. |
 | `SERVER_PORT` | `8080` | no | The healthcheck follows it. |
 | `LOG_LEVEL_SECURITY` | `INFO` | no | `DEBUG` to see why a token was rejected. |
 | `JAVA_OPTS` | `-XX:MaxRAMPercentage=75.0` | no | Replaces the default entirely, so repeat the heap setting if you add to it. |
@@ -209,6 +211,12 @@ explains how to report it privately, and what falls outside that.
 
 What a release needs beyond replacing the image, newest first. A version not listed needs nothing,
 and upgrading across several means doing each listed step on the way, oldest first.
+
+### Unreleased
+
+- **Optional:** the app can show Critical Now as a notification on a device. To offer it, make a key
+  pair with `scripts/vapid-keys.sh` and set `TODO_PUSH_PUBLIC_KEY` and `TODO_PUSH_PRIVATE_KEY`.
+  Without them nothing changes.
 
 ### 2.10.6
 

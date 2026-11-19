@@ -66,3 +66,7 @@ updates:
       - dependency-name: "typescript"
         update-types:
           - "version-update:semver-major"
+      # Describes the Node the build runs on, so its major moves with `node.version`.
+      - dependency-name: "@types/node"
+        update-types:
+          - "version-update:semver-major"

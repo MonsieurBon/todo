@@ -1,5 +1,6 @@
 package ch.ethy.todo.web.dto;
 
+import ch.ethy.todo.domain.PushSubscription;
 import ch.ethy.todo.domain.RecurrenceUnit;
 import ch.ethy.todo.domain.Task;
 import ch.ethy.todo.domain.TaskList;
@@ -101,6 +102,12 @@ public final class Requests {
       return deferralDate(until, days, clock);
     }
   }
+
+  /** What a browser's {@code PushSubscription} holds, flattened. */
+  public record PushDevice(
+      @NotBlank @Size(max = PushSubscription.MAX_ENDPOINT_LENGTH) String endpoint,
+      @NotBlank @Size(max = PushSubscription.MAX_P256DH_LENGTH) String p256dh,
+      @NotBlank @Size(max = PushSubscription.MAX_AUTH_LENGTH) String auth) {}
 
   private static LocalDate deferralDate(LocalDate until, Integer days, Clock clock) {
     if ((until == null) == (days == null)) {

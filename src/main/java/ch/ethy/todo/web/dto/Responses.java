@@ -81,5 +81,8 @@ public final class Responses {
 
   public record BoardView(List<ZoneLoad> zones, List<TaskView> tasks) {}
 
+  /** Null when this server sends no notifications. */
+  public record PushKey(String publicKey) {}
+
   public record ApiError(String error, String message, Map<String, String> fields) {}
 }

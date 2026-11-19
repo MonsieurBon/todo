@@ -58,6 +58,7 @@
     "@semantic-release/git": "11.0.1",
     "@semantic-release/npm": "13.2.0",
     "@semantic-release/release-notes-generator": "14.1.1",
+    "@types/node": "24.19.2",
     "angular-eslint": "22.6.0",
     "eslint": "10.14.0",
     "fake-indexeddb": "6.2.8",

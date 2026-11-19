@@ -38,6 +38,8 @@ export type TaskList = Sent<Schemas['TaskListSummary'], never>;
 export type CaptureTask = Schemas['CaptureTask'];
 export type CreateTask = Schemas['CreateTask'];
 export type UpdateTask = Schemas['UpdateTask'];
+export type PushKey = Sent<Schemas['PushKey'], 'publicKey'>;
+export type PushDevice = Required<Schemas['PushDevice']>;
 type Defer = Required<Schemas['Defer']>;
 export type Deferral =
   { days: Defer['days']; until?: never } | { until: Defer['until']; days?: never };

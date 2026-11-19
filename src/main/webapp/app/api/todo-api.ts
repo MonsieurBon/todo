@@ -6,6 +6,8 @@ import {
   CaptureTask,
   CreateTask,
   Deferral,
+  PushDevice,
+  PushKey,
   Task,
   TaskList,
   UpdateTask,
@@ -131,5 +133,13 @@ export class TodoApi {
 
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`/api/tasks/${id}`);
+  }
+
+  pushKey(): Observable<PushKey> {
+    return this.http.get<PushKey>('/api/push/key');
+  }
+
+  subscribeDevice(device: PushDevice): Observable<void> {
+    return this.http.put<void>('/api/push/subscription', device);
   }
 }

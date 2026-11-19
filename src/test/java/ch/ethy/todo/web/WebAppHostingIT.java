@@ -46,6 +46,8 @@ class WebAppHostingIT extends IntegrationTest {
         .isEqualTo(200);
     assertThat(mvc.perform(get("/ngsw-worker.js")).andReturn().getResponse().getStatus())
         .isEqualTo(200);
+    assertThat(mvc.perform(get("/push-worker.js")).andReturn().getResponse().getStatus())
+        .isEqualTo(200);
   }
 
   @Test

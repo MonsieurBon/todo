@@ -4,6 +4,7 @@ import { Router, provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './app';
 import { AppUpdate, UpdateOffer } from './core/app-update';
+import { CriticalNowNotification } from './core/critical-now-notification';
 import { AuthService } from './auth/auth.service';
 import { BoardStore } from './board/board-store';
 import { Writes } from './core/writes';
@@ -13,6 +14,12 @@ describe('the app shell', () => {
   let update: {
     offer: ReturnType<typeof signal<UpdateOffer | null>>;
     apply: ReturnType<typeof vi.fn>;
+  };
+  let notification: {
+    available: ReturnType<typeof signal<boolean>>;
+    on: ReturnType<typeof signal<boolean>>;
+    start: ReturnType<typeof vi.fn>;
+    turnOn: ReturnType<typeof vi.fn>;
   };
 
   const render = async (): Promise<ComponentFixture<App>> => {
@@ -29,9 +36,16 @@ describe('the app shell', () => {
 
   beforeEach(() => {
     update = { offer: signal<UpdateOffer | null>(null), apply: vi.fn() };
+    notification = {
+      available: signal(false),
+      on: signal(false),
+      start: vi.fn(async () => undefined),
+      turnOn: vi.fn(async () => 'done'),
+    };
     TestBed.configureTestingModule({
       providers: [
         { provide: AppUpdate, useValue: update },
+        { provide: CriticalNowNotification, useValue: notification },
         provideRouter([{ path: 'lists', children: [] }]),
         {
           provide: AuthService,
@@ -160,5 +174,45 @@ describe('the app shell', () => {
 
     expect(ready.isConnected).toBe(false);
     expect(fixture.nativeElement.querySelector('.update').getAttribute('role')).toBe('alert');
+  });
+
+  describe('the Critical Now notification', () => {
+    const openAccountMenu = (fixture: ComponentFixture<App>): HTMLElement | null => {
+      fixture.nativeElement.querySelector('button[aria-label="Account"]').click();
+      fixture.detectChanges();
+      return document.querySelector('.cdk-overlay-container button.notification');
+    };
+
+    it('is started with the app, which registers a device that has it on again', async () => {
+      await render();
+
+      expect(notification.start).toHaveBeenCalled();
+    });
+
+    it('is not offered where it cannot be had', async () => {
+      const fixture = await render();
+
+      expect(openAccountMenu(fixture)).toBeNull();
+    });
+
+    it('is offered in the account menu, and turned on from there', async () => {
+      notification.available.set(true);
+      const fixture = await render();
+
+      const item = openAccountMenu(fixture)!;
+      expect(item.textContent).toContain('Show Critical Now as a notification');
+      expect(item.getAttribute('aria-checked')).toBe('false');
+      item.click();
+
+      expect(notification.turnOn).toHaveBeenCalled();
+    });
+
+    it('shows that it is on', async () => {
+      notification.available.set(true);
+      notification.on.set(true);
+      const fixture = await render();
+
+      expect(openAccountMenu(fixture)!.getAttribute('aria-checked')).toBe('true');
+    });
   });
 });
