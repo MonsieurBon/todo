@@ -23,6 +23,10 @@ class PushConfig {
   private static final List<Duration> WELCOME_RETRIES =
       List.of(Duration.ofSeconds(2), Duration.ofSeconds(5), Duration.ofSeconds(15));
 
+  /** A push service having a bad minute, then a bad few. After that the next change tries. */
+  private static final List<Duration> FAILURE_RETRIES =
+      List.of(Duration.ofSeconds(30), Duration.ofMinutes(2), Duration.ofMinutes(10));
+
   /**
    * Off unless both keys are set; one without the other is a mistake worth failing the start over,
    * rather than a server that quietly sends nothing.
@@ -61,6 +65,7 @@ class PushConfig {
     ScheduledExecutorService thread =
         Executors.newSingleThreadScheduledExecutor(
             Thread.ofPlatform().name("critical-now-push").daemon().factory());
-    return new CriticalNowPusher(subscriptions, tasks, gateway, thread, WELCOME_RETRIES);
+    return new CriticalNowPusher(
+        subscriptions, tasks, gateway, thread, WELCOME_RETRIES, FAILURE_RETRIES);
   }
 }

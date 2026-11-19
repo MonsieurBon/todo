@@ -11,8 +11,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import ch.ethy.todo.IntegrationTest;
+import ch.ethy.todo.domain.PushSubscription;
 import ch.ethy.todo.repository.PushSubscriptionRepository;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,6 +37,13 @@ class PushIT extends IntegrationTest {
   @Autowired private MockMvc mvc;
   @Autowired private ObjectMapper json;
   @Autowired private PushSubscriptionRepository subscriptions;
+
+  /** Read the way the server never does: by endpoint alone, whoever's it is. */
+  private Optional<PushSubscription> stored(String endpoint) {
+    return subscriptions.findAllWithUser().stream()
+        .filter(device -> device.endpoint().equals(endpoint))
+        .findFirst();
+  }
 
   private static String someone() {
     return "push-" + UNIQUE.incrementAndGet() + "-" + System.nanoTime();
@@ -99,7 +108,7 @@ class PushIT extends IntegrationTest {
 
     await().until(() -> !pushes.sentTo(endpoint).isEmpty());
     assertThat(pushes.sentTo(endpoint).getFirst()).contains("Call the plumber");
-    assertThat(subscriptions.findByEndpoint(endpoint)).isPresent();
+    assertThat(stored(endpoint)).isPresent();
   }
 
   @Test
@@ -132,9 +141,42 @@ class PushIT extends IntegrationTest {
     assertThat(pushes.sentTo(endpoint).getLast())
         .contains("After's errand")
         .doesNotContain("Before's secret");
-    assertThat(
-            subscriptions.findWithUser(subscriptions.findByEndpoint(endpoint).orElseThrow().id()))
+    assertThat(stored(endpoint))
         .hasValueSatisfying(s -> assertThat(s.user().externalId()).isEqualTo(after));
+  }
+
+  @Test
+  @DisplayName("someone else's device is not taken over by its endpoint alone, and nothing is said")
+  void anEndpointAloneTakesNothingOver() throws Exception {
+    String owner = someone();
+    String endpoint = anEndpoint();
+    register(owner, endpoint);
+
+    mvc.perform(
+            body(
+                put("/api/push/subscription").with(as(someone())),
+                Map.of("endpoint", endpoint, "p256dh", P256DH, "auth", "AAAAAAAAAAAAAAAAAAAAAA")))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.message").value("No such device"));
+
+    assertThat(stored(endpoint))
+        .hasValueSatisfying(s -> assertThat(s.user().externalId()).isEqualTo(owner));
+  }
+
+  @Test
+  @DisplayName("its owner may register a device again with new keys")
+  void theOwnerRenewsTheKeys() throws Exception {
+    String me = someone();
+    String endpoint = anEndpoint();
+    register(me, endpoint);
+
+    mvc.perform(
+            body(
+                put("/api/push/subscription").with(as(me)),
+                Map.of("endpoint", endpoint, "p256dh", P256DH, "auth", "AAAAAAAAAAAAAAAAAAAAAA")))
+        .andExpect(status().isNoContent());
+
+    assertThat(stored(endpoint)).hasValueSatisfying(s -> assertThat(s.auth()).startsWith("AAAA"));
   }
 
   @Test
@@ -148,7 +190,7 @@ class PushIT extends IntegrationTest {
                 Map.of("endpoint", endpoint, "p256dh", P256DH, "auth", AUTH)))
         .andExpect(status().isBadRequest());
 
-    assertThat(subscriptions.findByEndpoint(endpoint)).isEmpty();
+    assertThat(stored(endpoint)).isEmpty();
     assertThat(pushes.sentTo(endpoint)).isEmpty();
   }
 
@@ -168,6 +210,36 @@ class PushIT extends IntegrationTest {
         .andExpect(status().isForbidden())
         .andExpect(content().string(""));
 
-    assertThat(subscriptions.findByEndpoint(endpoint)).isEmpty();
+    assertThat(stored(endpoint)).isEmpty();
+  }
+
+  private org.springframework.test.web.servlet.ResultActions removal(String endpoint, String auth)
+      throws Exception {
+    return mvc.perform(body(post("/push/removal"), Map.of("endpoint", endpoint, "auth", auth)));
+  }
+
+  @Test
+  @DisplayName("a signed-out device removes itself with its own secret, and needs no token for it")
+  void removesWithoutAToken() throws Exception {
+    String endpoint = anEndpoint();
+    register(someone(), endpoint);
+
+    removal(endpoint, AUTH).andExpect(status().isNoContent()).andExpect(content().string(""));
+
+    assertThat(stored(endpoint)).isEmpty();
+  }
+
+  @Test
+  @DisplayName("the wrong secret removes nothing, and is answered exactly like the right one")
+  void theWrongSecretRemovesNothing() throws Exception {
+    String endpoint = anEndpoint();
+    register(someone(), endpoint);
+
+    removal(endpoint, "c29tZXRoaW5nIGVsc2U")
+        .andExpect(status().isNoContent())
+        .andExpect(content().string(""));
+    removal(anEndpoint(), AUTH).andExpect(status().isNoContent()).andExpect(content().string(""));
+
+    assertThat(stored(endpoint)).isPresent();
   }
 }

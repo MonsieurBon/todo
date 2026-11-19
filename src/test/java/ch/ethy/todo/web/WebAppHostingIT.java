@@ -56,7 +56,9 @@ class WebAppHostingIT extends IntegrationTest {
     // HTML here would turn every typo into a JSON parse error. The bare roots matter too:
     // those are what a person types.
     for (String path :
-        new String[] {"/api", "/api/nonexistent", "/actuator", "/actuator/nope", "/v3", "/mcp"}) {
+        new String[] {
+          "/api", "/api/nonexistent", "/actuator", "/actuator/nope", "/v3", "/mcp", "/push"
+        }) {
       var response = mvc.perform(get(path)).andReturn().getResponse();
       assertThat(response.getContentAsString())
           .as("GET %s must not be answered with the web app", path)

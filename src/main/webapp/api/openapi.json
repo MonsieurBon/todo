@@ -203,6 +203,22 @@
         },
         "type" : "object"
       },
+      "PushRemoval" : {
+        "properties" : {
+          "auth" : {
+            "maxLength" : 24,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "endpoint" : {
+            "maxLength" : 2048,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "auth", "endpoint" ],
+        "type" : "object"
+      },
       "Recurrence" : {
         "properties" : {
           "every" : {
@@ -1247,6 +1263,27 @@
           }
         },
         "tags" : [ "task-controller" ]
+      }
+    },
+    "/push/removal" : {
+      "post" : {
+        "operationId" : "removeSubscription",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PushRemoval"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "push-removal-controller" ]
       }
     }
   }

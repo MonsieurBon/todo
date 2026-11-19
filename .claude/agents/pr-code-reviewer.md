@@ -104,8 +104,11 @@ unnecessary coupling?
   rewritten to remove.
 - Cross-user access answers **404** with no payload; a token for the wrong surface stays **403**. A
   403 for a resource that exists under another user confirms the id.
-- `/api/**`, `/mcp` and `/mcp/**` require a valid bearer token; `/.well-known/**` and
-  `/actuator/health/**` are deliberately public. Verify nothing else quietly joined them.
+- `/api/**`, `/mcp` and `/mcp/**` require a valid bearer token; `/.well-known/**`,
+  `/actuator/health/**` and `POST /push/removal` are deliberately public. The last is for a device
+  that has signed out and so has no token: it proves itself with its push subscription's own secret,
+  can only stop that device's notification, and answers the same whatever matched. It is no
+  precedent. Verify nothing else quietly joined them, and that it stays that narrow.
 - The app is a pure OAuth 2.1 **resource server** — it mints no tokens, stores no passwords, holds
   no session or cookie. The risk is accepting a token it should not: issuer and audience validation,
   signature, expiry, JWKS handling. Audience validation is the boundary the MCP specification

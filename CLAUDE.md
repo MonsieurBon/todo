@@ -168,6 +168,16 @@ with `npm run build`.
   abandoning the login form is ordinary, and deciding before anyone has claimed the device would
   destroy the user's own unsynced writes. Nothing can leak while it waits, because flushing needs
   a board and the board needs a session.
+- **Signing out never waits on the network.** Everything local happens at once. What needs a
+  connection is noted and finished by whoever is online first: the next start, or the worker when
+  the next push arrives, since a push arriving proves the connection. So a device signed out
+  offline still stops showing Critical Now, which is why the push worker is ours and not Angular's.
+  A start without a session also ends a subscription nobody noted, since not every way a session
+  ends stops to note it.
+- **`/push/removal` is open without a token, deliberately.** A device that has signed out has no
+  session left, so it proves itself with its push subscription's own secret instead, and all it can
+  do is stop that device's notification. It answers the same whatever matched. It is no precedent:
+  another open write is a new decision.
 
 ## Tests
 

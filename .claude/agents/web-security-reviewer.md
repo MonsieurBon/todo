@@ -32,8 +32,10 @@ everything is resolved and nothing new surfaced, one line and stop.
 - **Audience validation** (`spring.security.oauth2.resourceserver.jwt.audiences`) is the boundary
   the MCP specification requires: a token minted for another resource must be rejected.
 - `/api/**`, `/mcp` and `/mcp/**` require authentication. `/.well-known/**` (RFC 9728 protected
-  resource metadata) and `/actuator/health/**` are deliberately public; everything else is the
-  Angular shell.
+  resource metadata), `/actuator/health/**` and `POST /push/removal` are deliberately public;
+  everything else is the Angular shell. `/push/removal` is for a device that has signed out and so
+  has no token: it proves itself with its push subscription's own secret, can only stop that
+  device's notification, and answers the same whatever matched. It is no precedent.
 - A token opens one surface: `SCOPE_todo:api` for `/api/**`, `SCOPE_todo:mcp` for `/mcp`, enforced
   once in `SecurityConfig` and nowhere else. There are no permission tiers within a surface, so what
   bounds an assistant is which tools `TodoTools` exposes.

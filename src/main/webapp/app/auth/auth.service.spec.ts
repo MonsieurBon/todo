@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { OAuthErrorEvent, OAuthService } from 'angular-oauth2-oidc';
 import { Subject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CriticalNowNotification } from '../core/critical-now-notification';
 import { Outbox } from '../offline/outbox';
 import { AuthService } from './auth.service';
 
@@ -30,11 +31,15 @@ const oauthDouble = (events: Subject<unknown>) => {
 const serviceWith = (
   oauth: Record<string, ReturnType<typeof vi.fn>>,
   outbox: Record<string, ReturnType<typeof vi.fn>> = { clear: vi.fn(() => Promise.resolve()) },
+  notification: Record<string, ReturnType<typeof vi.fn>> = {
+    forget: vi.fn(() => Promise.resolve()),
+  },
 ) => {
   TestBed.configureTestingModule({
     providers: [
       { provide: OAuthService, useValue: oauth },
       { provide: Outbox, useValue: outbox },
+      { provide: CriticalNowNotification, useValue: notification },
     ],
   });
   return TestBed.inject(AuthService);
@@ -115,6 +120,19 @@ describe('a session whose token is refused', () => {
     TestBed.resetTestingModule();
     return serviceWith(oauth, outbox);
   };
+
+  it('takes the Critical Now notification off the device: whoever signs in next may be someone else', async () => {
+    const notification = { forget: vi.fn(() => Promise.resolve()) };
+    TestBed.resetTestingModule();
+    auth = serviceWith(oauth, outbox, notification);
+    await signedInDevice();
+    oauth['refreshToken'] = vi.fn(() => Promise.reject(invalidGrant));
+
+    await auth.tryRefresh();
+
+    expect(notification.forget).toHaveBeenCalled();
+    expect(oauth['initCodeFlow']).toHaveBeenCalled();
+  });
 
   it('clears the tokens and asks the IdP again, returning to the page they were on', async () => {
     await signedInDevice();
@@ -448,6 +466,7 @@ describe('a start that reached the IdP', () => {
 describe('signing out', () => {
   let oauth: Record<string, ReturnType<typeof vi.fn>>;
   let outbox: Record<string, ReturnType<typeof vi.fn>>;
+  let notification: Record<string, ReturnType<typeof vi.fn>>;
   let auth: AuthService;
   let order: string[];
 
@@ -468,7 +487,8 @@ describe('signing out', () => {
     oauth['hasValidAccessToken'] = vi.fn(() => true);
     oauth['getIdentityClaims'] = vi.fn(() => ({ sub: 'alice' }));
     outbox = { clear: recording('outbox', dropped) };
-    auth = serviceWith(oauth, outbox);
+    notification = { forget: recording('notification', dropped) };
+    auth = serviceWith(oauth, outbox, notification);
     await auth.bootstrap();
     expect(auth.signedIn()).toBe(true);
 
@@ -481,7 +501,7 @@ describe('signing out', () => {
     await auth.signOut();
 
     // The end-session redirect leaves nothing running, so anything not awaited before it never runs.
-    expect(order).toEqual(['caches', 'outbox', 'logOut']);
+    expect(order).toEqual(['notification', 'caches', 'outbox', 'logOut']);
     expect(auth.signedIn()).toBe(false);
   });
 
@@ -492,6 +512,7 @@ describe('signing out', () => {
   });
 
   it.each([
+    ['the notification cannot be taken off', () => (notification['forget'] = vi.fn(refused))],
     ['the caches cannot be dropped', () => vi.stubGlobal('caches', { keys: refused })],
     ['the queue cannot be dropped', () => (outbox['clear'] = vi.fn(refused))],
   ])('ends the session anyway when %s', async (_which, refuse) => {
@@ -505,6 +526,22 @@ describe('signing out', () => {
     // Worse than a queue left behind: the next person would get the session itself.
     expect(oauth['logOut']).toHaveBeenCalled();
     expect(auth.signedIn()).toBe(false);
+  });
+
+  it('ends the session even when taking the notification off never finishes', async () => {
+    vi.useFakeTimers();
+    try {
+      notification['forget'] = vi.fn(() => new Promise(() => undefined));
+
+      const signingOut = auth.signOut();
+      await vi.advanceTimersByTimeAsync(5000);
+      await signingOut;
+
+      expect(oauth['logOut']).toHaveBeenCalled();
+      expect(auth.signedIn()).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('leaves a queue it could not drop for the next start to settle', async () => {

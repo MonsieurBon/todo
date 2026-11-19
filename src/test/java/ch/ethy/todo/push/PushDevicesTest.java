@@ -19,12 +19,21 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 class PushDevicesTest {
 
-  private static final User ME = new User("me", "me@example.com", "Me");
-  private static final User SOMEONE = new User("someone", "someone@example.com", "Someone");
+  private static final User ME = user(1L, "me");
+  private static final User SOMEONE = user(2L, "someone");
+
+  private static User user(long id, String name) {
+    User user = new User(name, name + "@example.com", name);
+    ReflectionTestUtils.setField(user, "id", id);
+    return user;
+  }
+
   private static final String ENDPOINT = "https://fcm.googleapis.com/fcm/send/device-1";
   private static final String P256DH =
       "BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4";
@@ -36,7 +45,7 @@ class PushDevicesTest {
   @BeforeEach
   void devices() {
     subscriptions = mock(PushSubscriptionRepository.class);
-    when(subscriptions.save(any())).thenAnswer(call -> call.getArgument(0));
+    when(subscriptions.saveAndFlush(any())).thenAnswer(call -> call.getArgument(0));
     PushGateway on = mock(PushGateway.class);
     when(on.publicKey()).thenReturn(Optional.of("key"));
     devices = new PushDevices(subscriptions, on, mock(CriticalNowPusher.class));
@@ -52,20 +61,18 @@ class PushDevicesTest {
   @Test
   @DisplayName("a new endpoint becomes this user's device")
   void registersANewDevice() {
-    when(subscriptions.findByEndpoint(ENDPOINT)).thenReturn(Optional.empty());
-
     PushSubscription device = devices.register(ME, ENDPOINT, P256DH, AUTH);
 
     assertThat(device.user()).isSameAs(ME);
     assertThat(device.endpoint()).isEqualTo(ENDPOINT);
-    verify(subscriptions).save(device);
+    verify(subscriptions).saveAndFlush(device);
   }
 
   @Test
-  @DisplayName("a known endpoint is handed to whoever registers it now, with the keys it sent")
+  @DisplayName("a device's own secret hands it to whoever registers it now, with the keys it sent")
   void handsAKnownDeviceOver() {
-    var known = new PushSubscription(SOMEONE, ENDPOINT, "old-key", "old-auth");
-    when(subscriptions.findByEndpoint(ENDPOINT)).thenReturn(Optional.of(known));
+    var known = new PushSubscription(SOMEONE, ENDPOINT, "old-key", AUTH);
+    when(subscriptions.findReachable(ENDPOINT, ME, AUTH)).thenReturn(Optional.of(known));
 
     PushSubscription device = devices.register(ME, ENDPOINT, P256DH, AUTH);
 
@@ -75,9 +82,31 @@ class PushDevicesTest {
     assertThat(device.auth()).isEqualTo(AUTH);
   }
 
+  @Test
+  @DisplayName(
+      "an endpoint out of reach that is taken all the same is someone else's: no such device")
+  void keepsSomeoneElsesDevice() {
+    when(subscriptions.saveAndFlush(any()))
+        .thenThrow(new DataIntegrityViolationException("uq_push_subscription_endpoint"));
+
+    assertThatThrownBy(() -> devices.register(ME, ENDPOINT, P256DH, AUTH))
+        .isInstanceOf(NotFoundException.class)
+        .hasMessage("No such device");
+  }
+
+  @Test
+  @DisplayName("the same person registering their device again may renew its keys")
+  void renewsOwnKeys() {
+    var mine = new PushSubscription(ME, ENDPOINT, "old-key", "old-auth");
+    when(subscriptions.findReachable(ENDPOINT, ME, AUTH)).thenReturn(Optional.of(mine));
+
+    assertThat(devices.register(ME, ENDPOINT, P256DH, AUTH).auth()).isEqualTo(AUTH);
+  }
+
   @ParameterizedTest(name = "{0}")
   @ValueSource(
       strings = {
+        "https://fcm.googleapis.com/fcm/send/ünicode",
         "http://fcm.googleapis.com/fcm/send/x",
         "https://localhost/push",
         "https://10.0.0.1/push",
@@ -91,7 +120,7 @@ class PushDevicesTest {
   void refusesForeignEndpoints(String endpoint) {
     assertThatThrownBy(() -> devices.register(ME, endpoint, P256DH, AUTH))
         .isInstanceOf(IllegalArgumentException.class);
-    verify(subscriptions, never()).save(any());
+    verify(subscriptions, never()).saveAndFlush(any());
   }
 
   @ParameterizedTest(name = "{0}")
@@ -104,8 +133,6 @@ class PushDevicesTest {
       })
   @DisplayName("the push services of Chrome, Firefox, Edge and Safari are accepted")
   void acceptsKnownPushServices(String endpoint) {
-    when(subscriptions.findByEndpoint(endpoint)).thenReturn(Optional.empty());
-
     assertThat(devices.register(ME, endpoint, P256DH, AUTH).endpoint()).isEqualTo(endpoint);
   }
 
@@ -128,5 +155,13 @@ class PushDevicesTest {
     assertThat(off.publicKey()).isEmpty();
     assertThatThrownBy(() -> off.register(ME, ENDPOINT, P256DH, AUTH))
         .isInstanceOf(NotFoundException.class);
+  }
+
+  @Test
+  @DisplayName("a removal names the device by its endpoint and its secret together")
+  void removesWithTheSecret() {
+    devices.remove(ENDPOINT, AUTH);
+
+    verify(subscriptions).deleteByEndpointAndAuth(ENDPOINT, AUTH);
   }
 }

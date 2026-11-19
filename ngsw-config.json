@@ -31,5 +31,5 @@
       }
     }
   ],
-  "navigationUrls": ["/**", "!/api/**", "!/mcp/**", "!/actuator/**", "!/v3/**", "!/.well-known/**"]
+  "navigationUrls": ["/**", "!/api/**", "!/mcp/**", "!/push/**", "!/actuator/**", "!/v3/**", "!/.well-known/**"]
 }

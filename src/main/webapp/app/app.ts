@@ -64,9 +64,10 @@ export class App {
         this.writes.dismiss();
       }
     });
+    // Signed out too: a sign-out may have left a removal for the first start with a connection.
+    void this.notification.start(this.signedIn());
     if (this.signedIn()) {
       void this.board.initialise();
-      void this.notification.start();
       const returnUrl = this.auth.takeReturnUrl();
       if (returnUrl) {
         void this.router.navigateByUrl(returnUrl);
@@ -83,9 +84,7 @@ export class App {
   }
 
   protected toggleNotification(): void {
-    if (!this.notifying()) {
-      void this.notification.turnOn();
-    }
+    void (this.notifying() ? this.notification.turnOff() : this.notification.turnOn());
   }
 
   protected sync(): void {

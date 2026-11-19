@@ -42,6 +42,11 @@ class CriticalNowPusherTest {
 
   private static final Instant NOW = Instant.parse("2026-11-19T10:00:00Z");
   private static final User ME = new User("subject", "me@example.com", "Me");
+
+  static {
+    ReflectionTestUtils.setField(ME, "id", 1L);
+  }
+
   private static final Board BOARD =
       new Board(
           List.of(new Task("Pay rent", TaskZone.CRITICAL_NOW, NOW)),
@@ -84,7 +89,7 @@ class CriticalNowPusherTest {
     tasks = mock(TaskService.class);
     when(tasks.board(eq(ME), any(BoardFilter.class))).thenReturn(BOARD);
 
-    pusher = new CriticalNowPusher(subscriptions, tasks, gateway, executor, RETRIES);
+    pusher = new CriticalNowPusher(subscriptions, tasks, gateway, executor, RETRIES, RETRIES);
   }
 
   @AfterEach
@@ -130,16 +135,46 @@ class CriticalNowPusherTest {
   }
 
   @Test
-  @DisplayName("a failure is not retried here: the next change sends again")
-  void failureWaitsForTheNextChange() throws InterruptedException {
-    gateway.answers.add(PushGateway.Outcome.FAILED);
+  @DisplayName(
+      "a push the service could not take is tried a few times more, then left for the next change")
+  void failuresAreRetriedAFewTimes() throws InterruptedException {
+    gateway.answers.addAll(
+        List.of(
+            PushGateway.Outcome.FAILED, PushGateway.Outcome.FAILED, PushGateway.Outcome.FAILED));
 
     pusher.welcome(1L);
 
-    await().until(() -> gateway.sent.size() == 1);
-    Thread.sleep(50);
-    assertThat(gateway.sent).hasSize(1);
+    await().until(() -> gateway.sent.size() == 3);
+    Thread.sleep(100);
+    assertThat(gateway.sent).hasSize(3);
     verify(subscriptions, never()).recordSent(any(), any());
+    verify(subscriptions, never()).deleteById(any());
+  }
+
+  @Test
+  @DisplayName("a failed push after a change is tried again, and recorded once it gets through")
+  void aFailedChangeIsRetried() {
+    when(subscriptions.findAffected(any(), any())).thenReturn(List.of(device(1L, ME, null)));
+    gateway.answers.add(PushGateway.Outcome.FAILED);
+
+    pusher.boardsChanged(new BoardChanges.Changed(Set.of(1L), Set.of()));
+
+    await().until(() -> gateway.sent.size() == 2);
+    verify(subscriptions, org.mockito.Mockito.timeout(1000)).recordSent(eq(1L), anyString());
+  }
+
+  @Test
+  @DisplayName("one device's trouble does not cost the devices after it the change")
+  void oneDeviceDoesNotStopTheRest() {
+    User other = new User("other", "other@example.com", "Other");
+    ReflectionTestUtils.setField(other, "id", 2L);
+    when(tasks.board(eq(other), any(BoardFilter.class))).thenThrow(new IllegalStateException("db"));
+    when(subscriptions.findAffected(any(), any()))
+        .thenReturn(List.of(device(10L, other, null), device(11L, ME, null)));
+
+    pusher.boardsChanged(new BoardChanges.Changed(Set.of(1L), Set.of()));
+
+    verify(subscriptions, org.mockito.Mockito.timeout(1000)).recordSent(eq(11L), anyString());
   }
 
   private PushSubscription device(long id, User user, String lastSent) {
@@ -193,6 +228,17 @@ class CriticalNowPusherTest {
 
     await().until(() -> gateway.sent.size() == 1);
     verify(subscriptions, org.mockito.Mockito.timeout(1000)).recordSent(11L, digestOf(current));
+  }
+
+  @Test
+  @DisplayName("a device the push service no longer knows is forgotten after a change")
+  void forgetsAGoneDevice() {
+    when(subscriptions.findAffected(any(), any())).thenReturn(List.of(device(10L, ME, null)));
+    gateway.answers.add(PushGateway.Outcome.GONE);
+
+    pusher.boardsChanged(new BoardChanges.Changed(Set.of(1L), Set.of()));
+
+    verify(subscriptions, org.mockito.Mockito.timeout(1000)).deleteById(10L);
   }
 
   @Test

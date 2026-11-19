@@ -109,6 +109,11 @@ public final class Requests {
       @NotBlank @Size(max = PushSubscription.MAX_P256DH_LENGTH) String p256dh,
       @NotBlank @Size(max = PushSubscription.MAX_AUTH_LENGTH) String auth) {}
 
+  /** Proof of a subscription without a session: its endpoint and its secret. */
+  public record PushRemoval(
+      @NotBlank @Size(max = PushSubscription.MAX_ENDPOINT_LENGTH) String endpoint,
+      @NotBlank @Size(max = PushSubscription.MAX_AUTH_LENGTH) String auth) {}
+
   private static LocalDate deferralDate(LocalDate until, Integer days, Clock clock) {
     if ((until == null) == (days == null)) {
       throw new IllegalArgumentException("Defer to a date or by a number of days, one of them");

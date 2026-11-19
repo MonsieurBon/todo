@@ -39,23 +39,28 @@ public class CriticalNowPusher implements AutoCloseable {
   private final TaskService tasks;
   private final PushGateway gateway;
   private final ScheduledExecutorService executor;
-  private final List<Duration> retries;
+  private final List<Duration> welcomeRetries;
+  private final List<Duration> failureRetries;
 
   /**
-   * @param retries how long to wait before asking again when a device has only just registered: a
-   *     push service can call a brand-new subscription gone for a moment
+   * @param welcomeRetries how long to wait before asking again when a device has only just
+   *     registered: a push service can call a brand-new subscription gone for a moment
+   * @param failureRetries how long to wait before trying again after a push service could not take
+   *     a push, so that a lost one does not leave a device showing the wrong tasks for hours
    */
   CriticalNowPusher(
       PushSubscriptionRepository subscriptions,
       TaskService tasks,
       PushGateway gateway,
       ScheduledExecutorService executor,
-      List<Duration> retries) {
+      List<Duration> welcomeRetries,
+      List<Duration> failureRetries) {
     this.subscriptions = subscriptions;
     this.tasks = tasks;
     this.gateway = gateway;
     this.executor = executor;
-    this.retries = List.copyOf(retries);
+    this.welcomeRetries = List.copyOf(welcomeRetries);
+    this.failureRetries = List.copyOf(failureRetries);
   }
 
   /**
@@ -72,11 +77,15 @@ public class CriticalNowPusher implements AutoCloseable {
           .findWithUser(subscriptionId)
           .ifPresent(
               device -> {
-                if (send(device) == PushGateway.Outcome.GONE && attempt < retries.size()) {
-                  executor.schedule(
-                      () -> welcome(subscriptionId, attempt + 1),
-                      retries.get(attempt).toMillis(),
-                      TimeUnit.MILLISECONDS);
+                switch (send(device, payloadFor(device))) {
+                  case GONE -> {
+                    if (attempt < welcomeRetries.size()) {
+                      later(
+                          welcomeRetries.get(attempt), () -> welcome(subscriptionId, attempt + 1));
+                    }
+                  }
+                  case FAILED -> retryLater(subscriptionId, 0);
+                  case DELIVERED -> {}
                 }
               });
     } catch (RuntimeException e) {
@@ -112,17 +121,57 @@ public class CriticalNowPusher implements AutoCloseable {
   }
 
   private void refresh(Supplier<List<PushSubscription>> devices) {
+    List<PushSubscription> found;
     try {
-      Map<Long, byte[]> payloads = new HashMap<>();
-      for (PushSubscription device : devices.get()) {
-        byte[] payload = payloads.computeIfAbsent(device.user().id(), id -> payloadFor(device));
-        if (!digest(payload).equals(device.lastSent())) {
-          send(device, payload);
-        }
-      }
+      found = devices.get();
     } catch (RuntimeException e) {
-      log.warn("Could not refresh Critical Now notifications", e);
+      log.warn("Could not read which devices to push to", e);
+      return;
     }
+    Map<Long, byte[]> payloads = new HashMap<>();
+    for (PushSubscription device : found) {
+      try {
+        update(device, payloads.computeIfAbsent(device.user().id(), id -> payloadFor(device)), 0);
+      } catch (RuntimeException e) {
+        // One device's trouble must not cost every device after it this change.
+        log.warn("Could not push to subscription {}", device.id(), e);
+      }
+    }
+  }
+
+  /** Sends only what the device does not show yet. */
+  private void update(PushSubscription device, byte[] payload, int failures) {
+    if (digest(payload).equals(device.lastSent())) {
+      return;
+    }
+    switch (send(device, payload)) {
+      // A welcome waits a moment instead, since a push service can call a brand-new subscription
+      // gone; by the time something changes, it has had that moment.
+      case GONE -> subscriptions.deleteById(device.id());
+      case FAILED -> retryLater(device.id(), failures);
+      case DELIVERED -> {}
+    }
+  }
+
+  private void retryLater(Long subscriptionId, int failures) {
+    if (failures < failureRetries.size()) {
+      later(failureRetries.get(failures), () -> retry(subscriptionId, failures + 1));
+    }
+  }
+
+  /** Reads the board again, so a change made in the meantime is what is sent. */
+  private void retry(Long subscriptionId, int failures) {
+    try {
+      subscriptions
+          .findWithUser(subscriptionId)
+          .ifPresent(device -> update(device, payloadFor(device), failures));
+    } catch (RuntimeException e) {
+      log.warn("Could not push to subscription {}", subscriptionId, e);
+    }
+  }
+
+  private void later(Duration delay, Runnable work) {
+    executor.schedule(work, delay.toMillis(), TimeUnit.MILLISECONDS);
   }
 
   /** An empty {@code in} is not something every database takes; no id is ever negative. */
@@ -132,10 +181,6 @@ public class CriticalNowPusher implements AutoCloseable {
 
   private byte[] payloadFor(PushSubscription device) {
     return CriticalNowNotice.of(tasks.board(device.user(), CRITICAL_NOW)).payload();
-  }
-
-  private PushGateway.Outcome send(PushSubscription device) {
-    return send(device, payloadFor(device));
   }
 
   private PushGateway.Outcome send(PushSubscription device, byte[] payload) {

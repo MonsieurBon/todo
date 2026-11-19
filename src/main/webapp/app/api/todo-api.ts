@@ -8,6 +8,7 @@ import {
   Deferral,
   PushDevice,
   PushKey,
+  PushRemoval,
   Task,
   TaskList,
   UpdateTask,
@@ -141,5 +142,10 @@ export class TodoApi {
 
   subscribeDevice(device: PushDevice): Observable<void> {
     return this.http.put<void>('/api/push/subscription', device);
+  }
+
+  /** Outside `/api`, so no token goes with it: it is how a device that signed out finishes. */
+  removeSubscription(removal: PushRemoval): Observable<void> {
+    return this.http.post<void>('/push/removal', removal);
   }
 }

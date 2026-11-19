@@ -20,6 +20,7 @@ describe('the app shell', () => {
     on: ReturnType<typeof signal<boolean>>;
     start: ReturnType<typeof vi.fn>;
     turnOn: ReturnType<typeof vi.fn>;
+    turnOff: ReturnType<typeof vi.fn>;
   };
 
   const render = async (): Promise<ComponentFixture<App>> => {
@@ -41,6 +42,7 @@ describe('the app shell', () => {
       on: signal(false),
       start: vi.fn(async () => undefined),
       turnOn: vi.fn(async () => 'done'),
+      turnOff: vi.fn(async () => undefined),
     };
     TestBed.configureTestingModule({
       providers: [
@@ -186,7 +188,7 @@ describe('the app shell', () => {
     it('is started with the app, which registers a device that has it on again', async () => {
       await render();
 
-      expect(notification.start).toHaveBeenCalled();
+      expect(notification.start).toHaveBeenCalledWith(true);
     });
 
     it('is not offered where it cannot be had', async () => {
@@ -207,12 +209,17 @@ describe('the app shell', () => {
       expect(notification.turnOn).toHaveBeenCalled();
     });
 
-    it('shows that it is on', async () => {
+    it('shows that it is on, and is turned off from there', async () => {
       notification.available.set(true);
       notification.on.set(true);
       const fixture = await render();
 
-      expect(openAccountMenu(fixture)!.getAttribute('aria-checked')).toBe('true');
+      const item = openAccountMenu(fixture)!;
+      expect(item.getAttribute('aria-checked')).toBe('true');
+      item.click();
+
+      expect(notification.turnOff).toHaveBeenCalled();
+      expect(notification.turnOn).not.toHaveBeenCalled();
     });
   });
 });

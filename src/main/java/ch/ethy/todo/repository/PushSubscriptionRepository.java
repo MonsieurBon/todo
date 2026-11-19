@@ -1,6 +1,7 @@
 package ch.ethy.todo.repository;
 
 import ch.ethy.todo.domain.PushSubscription;
+import ch.ethy.todo.domain.User;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -13,7 +14,23 @@ import org.springframework.transaction.annotation.Transactional;
 
 public interface PushSubscriptionRepository extends JpaRepository<PushSubscription, Long> {
 
-  Optional<PushSubscription> findByEndpoint(String endpoint);
+  /**
+   * A device this user may register again: their own, or one whose secret they hold, which proves
+   * it is the same browser whoever signed in on it before. An endpoint alone is no secret.
+   */
+  @Query(
+      """
+      select s from PushSubscription s
+      where s.endpoint = :endpoint and (s.user = :user or s.auth = :auth)
+      """)
+  Optional<PushSubscription> findReachable(
+      @Param("endpoint") String endpoint, @Param("user") User user, @Param("auth") String auth);
+
+  /** By endpoint and secret together: a device that has signed out has nothing else to show. */
+  @Transactional
+  @Modifying
+  @Query("delete from PushSubscription s where s.endpoint = :endpoint and s.auth = :auth")
+  void deleteByEndpointAndAuth(@Param("endpoint") String endpoint, @Param("auth") String auth);
 
   /** With its user, since it is read outside any request to work out what to send. */
   @EntityGraph(attributePaths = "user")

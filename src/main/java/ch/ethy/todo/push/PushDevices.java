@@ -9,6 +9,7 @@ import java.net.URISyntaxException;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -60,14 +61,13 @@ public class PushDevices {
     mustBeUsable(p256dh, auth);
     PushSubscription device =
         subscriptions
-            .findByEndpoint(endpoint)
+            .findReachable(endpoint, user, auth)
             .map(
                 known -> {
                   known.handTo(user, p256dh, auth);
                   return known;
                 })
-            .orElseGet(
-                () -> subscriptions.save(new PushSubscription(user, endpoint, p256dh, auth)));
+            .orElseGet(() -> added(new PushSubscription(user, endpoint, p256dh, auth)));
     TransactionSynchronizationManager.registerSynchronization(
         new TransactionSynchronization() {
           @Override
@@ -76,6 +76,23 @@ public class PushDevices {
           }
         });
     return device;
+  }
+
+  /**
+   * For a device that has signed out, so there is no session to ask: holding the subscription's own
+   * secret is what proves it is that device, and all it can do is stop that device's notification.
+   */
+  public void remove(String endpoint, String auth) {
+    subscriptions.deleteByEndpointAndAuth(endpoint, auth);
+  }
+
+  /** An endpoint out of reach that is taken all the same belongs to someone else. */
+  private PushSubscription added(PushSubscription device) {
+    try {
+      return subscriptions.saveAndFlush(device);
+    } catch (DataIntegrityViolationException e) {
+      throw new NotFoundException("No such device");
+    }
   }
 
   private static void mustBeAPushService(String endpoint) {
@@ -92,7 +109,8 @@ public class PushDevices {
             && host != null
             && PUSH_SERVICES.stream()
                 .anyMatch(service -> host.equals(service) || host.endsWith("." + service));
-    if (!known) {
+    // Stored as ascii: anything else is refused here rather than by the database.
+    if (!known || !uri.toASCIIString().equals(endpoint)) {
       throw new IllegalArgumentException("Not the push service of a browser this server knows");
     }
   }
