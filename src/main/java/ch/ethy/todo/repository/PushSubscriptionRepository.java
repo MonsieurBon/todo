@@ -35,6 +35,9 @@ public interface PushSubscriptionRepository extends JpaRepository<PushSubscripti
   List<PushSubscription> findAffected(
       @Param("lists") Collection<Long> listIds, @Param("users") Collection<Long> userIds);
 
+  @Query("select s from PushSubscription s join fetch s.user")
+  List<PushSubscription> findAllWithUser();
+
   /** A statement rather than a loaded entity, so a re-registration in between is not undone. */
   @Transactional
   @Modifying

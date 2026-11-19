@@ -183,12 +183,39 @@ class CriticalNowPusherTest {
   }
 
   @Test
+  @DisplayName("at midnight every device is looked at, and sent what changed with the day")
+  void looksAtEveryDevice() {
+    String current = new String(CriticalNowNotice.of(BOARD).payload(), StandardCharsets.UTF_8);
+    when(subscriptions.findAllWithUser())
+        .thenReturn(List.of(device(10L, ME, digestOf(current)), device(11L, ME, "yesterday's")));
+
+    pusher.refreshAll();
+
+    await().until(() -> gateway.sent.size() == 1);
+    verify(subscriptions, org.mockito.Mockito.timeout(1000)).recordSent(11L, digestOf(current));
+  }
+
+  @Test
   @DisplayName("a change that named nobody asks the database nothing")
   void nothingToDo() throws InterruptedException {
     pusher.boardsChanged(new BoardChanges.Changed(Set.of(), Set.of()));
 
     Thread.sleep(50);
     verify(subscriptions, never()).findAffected(any(), any());
+  }
+
+  @Test
+  @DisplayName("a server without keys sends nothing, so it reads neither devices nor boards")
+  void nothingToDoWithoutKeys() throws InterruptedException {
+    var off =
+        new CriticalNowPusher(subscriptions, tasks, PushGateway.OFF, executor, RETRIES, RETRIES);
+
+    off.boardsChanged(new BoardChanges.Changed(Set.of(1L), Set.of()));
+    off.refreshAll();
+
+    Thread.sleep(50);
+    verify(subscriptions, never()).findAffected(any(), any());
+    verify(subscriptions, never()).findAllWithUser();
   }
 
   @Test

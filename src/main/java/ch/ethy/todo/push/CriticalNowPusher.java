@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
@@ -87,24 +88,40 @@ public class CriticalNowPusher implements AutoCloseable {
   /** After a write has committed: each device whose notification would now say something else. */
   @EventListener
   public void boardsChanged(BoardChanges.Changed changed) {
-    if (changed.listIds().isEmpty() && changed.userIds().isEmpty()) {
+    if (!sending() || (changed.listIds().isEmpty() && changed.userIds().isEmpty())) {
       return;
     }
     executor.execute(() -> refresh(changed));
   }
 
+  /** Every device: what a day's end changes is not a write anyone made. */
+  public void refreshAll() {
+    if (!sending()) {
+      return;
+    }
+    executor.execute(() -> refresh(subscriptions::findAllWithUser));
+  }
+
+  /** Without keys every push would fail, and rows left from when there were keys would retry it. */
+  private boolean sending() {
+    return gateway.publicKey().isPresent();
+  }
+
   private void refresh(BoardChanges.Changed changed) {
+    refresh(() -> subscriptions.findAffected(orNone(changed.listIds()), orNone(changed.userIds())));
+  }
+
+  private void refresh(Supplier<List<PushSubscription>> devices) {
     try {
       Map<Long, byte[]> payloads = new HashMap<>();
-      for (PushSubscription device :
-          subscriptions.findAffected(orNone(changed.listIds()), orNone(changed.userIds()))) {
+      for (PushSubscription device : devices.get()) {
         byte[] payload = payloads.computeIfAbsent(device.user().id(), id -> payloadFor(device));
         if (!digest(payload).equals(device.lastSent())) {
           send(device, payload);
         }
       }
     } catch (RuntimeException e) {
-      log.warn("Could not push after a change to lists {}", changed.listIds(), e);
+      log.warn("Could not refresh Critical Now notifications", e);
     }
   }
 
