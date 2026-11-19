@@ -128,6 +128,12 @@ with `npm run build`.
 - **A write over several tasks is whole or nothing.** One task out of reach answers the same 404
   it would alone, one completed task the same 409, and either way none of them has changed: the
   transaction undoes whatever went before the refusal.
+- **The Critical Now notification follows the rows, not the endpoints.** Every task row written
+  through the entity reports its list, and once the transaction commits each affected device is
+  sent its Critical Now if that now reads differently. So a new way of changing a task needs
+  nothing, as long as it goes through the entity: a statement that writes task rows without loading
+  them reports its lists itself. A change to a list that alters who sees its tasks must name the
+  people it affects, because after the commit nothing on a row says who could see it.
 - **Test the deny path** — that the refused thing returns no payload.
 - **The API contract is checked in and generated from.** `OpenApiContractIT` rewrites
   `openapi.json` and fails once when a DTO changes; review the diff and commit it. `npm run

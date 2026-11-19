@@ -3,17 +3,23 @@ package ch.ethy.todo.push;
 import ch.ethy.todo.domain.PushSubscription;
 import ch.ethy.todo.domain.TaskZone;
 import ch.ethy.todo.repository.PushSubscriptionRepository;
+import ch.ethy.todo.service.BoardChanges;
 import ch.ethy.todo.service.BoardFilter;
 import ch.ethy.todo.service.TaskService;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.event.EventListener;
 
 /**
  * Works out what each device's notification should say and sends it.
@@ -78,8 +84,44 @@ public class CriticalNowPusher implements AutoCloseable {
     }
   }
 
+  /** After a write has committed: each device whose notification would now say something else. */
+  @EventListener
+  public void boardsChanged(BoardChanges.Changed changed) {
+    if (changed.listIds().isEmpty() && changed.userIds().isEmpty()) {
+      return;
+    }
+    executor.execute(() -> refresh(changed));
+  }
+
+  private void refresh(BoardChanges.Changed changed) {
+    try {
+      Map<Long, byte[]> payloads = new HashMap<>();
+      for (PushSubscription device :
+          subscriptions.findAffected(orNone(changed.listIds()), orNone(changed.userIds()))) {
+        byte[] payload = payloads.computeIfAbsent(device.user().id(), id -> payloadFor(device));
+        if (!digest(payload).equals(device.lastSent())) {
+          send(device, payload);
+        }
+      }
+    } catch (RuntimeException e) {
+      log.warn("Could not push after a change to lists {}", changed.listIds(), e);
+    }
+  }
+
+  /** An empty {@code in} is not something every database takes; no id is ever negative. */
+  private static Collection<Long> orNone(Set<Long> ids) {
+    return ids.isEmpty() ? List.of(-1L) : ids;
+  }
+
+  private byte[] payloadFor(PushSubscription device) {
+    return CriticalNowNotice.of(tasks.board(device.user(), CRITICAL_NOW)).payload();
+  }
+
   private PushGateway.Outcome send(PushSubscription device) {
-    byte[] payload = CriticalNowNotice.of(tasks.board(device.user(), CRITICAL_NOW)).payload();
+    return send(device, payloadFor(device));
+  }
+
+  private PushGateway.Outcome send(PushSubscription device, byte[] payload) {
     PushGateway.Outcome outcome = gateway.send(device, payload);
     if (outcome == PushGateway.Outcome.DELIVERED) {
       subscriptions.recordSent(device.id(), digest(payload));

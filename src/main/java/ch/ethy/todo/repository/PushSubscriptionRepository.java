@@ -1,6 +1,8 @@
 package ch.ethy.todo.repository;
 
 import ch.ethy.todo.domain.PushSubscription;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,6 +19,21 @@ public interface PushSubscriptionRepository extends JpaRepository<PushSubscripti
   @EntityGraph(attributePaths = "user")
   @Query("select s from PushSubscription s where s.id = :id")
   Optional<PushSubscription> findWithUser(@Param("id") Long id);
+
+  /**
+   * The devices of everyone who can see one of these lists, or who is named. With their users,
+   * since they are read outside any request.
+   */
+  @Query(
+      """
+      select s from PushSubscription s join fetch s.user u
+      where u.id in :users
+         or exists (
+           select 1 from TaskList l left join l.members m
+           where l.id in :lists and (l.owner = u or m = u))
+      """)
+  List<PushSubscription> findAffected(
+      @Param("lists") Collection<Long> listIds, @Param("users") Collection<Long> userIds);
 
   /** A statement rather than a loaded entity, so a re-registration in between is not undone. */
   @Transactional

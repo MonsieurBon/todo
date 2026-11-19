@@ -16,6 +16,7 @@ import ch.ethy.todo.domain.TaskZone;
 import ch.ethy.todo.domain.User;
 import ch.ethy.todo.repository.PushSubscriptionRepository;
 import ch.ethy.todo.service.Board;
+import ch.ethy.todo.service.BoardChanges;
 import ch.ethy.todo.service.BoardFilter;
 import ch.ethy.todo.service.TaskService;
 import java.nio.charset.StandardCharsets;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -40,6 +42,11 @@ class CriticalNowPusherTest {
 
   private static final Instant NOW = Instant.parse("2026-11-19T10:00:00Z");
   private static final User ME = new User("subject", "me@example.com", "Me");
+  private static final Board BOARD =
+      new Board(
+          List.of(new Task("Pay rent", TaskZone.CRITICAL_NOW, NOW)),
+          Map.of(),
+          LocalDate.of(2026, 11, 19));
   private static final List<Duration> RETRIES =
       List.of(Duration.ofMillis(10), Duration.ofMillis(20));
 
@@ -64,6 +71,7 @@ class CriticalNowPusherTest {
   private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
   private final ScriptedGateway gateway = new ScriptedGateway();
   private PushSubscriptionRepository subscriptions;
+  private TaskService tasks;
   private CriticalNowPusher pusher;
 
   @BeforeEach
@@ -73,13 +81,8 @@ class CriticalNowPusherTest {
     subscriptions = mock(PushSubscriptionRepository.class);
     when(subscriptions.findWithUser(1L)).thenReturn(Optional.of(device));
 
-    TaskService tasks = mock(TaskService.class);
-    when(tasks.board(eq(ME), any(BoardFilter.class)))
-        .thenReturn(
-            new Board(
-                List.of(new Task("Pay rent", TaskZone.CRITICAL_NOW, NOW)),
-                Map.of(),
-                LocalDate.of(2026, 11, 19)));
+    tasks = mock(TaskService.class);
+    when(tasks.board(eq(ME), any(BoardFilter.class))).thenReturn(BOARD);
 
     pusher = new CriticalNowPusher(subscriptions, tasks, gateway, executor, RETRIES);
   }
@@ -137,6 +140,55 @@ class CriticalNowPusherTest {
     Thread.sleep(50);
     assertThat(gateway.sent).hasSize(1);
     verify(subscriptions, never()).recordSent(any(), any());
+  }
+
+  private PushSubscription device(long id, User user, String lastSent) {
+    PushSubscription device =
+        new PushSubscription(user, "https://push.example/" + id, "key", "auth");
+    ReflectionTestUtils.setField(device, "id", id);
+    ReflectionTestUtils.setField(device, "lastSent", lastSent);
+    return device;
+  }
+
+  private static String digestOf(String payload) {
+    return CriticalNowPusher.digest(payload.getBytes(StandardCharsets.UTF_8));
+  }
+
+  @Test
+  @DisplayName(
+      "after a change, a device is sent its Critical Now only when it would say something new")
+  void sendsOnlyWhatChanged() {
+    String current = new String(CriticalNowNotice.of(BOARD).payload(), StandardCharsets.UTF_8);
+    when(subscriptions.findAffected(any(), any()))
+        .thenReturn(
+            List.of(device(10L, ME, digestOf(current)), device(11L, ME, "something older")));
+
+    pusher.boardsChanged(new BoardChanges.Changed(Set.of(1L), Set.of()));
+
+    await().until(() -> gateway.sent.size() == 1);
+    verify(subscriptions, org.mockito.Mockito.timeout(1000)).recordSent(11L, digestOf(current));
+    verify(subscriptions, never()).recordSent(eq(10L), any());
+  }
+
+  @Test
+  @DisplayName("a board is read once per person, however many devices they have")
+  void readsEachBoardOnce() {
+    when(subscriptions.findAffected(any(), any()))
+        .thenReturn(List.of(device(10L, ME, null), device(11L, ME, null)));
+
+    pusher.boardsChanged(new BoardChanges.Changed(Set.of(1L), Set.of()));
+
+    await().until(() -> gateway.sent.size() == 2);
+    verify(tasks, org.mockito.Mockito.times(1)).board(eq(ME), any(BoardFilter.class));
+  }
+
+  @Test
+  @DisplayName("a change that named nobody asks the database nothing")
+  void nothingToDo() throws InterruptedException {
+    pusher.boardsChanged(new BoardChanges.Changed(Set.of(), Set.of()));
+
+    Thread.sleep(50);
+    verify(subscriptions, never()).findAffected(any(), any());
   }
 
   @Test
