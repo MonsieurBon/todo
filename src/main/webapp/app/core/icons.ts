@@ -27,6 +27,7 @@ const PATHS: Record<string, string> = {
   offline:
     '<path d="M6.5 18.5a4 4 0 0 1-.3-8A6 6 0 0 1 16.5 8"/><path d="M17 10.5a4 4 0 0 1 1 7.9"/><line x1="3" y1="3" x2="21" y2="21"/>',
   sync: '<path d="M20 12a8 8 0 0 1-13.7 5.6"/><path d="M4 12a8 8 0 0 1 13.7-5.6"/><polyline points="17.5 2.5 17.9 6.7 13.7 7.1"/><polyline points="6.5 21.5 6.1 17.3 10.3 16.9"/>',
+  bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
   account: '<circle cx="12" cy="8" r="3.5"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>',
   logout:
     '<path d="M14 6V4H5v16h9v-2"/><line x1="9" y1="12" x2="20" y2="12"/><polyline points="16.5 8.5 20 12 16.5 15.5"/>',

@@ -43,6 +43,11 @@ todo:
   # Whose midnight ends a day: when a deferral is over, and what "in a week" counts from.
   # Timestamps are unaffected and stay UTC.
   time-zone: ${TODO_TIME_ZONE:Europe/Zurich}
+  # The VAPID key pair (P-256, base64url) devices subscribe to Critical Now notifications with.
+  # Without both, the server sends none and the app does not offer them.
+  push:
+    public-key: ${TODO_PUSH_PUBLIC_KEY:}
+    private-key: ${TODO_PUSH_PRIVATE_KEY:}
 
 server:
   port: ${SERVER_PORT:8080}

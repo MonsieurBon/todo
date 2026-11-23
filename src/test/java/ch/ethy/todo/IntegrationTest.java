@@ -63,6 +63,8 @@ public abstract class IntegrationTest {
 
   @Autowired protected TestClock clock;
 
+  @Autowired protected RecordingPushGateway pushes;
+
   /** The context is shared, so time a test moved on must not carry into the next one. */
   @AfterEach
   void backToNow() {
@@ -75,6 +77,12 @@ public abstract class IntegrationTest {
     @Primary
     TestClock testClock() {
       return new TestClock();
+    }
+
+    @Bean
+    @Primary
+    RecordingPushGateway recordingPushGateway() {
+      return new RecordingPushGateway();
     }
   }
 }

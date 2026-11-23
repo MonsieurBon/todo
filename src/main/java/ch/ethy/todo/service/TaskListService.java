@@ -6,6 +6,7 @@ import ch.ethy.todo.repository.TaskListRepository;
 import ch.ethy.todo.repository.UserRepository;
 import java.util.List;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,10 +17,12 @@ public class TaskListService {
 
   private final TaskListRepository lists;
   private final UserRepository users;
+  private final BoardChanges changes;
 
-  public TaskListService(TaskListRepository lists, UserRepository users) {
+  public TaskListService(TaskListRepository lists, UserRepository users, BoardChanges changes) {
     this.lists = lists;
     this.users = users;
+    this.changes = changes;
   }
 
   @Transactional(readOnly = true)
@@ -104,6 +107,8 @@ public class TaskListService {
           "The inbox cannot be deleted - it is where anything captured without a list goes."
               + " Rename it instead.");
     }
+    // Named now: once it is gone, nothing says who could see it.
+    changes.usersAffected(viewersOf(list));
     lists.delete(list);
   }
 
@@ -114,13 +119,24 @@ public class TaskListService {
             .findByEmail(email)
             .orElseThrow(() -> new NotFoundException("No user with email " + email));
     list.share(target);
+    changes.usersAffected(List.of(target.id()));
     return list;
   }
 
   public TaskList unshare(Long id, User owner, String email) {
     TaskList list = resolveOwned(id, owner);
-    users.findByEmail(email).ifPresent(list::unshare);
+    users
+        .findByEmail(email)
+        .ifPresent(
+            member -> {
+              list.unshare(member);
+              changes.usersAffected(List.of(member.id()));
+            });
     return list;
+  }
+
+  private static List<Long> viewersOf(TaskList list) {
+    return Stream.concat(Stream.of(list.owner()), list.members().stream()).map(User::id).toList();
   }
 
   private static NotFoundException notFound(Long id) {

@@ -152,6 +152,19 @@ test('the board still renders with no connection, and a capture is kept and sent
   await expect(page.getByText(`Captured underground ${run}`)).toHaveCount(1);
 });
 
+test('the worker in charge is ours, and a server without push keys offers no notification', async () => {
+  await page.goto('/');
+  const script = await page.evaluate(
+    async () => (await navigator.serviceWorker.ready).active?.scriptURL,
+  );
+  expect(new URL(script!).pathname).toBe('/push-worker.js');
+
+  await page.getByRole('button', { name: 'Account' }).click();
+  await expect(page.getByRole('menuitem', { name: 'Sign out' })).toBeVisible();
+  await expect(page.getByText('Show Critical Now as a notification')).toHaveCount(0);
+  await page.keyboard.press('Escape');
+});
+
 /**
  * The mouse path through the topics dropdown, which the specs cannot reach: the panel is a CDK
  * overlay and selecting from it interleaves a blur with the click. Committing on both produced two

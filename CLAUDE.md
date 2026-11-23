@@ -128,6 +128,12 @@ with `npm run build`.
 - **A write over several tasks is whole or nothing.** One task out of reach answers the same 404
   it would alone, one completed task the same 409, and either way none of them has changed: the
   transaction undoes whatever went before the refusal.
+- **The Critical Now notification follows the rows, not the endpoints.** Every task row written
+  through the entity reports its list, and once the transaction commits each affected device is
+  sent its Critical Now if that now reads differently. So a new way of changing a task needs
+  nothing, as long as it goes through the entity: a statement that writes task rows without loading
+  them reports its lists itself. A change to a list that alters who sees its tasks must name the
+  people it affects, because after the commit nothing on a row says who could see it.
 - **Test the deny path** — that the refused thing returns no payload.
 - **The API contract is checked in and generated from.** `OpenApiContractIT` rewrites
   `openapi.json` and fails once when a DTO changes; review the diff and commit it. `npm run
@@ -162,6 +168,16 @@ with `npm run build`.
   abandoning the login form is ordinary, and deciding before anyone has claimed the device would
   destroy the user's own unsynced writes. Nothing can leak while it waits, because flushing needs
   a board and the board needs a session.
+- **Signing out never waits on the network.** Everything local happens at once. What needs a
+  connection is noted and finished by whoever is online first: the next start, or the worker when
+  the next push arrives, since a push arriving proves the connection. So a device signed out
+  offline still stops showing Critical Now, which is why the push worker is ours and not Angular's.
+  A start without a session also ends a subscription nobody noted, since not every way a session
+  ends stops to note it.
+- **`/push/removal` is open without a token, deliberately.** A device that has signed out has no
+  session left, so it proves itself with its push subscription's own secret instead, and all it can
+  do is stop that device's notification. It answers the same whatever matched. It is no precedent:
+  another open write is a new decision.
 
 ## Tests
 

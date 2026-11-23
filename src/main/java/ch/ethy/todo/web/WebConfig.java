@@ -17,7 +17,7 @@ public class WebConfig implements WebMvcConfigurer {
    * These must 404 rather than answer HTML: a JSON client given index.html reports a parse error.
    */
   private static final List<String> SERVER_OWNED =
-      List.of("api", "mcp", "actuator", "v3", "swagger-ui", ".well-known");
+      List.of("api", "mcp", "push", "actuator", "v3", "swagger-ui", ".well-known");
 
   /**
    * Both halves matter: without the exact match the bare {@code /api} falls through to the web app,

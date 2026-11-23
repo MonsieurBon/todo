@@ -19,10 +19,14 @@ export const appConfig: ApplicationConfig = {
     // sessionStorage, the library's default, means a login every time the phone reclaims the
     // process. localStorage is readable by an injected script: accepted cost for a personal app.
     { provide: OAuthStorage, useFactory: () => localStorage },
-    provideServiceWorker('ngsw-worker.js', {
+    // Angular's worker, loaded by ours: a registration belongs to its scope, not its script, so
+    // devices that registered Angular's directly move over on their next update.
+    provideServiceWorker('push-worker.js', {
       enabled: !isDevMode(),
       // Registering immediately would compete with the first board request for the connection.
       registrationStrategy: 'registerWhenStable:30000',
+      // Angular's worker is an import of ours, which the browser would otherwise take from its cache.
+      updateViaCache: 'none',
     }),
     // Blocks the first render: a flash of the signed-out shell is worse than a moment of nothing.
     provideAppInitializer(() => inject(AuthService).bootstrap()),

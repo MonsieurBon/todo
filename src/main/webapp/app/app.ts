@@ -7,6 +7,7 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 import { AuthService } from './auth/auth.service';
 import { BoardStore } from './board/board-store';
 import { AppUpdate } from './core/app-update';
+import { CriticalNowNotification } from './core/critical-now-notification';
 import { Writes } from './core/writes';
 
 @Component({
@@ -33,6 +34,7 @@ export class App {
   private readonly router = inject(Router);
   private readonly writes = inject(Writes);
   private readonly update = inject(AppUpdate);
+  private readonly notification = inject(CriticalNowNotification);
 
   protected readonly signedIn = this.auth.signedIn;
   protected readonly account = this.auth.displayName;
@@ -41,6 +43,8 @@ export class App {
   protected readonly showingCached = this.board.showingCached;
   protected readonly problem = this.writes.problem;
   protected readonly updateOffer = this.update.offer;
+  protected readonly notificationAvailable = this.notification.available;
+  protected readonly notifying = this.notification.on;
 
   protected readonly connectionNote = computed(() => {
     const queued = this.pending();
@@ -60,6 +64,8 @@ export class App {
         this.writes.dismiss();
       }
     });
+    // Signed out too: a sign-out may have left a removal for the first start with a connection.
+    void this.notification.start(this.signedIn());
     if (this.signedIn()) {
       void this.board.initialise();
       const returnUrl = this.auth.takeReturnUrl();
@@ -75,6 +81,10 @@ export class App {
 
   protected signOut(): void {
     void this.auth.signOut();
+  }
+
+  protected toggleNotification(): void {
+    void (this.notifying() ? this.notification.turnOff() : this.notification.turnOn());
   }
 
   protected sync(): void {

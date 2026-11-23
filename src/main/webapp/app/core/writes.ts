@@ -83,6 +83,12 @@ export class Writes {
     }
   }
 
+  /** For a refusal that never reached the server, so there is no answer to read a reason from. */
+  refuse(reason: string): WriteResult {
+    this.failure.set(reason);
+    return 'refused';
+  }
+
   dismiss(): void {
     this.failure.set(null);
   }

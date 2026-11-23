@@ -69,7 +69,9 @@
       <artifactId>spring-boot-starter-security</artifactId>
     </dependency>
     <!-- Auth is delegated to an external IdP: this app is a pure OAuth 2.1 resource
-         server. It validates tokens; it never issues them and stores no credentials. -->
+         server. It validates tokens; it never issues them and stores no credentials.
+         Its Nimbus JOSE also signs the VAPID token of a Web Push request: left to
+         Spring Security, so it stays the version Spring Security is built against. -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>

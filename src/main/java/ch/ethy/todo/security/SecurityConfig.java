@@ -3,6 +3,7 @@ package ch.ethy.todo.security;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -48,6 +49,10 @@ public class SecurityConfig {
                     .requestMatchers("/.well-known/**")
                     .permitAll()
                     .requestMatchers("/actuator/health/**")
+                    .permitAll()
+                    // A device that signed out has no token left. It proves itself with its push
+                    // subscription's own secret, and all that buys is stopping its notification.
+                    .requestMatchers(HttpMethod.POST, "/push/removal")
                     .permitAll()
                     .requestMatchers("/api/**")
                     .hasAuthority("SCOPE_todo:api")

@@ -1,5 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AuthConfig, OAuthErrorEvent, OAuthService } from 'angular-oauth2-oidc';
+import { CriticalNowNotification } from '../core/critical-now-notification';
 import { Outbox } from '../offline/outbox';
 
 const ISSUER_KEY = 'todo.issuer';
@@ -18,6 +19,9 @@ const RECOVERY_COOLDOWN_MS = 30_000;
 
 const CLIENT_ID = 'todo-web';
 
+/** More than the notification's own bounds add up to: this one is for whatever they missed. */
+const FORGET_NOTIFICATION_MS = 5000;
+
 /**
  * No `todo:` scope is named here on purpose: the IdP grants it by default, so a bundle cached in a
  * browser can never pin a scope name that the realm has since renamed — which would be refused at
@@ -31,6 +35,7 @@ const SCOPES = 'openid profile email offline_access';
 export class AuthService {
   private readonly oauth = inject(OAuthService);
   private readonly outbox = inject(Outbox);
+  private readonly notification = inject(CriticalNowNotification);
 
   private readonly ready = signal(false);
   private readonly session = signal(false);
@@ -189,6 +194,8 @@ export class AuthService {
       return;
     }
     this.startingOver = true;
+    // Whoever answers the login form may be someone else, and the titles are on the lock screen.
+    await this.forgetNotification();
     // A cache that will not drop must not strand the sign-in; some private modes throw here.
     await this.forgetCaches().catch(() => undefined);
     this.session.set(false);
@@ -240,10 +247,14 @@ export class AuthService {
     return claims?.['sub'] ?? null;
   }
 
-  /** Caches and outbox go too: leaving either behind shows one person's list to the next. */
+  /**
+   * The notification, caches and outbox go too: leaving any behind shows one person's list to the
+   * next. None of it waits on the network, which a sign-out may not have.
+   */
   async signOut(): Promise<void> {
     try {
       // Guarded one by one, never as a pair: a cache that will not drop must still reach the queue.
+      await this.forgetNotification();
       await this.forgetCaches().catch(() => undefined);
       // Unsettled rather than unsent: the next start weighs it against whoever comes back.
       await this.outbox.clear().catch(() => this.markRecoveringFrom());
@@ -266,6 +277,14 @@ export class AuthService {
     } catch {
       // Full, or blocked. Nothing here can do anything about it.
     }
+  }
+
+  /** Bounded here as well: a sign-out that waits on something that never answers never ends. */
+  private forgetNotification(): Promise<void> {
+    return Promise.race([
+      this.notification.forget(),
+      new Promise<void>((resolve) => setTimeout(resolve, FORGET_NOTIFICATION_MS)),
+    ]).catch(() => undefined);
   }
 
   private async forgetCaches(): Promise<void> {
