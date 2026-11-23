@@ -212,7 +212,7 @@ explains how to report it privately, and what falls outside that.
 What a release needs beyond replacing the image, newest first. A version not listed needs nothing,
 and upgrading across several means doing each listed step on the way, oldest first.
 
-### Unreleased
+### 2.13.0
 
 - **Optional:** the app can show Critical Now as a notification on a device. To offer it, make a key
   pair with `scripts/vapid-keys.sh` and set `TODO_PUSH_PUBLIC_KEY` and `TODO_PUSH_PRIVATE_KEY`.

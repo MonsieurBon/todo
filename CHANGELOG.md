@@ -1,3 +1,13 @@
+# [2.13.0](https://github.com/MonsieurBon/todo/compare/v2.12.2...v2.13.0) (2026-11-23)
+
+
+### Features
+
+* bring deferred tasks back into the Critical Now notification at midnight ([ff720b6](https://github.com/MonsieurBon/todo/commit/ff720b621a0249d9233defbb239ca9849daacd74))
+* keep the Critical Now notification current after every change ([6b5ed51](https://github.com/MonsieurBon/todo/commit/6b5ed51dfa7211bf5c27b056e582eb46290ad046))
+* show Critical Now as a notification on a device that turns it on ([d093ba5](https://github.com/MonsieurBon/todo/commit/d093ba58845c2033dc80e36bad1b983029fdc8fd))
+* take the Critical Now notification off a device that signs out or turns it off ([24d5f12](https://github.com/MonsieurBon/todo/commit/24d5f127db0327b143ab835a41b83bb438bd50c4))
+
 ## [2.12.2](https://github.com/MonsieurBon/todo/compare/v2.12.1...v2.12.2) (2026-11-13)
 
 
