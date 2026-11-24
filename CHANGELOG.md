@@ -1,3 +1,10 @@
+## [2.13.1](https://github.com/MonsieurBon/todo/compare/v2.13.0...v2.13.1) (2026-11-24)
+
+
+### Bug Fixes
+
+* **deps:** bump eclipse-temurin from `ecdc0ad` to `945247f` ([5809d70](https://github.com/MonsieurBon/todo/commit/5809d70358aadfcaf5efb440f2d5e7eb27230237))
+
 # [2.13.0](https://github.com/MonsieurBon/todo/compare/v2.12.2...v2.13.0) (2026-11-23)
 
 
