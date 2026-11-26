@@ -231,6 +231,12 @@ commits stay `build`.
 `main` takes nothing that hasn't passed the build's checks, from anyone: a ruleset requires them,
 and the release's GitHub App is the only actor past it, so that it can push the release commits.
 
+A release's image is built and pushed before it is tagged: once the tag exists, a run finds nothing
+left to release, so whatever fails after it has to be repaired by hand. `latest` moves only once the
+release exists. The version is decided by a dry run before the build, and the release fails unless
+it releases exactly that version. The dry run knows the commit analyzer only by name, so configuring
+the analyzer means configuring the dry run too.
+
 A breaking change is a `BREAKING CHANGE:` footer — with a space, its own paragraph in the body.
 `BREAKING-CHANGE:` and a subject-line mention both fail to produce a major here. One commit in the
 range carrying it is enough, whatever its type. Squash merge is off, so when squashing locally the
