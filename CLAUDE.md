@@ -33,8 +33,10 @@ The repository is public: only this project's own work goes into it.
   a fresh `pr-code-reviewer` agent, given the branch as it is about to be pushed rather than as the
   PR shows it, and told to report its findings rather than post them. Review it yourself as well.
   The author checks a diff against the plan that produced it; a reviewer without that context asks
-  what the change breaks, and whether it is the right change at all. Your own pass adds what only
-  you know. Fix each finding or know why not, and raise one that questions the approach with
+  what the change breaks, and whether it is the right change at all. So brief it as a PR body would,
+  with why the change exists, and never with the plan, what was tested or where to look: told how
+  the change works, it checks the diff against that story instead of reading it. Your own pass adds
+  what only you know. Fix each finding or know why not, and raise one that questions the approach with
   Fabian. A finding caught here is a review round saved. Nothing reaches the remote that hasn't been
   reviewed.
 - When a review comes back, the pre-push reviewer's or the PR's, show Fabian what it found: each
