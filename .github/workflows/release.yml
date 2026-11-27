@@ -51,14 +51,41 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # A release must not be cut from something that does not pass. The image is built
-      # later by semantic-release's publishCmd, once the version is known.
+      # A release must not be cut from something that does not pass.
       - name: test frontend
         run: npm run test:ci
       - name: test backend
         run: ./mvnw -B test -Dskip.npm=true -Dskip.installnodenpm=true
       - name: integration tests
         run: ./mvnw -B -Pintegration-tests verify -Dskip.npm=true -Dskip.installnodenpm=true
+
+      # The jar is built before anything is tagged, so a failed build is re-run rather than
+      # repaired, and before the release step, so the build never runs beside the App's
+      # token. It is built at the release's version, which its manifest carries and Spring
+      # Boot logs at startup. The dry run takes the checkout as its repository: semantic-release
+      # checks that it may push even in a dry run, and no token exists yet. The version
+      # comes from its API, since its log also prints every commit message.
+      - name: next version
+        id: next
+        run: |
+          version=$(node --input-type=module -e "
+            import semanticRelease from 'semantic-release';
+            const result = await semanticRelease(
+              { dryRun: true, repositoryUrl: process.cwd(), plugins: ['@semantic-release/commit-analyzer'] },
+              { stdout: process.stderr });
+            console.log(result ? result.nextRelease.version : '');")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      # The release commit takes its pom.xml from this working tree.
+      - name: build
+        if: steps.next.outputs.version != ''
+        env:
+          VERSION: ${{ steps.next.outputs.version }}
+        run: |
+          ./mvnw -B versions:set -DnewVersion="$VERSION" -DgenerateBackupPoms=false
+          ./mvnw -B clean package -DskipTests=true
+          docker build --no-cache --tag "ghcr.io/monsieurbon/todo:$VERSION" \
+            --tag ghcr.io/monsieurbon/todo:latest .
 
       - name: Log in to GHCR
         uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
@@ -78,11 +105,23 @@ jobs:
 
       # semantic-release pushes with GITHUB_TOKEN, which the ruleset turns away, unless
       # the remote already takes its push; so the App's token goes on the remote.
+      # RELEASE_VERSION is what was built. The release refuses any other version, and a
+      # version built but not released fails here too, unless main moved on meanwhile: then
+      # semantic-release releases nothing, and the run queued behind this one does.
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APP_TOKEN: ${{ steps.app.outputs.token }}
+          RELEASE_VERSION: ${{ steps.next.outputs.version }}
         run: |
           git config http.https://github.com/.extraheader \
             "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$APP_TOKEN" | base64 -w0)"
           npx semantic-release
+          if [ -n "$RELEASE_VERSION" ] && ! git rev-parse -q --verify "refs/tags/v$RELEASE_VERSION" > /dev/null; then
+            if [ "$(git ls-remote origin refs/heads/main | cut -f1)" != "$(git rev-parse HEAD)" ]; then
+              echo "::notice::main moved on during this run; the run queued behind it releases"
+              exit 0
+            fi
+            echo "::error::built $RELEASE_VERSION, but released nothing"
+            exit 1
+          fi
